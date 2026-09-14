@@ -1,0 +1,38 @@
+name: Deploy Web App to Cloudflare Pages
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "web/**"
+      - ".github/workflows/deploy_web.yml"
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install Frontend Dependencies
+        working-directory: web
+        run: npm ci || npm install
+
+      - name: Build Web Application
+        working-directory: web
+        run: npm run build
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: "apnaneta"
+          directory: "web/dist"
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
