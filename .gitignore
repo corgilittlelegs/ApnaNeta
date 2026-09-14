@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+env/
+venv/
+
+# Environment variables
+.env
+.env.local
+
+# Data caches & temporary downloads
+data/cache/*
+!data/cache/.gitkeep
+data/db/*.duckdb.wal
+
+# Testing
+.pytest_cache/
+.coverage
+
+# Node / Frontend
+node_modules/
+.next/
+out/
+dist/
+
+# OS Specific
+.DS_Store
