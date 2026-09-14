@@ -1,0 +1,39 @@
+name: Daily Sansad Attendance & Activity Sync
+
+on:
+  schedule:
+    - cron: '0 4 * * 1-5' # Runs Monday to Friday at 04:00 UTC (09:30 AM IST)
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+jobs:
+  sync_sansad:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: |
+          pip install httpx pydantic pydantic-settings
+
+      - name: Run Sansad Synchronizer
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          python -c "
+          import asyncio
+          from src.ingestion.sansad_api import sansad_scraper
+          async def main():
+              print('Syncing Lok Sabha...')
+              await sansad_scraper.sync_sansad_metrics(house='lok_sabha')
+              print('Syncing Rajya Sabha...')
+              await sansad_scraper.sync_sansad_metrics(house='rajya_sabha')
+          asyncio.run(main())
+          "
