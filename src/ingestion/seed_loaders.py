@@ -69,4 +69,15 @@ async def ingest_open_sansad(limit: int = 0) -> int:
 
 if __name__ == "__main__":
     import asyncio
-    asyncio.run(ingest_open_sansad(limit=100))
+    import os
+    import sys
+
+    raw_limit = os.getenv("LIMIT", "").strip() or (sys.argv[1] if len(sys.argv) > 1 else "500")
+    try:
+        limit_val = int(raw_limit)
+    except ValueError:
+        logger.warning(f"Invalid LIMIT value '{raw_limit}'. Defaulting to 500.")
+        limit_val = 500
+
+    logger.info(f"Starting OpenSansad ingestion with limit={limit_val}")
+    asyncio.run(ingest_open_sansad(limit=limit_val))

@@ -33,6 +33,9 @@ class SupabaseClient:
                 headers=self._headers(),
                 json=records,
             )
+            if response.is_error:
+                import logging
+                logging.getLogger(__name__).error(f"Supabase POST {table} error ({response.status_code}): {response.text}")
             response.raise_for_status()
             return response.json()
 
@@ -47,6 +50,9 @@ class SupabaseClient:
                 headers=self._headers(),
                 params=params or {},
             )
+            if response.is_error:
+                import logging
+                logging.getLogger(__name__).error(f"Supabase GET {table} error ({response.status_code}): {response.text}")
             response.raise_for_status()
             return response.json()
 
@@ -64,6 +70,9 @@ class SupabaseClient:
                 headers=headers,
                 json=records,
             )
+            if response.is_error:
+                import logging
+                logging.getLogger(__name__).error(f"Supabase UPSERT {table} error ({response.status_code}): {response.text}")
             response.raise_for_status()
             return response.json()
 
