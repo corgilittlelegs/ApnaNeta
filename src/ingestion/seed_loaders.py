@@ -20,7 +20,11 @@ async def ingest_open_sansad(limit: int = 0) -> int:
     """
     logger.info(f"Streaming OpenSanctions data from: {OPEN_SANSAD_CSV_URL}")
     
-    async with httpx.AsyncClient(timeout=60.0) as client:
+    client_headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 ApnaNeta/1.0",
+        "Accept": "*/*",
+    }
+    async with httpx.AsyncClient(timeout=60.0, follow_redirects=True, headers=client_headers) as client:
         response = await client.get(OPEN_SANSAD_CSV_URL)
         response.raise_for_status()
         csv_content = response.text
@@ -80,4 +84,11 @@ if __name__ == "__main__":
         limit_val = 500
 
     logger.info(f"Starting OpenSansad ingestion with limit={limit_val}")
-    asyncio.run(ingest_open_sansad(limit=limit_val))
+    try:
+        loaded = asyncio.run(ingest_open_sansad(limit=limit_val))
+        logger.info(f"Ingestion completed successfully! Total records loaded: {loaded}")
+    except Exception as e:
+        import traceback
+        logger.error(f"Ingestion failed with error: {e}")
+        traceback.print_exc()
+        sys.exit(1)

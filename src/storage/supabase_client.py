@@ -10,9 +10,14 @@ class SupabaseClient:
     """
 
     def __init__(self, url: Optional[str] = None, key: Optional[str] = None):
-        self.url = (url or settings.SUPABASE_URL).rstrip("/")
-        self.key = key or settings.SUPABASE_SERVICE_ROLE_KEY
+        raw_url = url or settings.SUPABASE_URL or ""
+        raw_key = key or settings.SUPABASE_SERVICE_ROLE_KEY or ""
+        self.url = raw_url.strip().rstrip("/")
+        self.key = raw_key.strip()
         self.rest_url = f"{self.url}/rest/v1" if self.url else ""
+        if not self.url or not self.key:
+            import logging
+            logging.getLogger(__name__).warning("Supabase URL or service_role key not configured!")
 
     def _headers(self) -> Dict[str, str]:
         return {
