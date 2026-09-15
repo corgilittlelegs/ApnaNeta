@@ -118,8 +118,9 @@ export const App: React.FC = () => {
   const [selectedHouse, setSelectedHouse] = useState('ALL');
 
   useEffect(() => {
-    const rawUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim();
-    const rawKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
+    const metaEnv = (import.meta as any).env || {};
+    const rawUrl = String(metaEnv.VITE_SUPABASE_URL || '').trim();
+    const rawKey = String(metaEnv.VITE_SUPABASE_ANON_KEY || '').trim();
 
     if (!rawUrl || !rawKey) {
       return;
