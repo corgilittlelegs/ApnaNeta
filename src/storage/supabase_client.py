@@ -12,7 +12,13 @@ class SupabaseClient:
     def __init__(self, url: Optional[str] = None, key: Optional[str] = None):
         raw_url = url or settings.SUPABASE_URL or ""
         raw_key = key or settings.SUPABASE_SERVICE_ROLE_KEY or ""
-        self.url = raw_url.strip().rstrip("/")
+        clean_url = raw_url.strip().rstrip("/")
+        if clean_url.endswith("/rest/v1"):
+            clean_url = clean_url[:-len("/rest/v1")].rstrip("/")
+        elif clean_url.endswith("/rest"):
+            clean_url = clean_url[:-len("/rest")].rstrip("/")
+
+        self.url = clean_url
         self.key = raw_key.strip()
         self.rest_url = f"{self.url}/rest/v1" if self.url else ""
         if not self.url or not self.key:

@@ -14,7 +14,7 @@ class Settings(BaseModel):
     R2_ACCOUNT_ID: str = os.getenv("R2_ACCOUNT_ID", "")
     R2_ACCESS_KEY_ID: str = os.getenv("R2_ACCESS_KEY_ID", "")
     R2_SECRET_ACCESS_KEY: str = os.getenv("R2_SECRET_ACCESS_KEY", "")
-    R2_BUCKET_NAME: str = os.getenv("R2_BUCKET_NAME", "apnaneta-affidavits")
+    R2_BUCKET_NAME: str = os.getenv("R2_BUCKET_NAME") or "apnaneta-affidavits"
     
     # App Settings
     APP_ENV: str = os.getenv("APP_ENV", "production")

@@ -91,3 +91,15 @@ class SansadScraper:
 
 
 sansad_scraper = SansadScraper()
+
+if __name__ == "__main__":
+    import asyncio
+
+    async def main():
+        logger.info("Syncing Lok Sabha parliamentary activity...")
+        await sansad_scraper.sync_sansad_metrics(house="lok_sabha")
+        logger.info("Syncing Rajya Sabha parliamentary activity...")
+        await sansad_scraper.sync_sansad_metrics(house="rajya_sabha")
+        logger.info("Sansad sync completed successfully.")
+
+    asyncio.run(main())

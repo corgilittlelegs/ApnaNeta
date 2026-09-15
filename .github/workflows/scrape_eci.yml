@@ -34,9 +34,8 @@ jobs:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME || 'apnaneta-affidavits' }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          TARGET_STATE: ${{ inputs.state }}
+          PYTHONPATH: .
         run: |
-          python -c "
-          print('ECI Ingestion Runner initialized for: ${{ github.event.inputs.state || 'National' }}')
-          # Worker checks for active election calendars and processes affidavits
-          "
+          python -m src.ingestion.eci_affidavits

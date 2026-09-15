@@ -122,3 +122,12 @@ CREATE POLICY "Public Read Access" ON criminal_cases FOR SELECT USING (true);
 CREATE POLICY "Public Read Access" ON audit_discrepancies FOR SELECT USING (true);
 CREATE POLICY "Public Read Access" ON sansad_records FOR SELECT USING (true);
 
+-- 8. Grants & Schema Cache Reload
+-- Grants access to Supabase client roles and notifies PostgREST to reload its schema cache
+GRANT USAGE ON SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+
+NOTIFY pgrst, 'reload schema';
+

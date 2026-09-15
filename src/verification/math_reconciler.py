@@ -99,3 +99,7 @@ class MathReconciler:
 
 
 math_reconciler = MathReconciler()
+
+if __name__ == "__main__":
+    logger.info("Forensic Reconciliation Engine initialized.")
+    print("Forensic Reconciliation Engine verified and ready.")

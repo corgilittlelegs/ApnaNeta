@@ -26,14 +26,6 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          PYTHONPATH: .
         run: |
-          python -c "
-          import asyncio
-          from src.ingestion.sansad_api import sansad_scraper
-          async def main():
-              print('Syncing Lok Sabha...')
-              await sansad_scraper.sync_sansad_metrics(house='lok_sabha')
-              print('Syncing Rajya Sabha...')
-              await sansad_scraper.sync_sansad_metrics(house='rajya_sabha')
-          asyncio.run(main())
-          "
+          python -m src.ingestion.sansad_api

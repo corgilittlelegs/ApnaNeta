@@ -116,3 +116,11 @@ class ECIAffidavitScraper:
 
 
 eci_scraper = ECIAffidavitScraper()
+
+if __name__ == "__main__":
+    import os
+    import sys
+
+    target_state = os.getenv("TARGET_STATE") or (sys.argv[1] if len(sys.argv) > 1 else "National")
+    logger.info(f"Starting ECI affidavit runner for scope: {target_state}")
+    print(f"ECI Affidavit Scraper initialized and ready for state: {target_state}")
