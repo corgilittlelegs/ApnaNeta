@@ -105,3 +105,20 @@ CREATE TABLE IF NOT EXISTS sansad_records (
 );
 
 CREATE INDEX IF NOT EXISTS idx_sansad_candidate ON sansad_records (candidate_id);
+
+-- 7. Security: Enable Row Level Security (RLS) & Public Read-Only Policies
+-- Anyone on the web can view/query the data, but only the backend service_role key can insert/modify.
+ALTER TABLE candidates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE affidavits ENABLE ROW LEVEL SECURITY;
+ALTER TABLE assets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE criminal_cases ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_discrepancies ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sansad_records ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public Read Access" ON candidates FOR SELECT USING (true);
+CREATE POLICY "Public Read Access" ON affidavits FOR SELECT USING (true);
+CREATE POLICY "Public Read Access" ON assets FOR SELECT USING (true);
+CREATE POLICY "Public Read Access" ON criminal_cases FOR SELECT USING (true);
+CREATE POLICY "Public Read Access" ON audit_discrepancies FOR SELECT USING (true);
+CREATE POLICY "Public Read Access" ON sansad_records FOR SELECT USING (true);
+
