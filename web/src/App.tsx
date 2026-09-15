@@ -112,6 +112,8 @@ const SAMPLE_CANDIDATES: Candidate[] = [
 
 export const App: React.FC = () => {
   const [candidates, setCandidates] = useState<Candidate[]>(SAMPLE_CANDIDATES);
+  const [totalDatabaseCount, setTotalDatabaseCount] = useState<number>(0);
+  const [displayLimit, setDisplayLimit] = useState<number>(50);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isLiveConnected, setIsLiveConnected] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -132,17 +134,26 @@ export const App: React.FC = () => {
       setIsLoading(true);
       try {
         const res = await fetch(
-          `${cleanUrl}/rest/v1/candidates?select=*&order=name.asc&limit=500`,
+          `${cleanUrl}/rest/v1/candidates?select=*&order=name.asc&limit=10000`,
           {
             headers: {
               apikey: rawKey,
               Authorization: `Bearer ${rawKey}`,
+              Prefer: 'count=exact',
             },
           }
         );
 
         if (!res.ok) {
           throw new Error(`Supabase query failed with status: ${res.status}`);
+        }
+
+        const contentRange = res.headers.get('content-range');
+        if (contentRange && contentRange.includes('/')) {
+          const totalCount = parseInt(contentRange.split('/')[1], 10);
+          if (!isNaN(totalCount) && totalCount > 0) {
+            setTotalDatabaseCount(totalCount);
+          }
         }
 
         const data = await res.json();
@@ -259,7 +270,7 @@ export const App: React.FC = () => {
               </div>
               <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold ${isLiveConnected ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-blue-50 text-blue-700 border border-blue-200'}`}>
                 <Database className="w-3.5 h-3.5 text-blue-600" />
-                {isLiveConnected ? `Supabase Live (${candidates.length} MPs)` : 'Supabase & R2 Online'}
+                {isLiveConnected ? `Supabase Live (${(totalDatabaseCount || candidates.length).toLocaleString()} MPs)` : 'Supabase & R2 Online'}
               </div>
             </div>
           </div>
@@ -268,7 +279,7 @@ export const App: React.FC = () => {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80">
               <span className="text-xs text-slate-500 font-medium">MPs & Candidates Indexed</span>
-              <p className="text-xl font-bold font-mono text-slate-900 mt-1">{candidates.length.toLocaleString()}</p>
+              <p className="text-xl font-bold font-mono text-slate-900 mt-1">{(totalDatabaseCount || candidates.length).toLocaleString()}</p>
               <span className="text-[10px] text-emerald-600 font-medium">
                 {isLiveConnected ? 'Live from Supabase' : 'Live from OpenSanctions'}
               </span>
@@ -313,15 +324,28 @@ export const App: React.FC = () => {
             <p className="text-slate-500 text-sm">No politicians found matching your search criteria.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-            {filteredCandidates.map((candidate) => (
-              <CandidateCard
-                key={candidate.id}
-                candidate={candidate}
-                onVerifyProof={handleOpenProof}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+              {filteredCandidates.slice(0, displayLimit).map((candidate) => (
+                <CandidateCard
+                  key={candidate.id}
+                  candidate={candidate}
+                  onVerifyProof={handleOpenProof}
+                />
+              ))}
+            </div>
+
+            {filteredCandidates.length > displayLimit && (
+              <div className="mt-10 text-center">
+                <button
+                  onClick={() => setDisplayLimit((prev) => prev + 50)}
+                  className="px-8 py-3.5 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 text-slate-800 text-sm font-semibold rounded-2xl shadow-sm hover:shadow transition-all duration-200 cursor-pointer"
+                >
+                  Load More Parliamentarians ({filteredCandidates.length - displayLimit} remaining)
+                </button>
+              </div>
+            )}
+          </>
         )}
       </main>
 
