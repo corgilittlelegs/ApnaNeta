@@ -3,7 +3,7 @@ import { Navbar } from './components/Navbar';
 import { CandidateCard } from './components/CandidateCard';
 import { AffidavitProofViewer } from './components/AffidavitProofViewer';
 import { Candidate, BoundingBox } from './types/candidate';
-import { CheckCircle2, AlertTriangle, Cpu, Database, ShieldCheck } from 'lucide-react';
+import { Cpu, Database } from 'lucide-react';
 
 // Seed sample data for interactive citizen demonstration
 const SAMPLE_CANDIDATES: Candidate[] = [

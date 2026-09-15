@@ -1,5 +1,5 @@
 import React from 'react';
-import { Landmark, AlertOctagon, Scale, CalendarCheck, ShieldAlert } from 'lucide-react';
+import { AlertOctagon, Scale, CalendarCheck } from 'lucide-react';
 import { Candidate } from '../types/candidate';
 import { DiscrepancyBadge } from './DiscrepancyBadge';
 

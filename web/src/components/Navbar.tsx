@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Shield, Filter } from 'lucide-react';
+import { Search, Filter } from 'lucide-react';
 
 interface NavbarProps {
   searchQuery: string;
