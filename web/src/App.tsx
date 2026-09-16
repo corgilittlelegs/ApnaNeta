@@ -134,7 +134,7 @@ export const App: React.FC = () => {
       setIsLoading(true);
       try {
         const res = await fetch(
-          `${cleanUrl}/rest/v1/candidates?select=*,sansad_records(attendance_rate,debates_count,questions_count)&order=name.asc&limit=10000`,
+          `${cleanUrl}/rest/v1/candidates?select=*,sansad_records(attendance_rate,debates_count,questions_count),affidavits(id,filing_year,source_url,r2_storage_key,audit_discrepancies(*),criminal_cases(is_serious_category))&order=name.asc&limit=10000`,
           {
             headers: {
               apikey: rawKey,
@@ -165,6 +165,37 @@ export const App: React.FC = () => {
             .map((row: any) => {
               const sansad = Array.isArray(row.sansad_records) && row.sansad_records.length > 0 ? row.sansad_records[0] : null;
               const attendance = sansad?.attendance_rate != null ? Number(sansad.attendance_rate) : undefined;
+              const debates = sansad?.debates_count != null ? Number(sansad.debates_count) : undefined;
+              const questions = sansad?.questions_count != null ? Number(sansad.questions_count) : undefined;
+
+              const aff = Array.isArray(row.affidavits) && row.affidavits.length > 0 ? row.affidavits[0] : null;
+              const audit = aff?.audit_discrepancies && Array.isArray(aff.audit_discrepancies) && aff.audit_discrepancies.length > 0
+                ? aff.audit_discrepancies[0]
+                : (aff?.audit_discrepancies && !Array.isArray(aff.audit_discrepancies) ? aff.audit_discrepancies : null);
+              const cases = aff && Array.isArray(aff.criminal_cases) ? aff.criminal_cases : [];
+
+              const totalMovable = Number(audit?.part_b_movable_total ?? row.total_movable_assets ?? 0.0);
+              const totalImmovable = Number(audit?.part_b_immovable_total ?? row.total_immovable_assets ?? 0.0);
+              const totalLiabilities = Number(row.total_liabilities ?? 0.0);
+              const totalNetWorth = Number(audit?.total_net_worth ?? row.total_net_worth ?? 0.0);
+              const totalIncome = Number(audit?.total_five_year_declared_income ?? row.total_five_year_income ?? 0.0);
+              const deltaMovable = Number(audit?.delta_movable ?? row.delta_movable ?? 0.0);
+              const deltaImmovable = Number(audit?.delta_immovable ?? row.delta_immovable ?? 0.0);
+              const hasArithDiscrepancy = Boolean(audit?.has_arithmetic_discrepancy ?? row.has_arithmetic_discrepancy ?? false);
+              const wdr = audit?.wealth_discrepancy_ratio != null
+                ? Number(audit.wealth_discrepancy_ratio)
+                : (row.wealth_discrepancy_ratio != null ? Number(row.wealth_discrepancy_ratio) : 1.0);
+              const hasAnomalousWdr = Boolean(audit?.has_anomalous_wealth_ratio ?? row.has_anomalous_wealth_ratio ?? false);
+
+              const crimCount = cases.length > 0 ? cases.length : Number(row.criminal_cases_count ?? 0);
+              const seriousCount = cases.length > 0
+                ? cases.filter((c: any) => c.is_serious_category).length
+                : Number(row.serious_criminal_cases_count ?? 0);
+              const protestCount = Number(row.protest_cases_count ?? 0);
+
+              const pdfSourceUrl = aff?.source_url || row.pdf_source_url || 'https://affidavit.eci.gov.in';
+              const r2Key = aff?.r2_storage_key || row.r2_storage_key || undefined;
+
               return {
                 id: String(row.id),
                 name: row.name,
@@ -173,22 +204,25 @@ export const App: React.FC = () => {
                 state: row.state || 'India',
                 house: (row.house && row.house.includes('Rajya') ? 'Rajya Sabha' : 'Lok Sabha') as any,
                 party: row.party || 'Parliamentarian',
-                filing_year: 2024,
-                total_movable_assets: 0.0,
-                total_immovable_assets: 0.0,
-                total_liabilities: 0.0,
-                total_net_worth: 0.0,
-                total_five_year_income: 0.0,
-                criminal_cases_count: 0,
-                serious_criminal_cases_count: 0,
-                protest_cases_count: 0,
+                filing_year: aff?.filing_year || 2024,
+                total_movable_assets: totalMovable,
+                total_immovable_assets: totalImmovable,
+                total_liabilities: totalLiabilities,
+                total_net_worth: totalNetWorth,
+                total_five_year_income: totalIncome,
+                criminal_cases_count: crimCount,
+                serious_criminal_cases_count: seriousCount,
+                protest_cases_count: protestCount,
                 attendance_rate: attendance,
-                has_arithmetic_discrepancy: false,
-                delta_movable: 0.0,
-                delta_immovable: 0.0,
-                wealth_discrepancy_ratio: 1.0,
-                has_anomalous_wealth_ratio: false,
-                pdf_source_url: 'https://affidavit.eci.gov.in',
+                debates_count: debates,
+                questions_count: questions,
+                has_arithmetic_discrepancy: hasArithDiscrepancy,
+                delta_movable: deltaMovable,
+                delta_immovable: deltaImmovable,
+                wealth_discrepancy_ratio: wdr,
+                has_anomalous_wealth_ratio: hasAnomalousWdr,
+                pdf_source_url: pdfSourceUrl,
+                r2_storage_key: r2Key,
               };
             });
 

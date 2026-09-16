@@ -85,5 +85,22 @@ class R2StorageClient:
 
         return f"crops/{crop_key}"
 
+    def download_affidavit_pdf(self, object_key: str) -> Optional[bytes]:
+        """
+        Downloads an affidavit PDF from Cloudflare R2 given its object key.
+        Returns the raw PDF bytes or None if not found or in mock mode.
+        """
+        client = self._get_client()
+        if client:
+            try:
+                response = client.get_object(Bucket=self.bucket_name, Key=object_key)
+                return response["Body"].read()
+            except Exception as e:
+                logger.error(f"Error downloading {object_key} from R2: {e}")
+                return None
+        else:
+            logger.info(f"[Dry-Run] Would download {object_key} from R2.")
+            return None
+
 
 r2_storage = R2StorageClient()

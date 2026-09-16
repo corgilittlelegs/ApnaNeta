@@ -17,6 +17,21 @@ CREATE TABLE IF NOT EXISTS candidates (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Cached summary metrics on candidates for high-performance dashboard rendering
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS total_movable_assets NUMERIC(15, 2) DEFAULT 0.00;
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS total_immovable_assets NUMERIC(15, 2) DEFAULT 0.00;
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS total_liabilities NUMERIC(15, 2) DEFAULT 0.00;
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS total_net_worth NUMERIC(15, 2) DEFAULT 0.00;
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS total_five_year_income NUMERIC(15, 2) DEFAULT 0.00;
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS criminal_cases_count INT DEFAULT 0;
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS serious_criminal_cases_count INT DEFAULT 0;
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS protest_cases_count INT DEFAULT 0;
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS has_arithmetic_discrepancy BOOLEAN DEFAULT FALSE;
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS delta_movable NUMERIC(15, 2) DEFAULT 0.00;
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS delta_immovable NUMERIC(15, 2) DEFAULT 0.00;
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS wealth_discrepancy_ratio NUMERIC(10, 2);
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS has_anomalous_wealth_ratio BOOLEAN DEFAULT FALSE;
+
 CREATE INDEX IF NOT EXISTS idx_candidates_name ON candidates (name);
 CREATE INDEX IF NOT EXISTS idx_candidates_constituency ON candidates (state, constituency);
 
