@@ -30,7 +30,7 @@ const SAMPLE_CANDIDATES: Candidate[] = [
     wealth_discrepancy_ratio: 2.12,
     has_anomalous_wealth_ratio: false,
     pdf_source_url: 'https://affidavit.eci.gov.in/CandidateCustomFilter?electionType=24-PC-GENERAL-1-2024',
-    proof_bbox: { page: 1, ymin: 150, xmin: 100, ymax: 280, xmax: 900 },
+    proof_bbox: { page: 1, ymin: 245, xmin: 30, ymax: 355, xmax: 970 },
   },
   {
     id: '2',
@@ -55,7 +55,7 @@ const SAMPLE_CANDIDATES: Candidate[] = [
     wealth_discrepancy_ratio: 4.14,
     has_anomalous_wealth_ratio: false,
     pdf_source_url: 'https://affidavit.eci.gov.in/CandidateCustomFilter?electionType=24-PC-GENERAL-1-2024',
-    proof_bbox: { page: 8, ymin: 220, xmin: 150, ymax: 380, xmax: 850 },
+    proof_bbox: { page: 1, ymin: 245, xmin: 30, ymax: 355, xmax: 970 },
   },
   {
     id: '3',
@@ -81,7 +81,7 @@ const SAMPLE_CANDIDATES: Candidate[] = [
     wealth_discrepancy_ratio: 20.0, // High WDR anomaly flagged!
     has_anomalous_wealth_ratio: true,
     pdf_source_url: 'https://affidavit.eci.gov.in/CandidateCustomFilter?electionType=24-PC-GENERAL-1-2024',
-    proof_bbox: { page: 14, ymin: 340, xmin: 200, ymax: 450, xmax: 800 },
+    proof_bbox: { page: 7, ymin: 545, xmin: 30, ymax: 755, xmax: 970 },
   },
   {
     id: '4',
@@ -106,7 +106,7 @@ const SAMPLE_CANDIDATES: Candidate[] = [
     wealth_discrepancy_ratio: 6.01,
     has_anomalous_wealth_ratio: false,
     pdf_source_url: 'https://affidavit.eci.gov.in/CandidateCustomFilter?electionType=24-PC-GENERAL-1-2024',
-    proof_bbox: { page: 12, ymin: 280, xmin: 100, ymax: 410, xmax: 880 },
+    proof_bbox: { page: 1, ymin: 245, xmin: 30, ymax: 355, xmax: 970 },
   },
 ];
 

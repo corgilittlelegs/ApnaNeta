@@ -47,25 +47,34 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
 
   // Determine dynamic highlight style based on whether it's identity, assets, or discrepancy
   const isIdentity = fieldLabel.toLowerCase().includes('identity') || fieldLabel.toLowerCase().includes('sworn');
+  const isIncome = fieldLabel.toLowerCase().includes('income') || fieldLabel.toLowerCase().includes('tax') || fieldLabel.toLowerCase().includes('pan');
   const isMovable = fieldLabel.toLowerCase().includes('movable');
-  const isNetWorth = fieldLabel.toLowerCase().includes('worth') || fieldLabel.toLowerCase().includes('asset');
+  const isNetWorth = fieldLabel.toLowerCase().includes('worth') || fieldLabel.toLowerCase().includes('net');
+  const isDiscrepancy = fieldLabel.toLowerCase().includes('variance') || fieldLabel.toLowerCase().includes('ratio') || fieldLabel.toLowerCase().includes('arithmetic');
 
-  // Coordinates (0-1000 percentage scale)
-  const defaultBbox: BoundingBox = isIdentity
-    ? { page: 1, ymin: 190, xmin: 50, ymax: 290, xmax: 950 }
-    : isMovable
-    ? { page: 7, ymin: 520, xmin: 50, ymax: 620, xmax: 950 }
+  // Precision coordinates (0-1000 scale) calibrated to Form 26 statutory sections
+  const targetBbox: BoundingBox = isIdentity
+    ? { page: 1, ymin: 245, xmin: 30, ymax: 355, xmax: 970 } // Deponent Sworn Statement
+    : isIncome
+    ? { page: 4, ymin: 375, xmin: 30, ymax: 535, xmax: 970 } // Table 4 (PAN & ITR Declarations)
     : isNetWorth
-    ? { page: 8, ymin: 690, xmin: 50, ymax: 780, xmax: 950 }
-    : { page: 1, ymin: 190, xmin: 50, ymax: 290, xmax: 950 };
+    ? { page: 8, ymin: 680, xmin: 30, ymax: 755, xmax: 970 } // Total Sworn Net Worth Row
+    : isMovable || isDiscrepancy
+    ? { page: 7, ymin: 545, xmin: 30, ymax: 755, xmax: 970 } // Table 7 (Asset Breakdown & Summary)
+    : (bbox || { page: 1, ymin: 245, xmin: 30, ymax: 355, xmax: 970 });
 
-  const activeBbox: BoundingBox = bbox || defaultBbox;
+  const activeBbox = targetBbox;
+
+  const calcTop = activeBbox.ymin / 10;
+  const calcLeft = activeBbox.xmin / 10;
+  const calcHeight = Math.max(5, (activeBbox.ymax - activeBbox.ymin) / 10);
+  const calcWidth = Math.max(20, (activeBbox.xmax - activeBbox.xmin) / 10);
 
   const highlightStyle: React.CSSProperties = {
-    top: `${activeBbox.ymin / 10}%`,
-    left: `${activeBbox.xmin / 10}%`,
-    height: `${Math.max(60, (activeBbox.ymax - activeBbox.ymin) / 10)}%`,
-    width: `${(activeBbox.xmax - activeBbox.xmin) / 10}%`,
+    top: `${calcTop}%`,
+    left: `${calcLeft}%`,
+    height: `${calcHeight}%`,
+    width: `${calcWidth}%`,
   };
 
   const constituency = candidate?.constituency || 'Parliamentary';
@@ -384,23 +393,21 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
 
               {/* Interactive Bounding-Box Overlay */}
               <div
-                className="absolute border-2 border-amber-500 bg-amber-400/20 rounded shadow-[0_0_20px_rgba(245,158,11,0.5)] flex flex-col justify-between p-2 pointer-events-none transition-all"
+                className="absolute border-2 border-amber-500 bg-amber-400/10 rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.25)] pointer-events-none transition-all"
                 style={highlightStyle}
               >
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[9px] font-bold font-mono bg-amber-600 text-white px-2 py-0.5 rounded shadow">
-                    FORENSIC AUDIT EVIDENCE CROP
-                  </span>
-                  <span className="text-[8px] font-bold bg-white/95 text-slate-800 px-1.5 py-0.5 rounded border border-amber-400">
-                    {fieldLabel}
-                  </span>
-                </div>
-                <div className="flex justify-between items-end">
-                  <span className="text-xs font-mono font-black text-slate-950 bg-white/95 px-2 py-1 rounded shadow border border-amber-500">
+                {/* Floating pill docked cleanly on top border */}
+                <div className="flex items-center justify-between -mt-3.5 px-2">
+                  <div className="flex items-center gap-1 shadow-sm">
+                    <span className="text-[8px] font-bold font-mono bg-amber-600 text-white px-2 py-0.5 rounded-l">
+                      FORENSIC AUDIT CROP
+                    </span>
+                    <span className="text-[8px] font-bold bg-white text-slate-800 px-2 py-0.5 rounded-r border border-amber-400">
+                      {fieldLabel}
+                    </span>
+                  </div>
+                  <span className="text-[9px] font-mono font-black bg-amber-100 text-amber-950 border border-amber-400 px-2 py-0.5 rounded shadow-sm">
                     {claimedValue}
-                  </span>
-                  <span className="text-[8px] font-serif italic text-slate-700 bg-white/90 px-1.5 py-0.5 rounded border border-amber-300">
-                    Sworn & Notarized
                   </span>
                 </div>
               </div>
