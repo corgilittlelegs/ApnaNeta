@@ -50,33 +50,44 @@ class GeminiVLMClient:
                 "[ymin, xmin, ymax, xmax] on a 0-1000 scale. Return strictly valid JSON."
             )
 
-            models_to_try = [
-                self.model_name,
-                "gemini-2.5-flash",
-                "gemini-1.5-flash",
-                "gemini-2.0-flash",
-            ]
+            models_to_try = []
+            for m in [self.model_name, "gemini-3.8-flash", "gemini-3.6-flash"]:
+                if m and m not in models_to_try:
+                    models_to_try.append(m)
+
             response = None
             last_err = None
+            import time
+
             for model_id in models_to_try:
-                try:
-                    response = client.models.generate_content(
-                        model=model_id,
-                        contents=[
-                            types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg"),
-                            prompt,
-                        ],
-                        config=types.GenerateContentConfig(
-                            response_mime_type="application/json",
-                            temperature=0.0,
-                        ),
-                    )
-                    if response and response.text:
-                        logger.info(f"Successfully generated extraction using model: {model_id}")
-                        break
-                except Exception as err:
-                    last_err = err
-                    logger.warning(f"Model {model_id} failed: {err}. Trying next candidate...")
+                for attempt in range(3):
+                    try:
+                        response = client.models.generate_content(
+                            model=model_id,
+                            contents=[
+                                types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg"),
+                                prompt,
+                            ],
+                            config=types.GenerateContentConfig(
+                                response_mime_type="application/json",
+                                temperature=0.0,
+                            ),
+                        )
+                        if response and response.text:
+                            logger.info(f"Successfully generated extraction using model: {model_id}")
+                            break
+                    except Exception as err:
+                        last_err = err
+                        err_str = str(err)
+                        if ("503" in err_str or "UNAVAILABLE" in err_str or "high demand" in err_str) and attempt < 2:
+                            wait_time = (attempt + 1) * 2.5
+                            logger.warning(f"Model {model_id} hit 503 demand spike. Retrying in {wait_time:.1f}s (attempt {attempt + 1}/3)...")
+                            time.sleep(wait_time)
+                        else:
+                            logger.warning(f"Model {model_id} failed: {err}. Trying next fallback...")
+                            break
+                if response and response.text:
+                    break
 
             if not response or not response.text:
                 raise last_err or RuntimeError("Gemini model extraction returned empty response.")
@@ -156,33 +167,44 @@ class GeminiVLMClient:
                 "IMPORTANT: All amounts must be numbers in INR (Indian Rupees). For each number or row, provide normalized bounding box coordinates [ymin, xmin, ymax, xmax] on a 0-1000 scale, with the 1-indexed page number. Return ONLY valid JSON."
             )
 
-            models_to_try = [
-                self.model_name,
-                "gemini-2.5-flash",
-                "gemini-2.0-flash",
-                "gemini-1.5-flash",
-            ]
+            models_to_try = []
+            for m in [self.model_name, "gemini-3.8-flash", "gemini-3.6-flash"]:
+                if m and m not in models_to_try:
+                    models_to_try.append(m)
+
             response = None
             last_err = None
+            import time
+
             for model_id in models_to_try:
-                try:
-                    response = client.models.generate_content(
-                        model=model_id,
-                        contents=[
-                            types.Part.from_bytes(data=pdf_bytes, mime_type="application/pdf"),
-                            prompt,
-                        ],
-                        config=types.GenerateContentConfig(
-                            response_mime_type="application/json",
-                            temperature=0.0,
-                        ),
-                    )
-                    if response and response.text:
-                        logger.info(f"Successfully generated extraction from PDF using model: {model_id}")
-                        break
-                except Exception as err:
-                    last_err = err
-                    logger.warning(f"Model {model_id} failed on PDF: {err}. Trying next candidate...")
+                for attempt in range(3):
+                    try:
+                        response = client.models.generate_content(
+                            model=model_id,
+                            contents=[
+                                types.Part.from_bytes(data=pdf_bytes, mime_type="application/pdf"),
+                                prompt,
+                            ],
+                            config=types.GenerateContentConfig(
+                                response_mime_type="application/json",
+                                temperature=0.0,
+                            ),
+                        )
+                        if response and response.text:
+                            logger.info(f"Successfully generated extraction from PDF using model: {model_id}")
+                            break
+                    except Exception as err:
+                        last_err = err
+                        err_str = str(err)
+                        if ("503" in err_str or "UNAVAILABLE" in err_str or "high demand" in err_str) and attempt < 2:
+                            wait_time = (attempt + 1) * 2.5
+                            logger.warning(f"Model {model_id} hit 503 demand spike on PDF. Retrying in {wait_time:.1f}s (attempt {attempt + 1}/3)...")
+                            time.sleep(wait_time)
+                        else:
+                            logger.warning(f"Model {model_id} failed on PDF: {err}. Trying next fallback...")
+                            break
+                if response and response.text:
+                    break
 
             if not response or not response.text:
                 raise last_err or RuntimeError("Gemini model extraction on PDF returned empty response.")

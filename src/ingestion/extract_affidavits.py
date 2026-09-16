@@ -79,6 +79,7 @@ class AffidavitExtractionWorker:
     def __init__(self, rate_limiter: Optional[PoliteRateLimiter] = None):
         # 4-second polite delay strictly enforces free tier 15 RPM limits
         self.rate_limiter = rate_limiter or PoliteRateLimiter(min_delay=3.5, max_delay=4.5)
+        self._skip_candidate_cache = False
 
     async def fetch_pending_affidavits(self, limit: int = 10, force: bool = False) -> List[Dict[str, Any]]:
         """
@@ -403,11 +404,15 @@ class AffidavitExtractionWorker:
             "has_anomalous_wealth_ratio": audit.has_anomalous_wealth_ratio,
         }
 
-        try:
-            await supabase.update("candidates", candidate_summary, {"id": f"eq.{candidate_id}"})
-            logger.info(f"Updated candidate {candidate_id} summary metrics cache.")
-        except Exception as e:
-            logger.warning(f"Note: Candidate table cache update was bypassed (audit_discrepancies is canonical): {e}")
+        if not self._skip_candidate_cache:
+            try:
+                await supabase.update("candidates", candidate_summary, {"id": f"eq.{candidate_id}"})
+                logger.info(f"Updated candidate {candidate_id} summary metrics cache.")
+            except Exception as e:
+                err_msg = str(e)
+                if "column" in err_msg.lower() or "400" in err_msg or "PGRST204" in err_msg:
+                    self._skip_candidate_cache = True
+                logger.info(f"Note: Candidate table cache update was bypassed (audit_discrepancies is canonical): {e}")
 
         return True
 
