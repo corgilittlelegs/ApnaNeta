@@ -55,16 +55,16 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
 
-  // 1. Background Fill: Deep Slate / Indigo Gradient
+  // 1. Background Fill: Sovereign Navy Deep Gradient
   const bgGrad = ctx.createLinearGradient(0, 0, 1080, 1080);
-  bgGrad.addColorStop(0, '#0b1329');
-  bgGrad.addColorStop(0.5, '#0f172a');
-  bgGrad.addColorStop(1, '#090e1c');
+  bgGrad.addColorStop(0, '#07101E');
+  bgGrad.addColorStop(0.5, '#0A192F');
+  bgGrad.addColorStop(1, '#050D1A');
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, size, size);
 
   // Subtle decorative background grid pattern
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.025)';
   ctx.lineWidth = 1;
   for (let x = 40; x < size; x += 40) {
     ctx.beginPath();
@@ -80,28 +80,47 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
   }
 
   // 2. Top Indian National Tricolor Accent Bar
-  ctx.fillStyle = '#ff9933'; // Saffron
-  ctx.fillRect(0, 0, 360, 10);
+  ctx.fillStyle = '#D97706'; // Kashmiri Saffron
+  ctx.fillRect(0, 0, 360, 8);
   ctx.fillStyle = '#ffffff'; // White
-  ctx.fillRect(360, 0, 360, 10);
-  ctx.fillStyle = '#138808'; // Green
-  ctx.fillRect(720, 0, 360, 10);
+  ctx.fillRect(360, 0, 360, 8);
+  ctx.fillStyle = '#059669'; // Verification Jade
+  ctx.fillRect(720, 0, 360, 8);
 
   // 3. Header Civic Branding
   const pad = 60;
 
-  // Crest Box
-  roundRect(ctx, pad, 44, 52, 52, 14);
-  ctx.fillStyle = 'rgba(37, 99, 235, 0.2)';
+  // Dharma Aperture Emblem on Canvas
+  const cx = pad + 26;
+  const cy = 44 + 26;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 25, 0, Math.PI * 2);
+  ctx.fillStyle = '#0A192F';
   ctx.fill();
-  ctx.strokeStyle = 'rgba(59, 130, 246, 0.5)';
+  ctx.strokeStyle = '#3B82F6';
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  ctx.font = '26px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('🇮🇳', pad + 26, 44 + 27);
+  ctx.beginPath();
+  ctx.arc(cx, cy, 15, 0, Math.PI * 2);
+  ctx.strokeStyle = '#D97706';
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, 5.5, 0, Math.PI * 2);
+  ctx.fillStyle = '#059669';
+  ctx.fill();
+
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+  ctx.lineWidth = 1.2;
+  for (let i = 0; i < 8; i++) {
+    const angle = (i * Math.PI) / 4;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(angle) * 5.5, cy + Math.sin(angle) * 5.5);
+    ctx.lineTo(cx + Math.cos(angle) * 24, cy + Math.sin(angle) * 24);
+    ctx.stroke();
+  }
 
   // Branding Text
   ctx.textAlign = 'left';
@@ -125,17 +144,17 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
   }
 
   // Verification Shield Tag (Right)
-  roundRect(ctx, size - pad - 210, 50, 210, 38, 10);
-  ctx.fillStyle = 'rgba(16, 185, 129, 0.15)';
+  roundRect(ctx, size - pad - 220, 50, 220, 38, 10);
+  ctx.fillStyle = 'rgba(5, 150, 105, 0.15)';
   ctx.fill();
-  ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)';
+  ctx.strokeStyle = 'rgba(5, 150, 105, 0.5)';
   ctx.lineWidth = 1;
   ctx.stroke();
 
-  ctx.font = '700 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.font = '700 12px "Plus Jakarta Sans", sans-serif';
   ctx.fillStyle = '#34d399';
   ctx.textAlign = 'center';
-  ctx.fillText('✓ ECI AFFIDAVIT VERIFIED', size - pad - 105, 74);
+  ctx.fillText('✓ ECI AFFIDAVIT VERIFIED', size - pad - 110, 74);
 
   // Divider Line
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
@@ -150,7 +169,7 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
 
   // Party Badge (with safety truncation for very long party names)
   let partyText = (candidate.party || 'Independent').toUpperCase();
-  ctx.font = '800 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.font = '700 12px "Plus Jakarta Sans", sans-serif';
   if (ctx.measureText(partyText).width > 350) {
     while (partyText.length > 5 && ctx.measureText(partyText + '…').width > 350) {
       partyText = partyText.slice(0, -1);
@@ -159,25 +178,25 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
   }
   const partyWidth = ctx.measureText(partyText).width + 24;
   roundRect(ctx, pad, curY - 22, partyWidth, 30, 8);
-  ctx.fillStyle = 'rgba(59, 130, 246, 0.2)';
+  ctx.fillStyle = 'rgba(30, 58, 138, 0.4)';
   ctx.fill();
   ctx.strokeStyle = 'rgba(96, 165, 250, 0.5)';
   ctx.stroke();
 
   ctx.textAlign = 'left';
-  ctx.fillStyle = '#60a5fa';
+  ctx.fillStyle = '#93c5fd';
   ctx.fillText(partyText, pad + 12, curY - 2);
 
   // Sworn Filing Year Badge (next to party)
   const yearText = `FORM 26 • ${candidate.filing_year} SWORN FILING`;
-  roundRect(ctx, pad + partyWidth + 12, curY - 22, 220, 30, 8);
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.07)';
+  roundRect(ctx, pad + partyWidth + 12, curY - 22, 230, 30, 8);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
   ctx.fill();
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
   ctx.stroke();
 
   ctx.fillStyle = '#cbd5e1';
-  ctx.font = '600 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.font = '600 11px "JetBrains Mono", monospace';
   ctx.fillText(yearText, pad + partyWidth + 24, curY - 2);
 
   // Candidate Name (with responsive font scaling)
@@ -197,7 +216,7 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
 
   // Constituency & State Subtitle
   curY += 28;
-  ctx.font = '500 18px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.font = '500 17px "Plus Jakarta Sans", sans-serif';
   ctx.fillStyle = '#94a3b8';
   ctx.fillText(`${candidate.constituency}, ${candidate.state} • ${candidate.house}`, pad, curY);
 
@@ -216,15 +235,15 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
   ctx.stroke();
 
-  ctx.font = '700 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.font = '700 12px "Plus Jakarta Sans", sans-serif';
   ctx.fillStyle = '#94a3b8';
-  ctx.fillText('💰 DECLARED NET WORTH', m1X + 20, m1Y + 32);
+  ctx.fillText('DECLARED NET WORTH', m1X + 20, m1Y + 32);
 
-  ctx.font = '900 32px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace';
+  ctx.font = '700 32px "JetBrains Mono", monospace';
   ctx.fillStyle = '#38bdf8';
   ctx.fillText(formatINR(candidate.total_net_worth), m1X + 20, m1Y + 76);
 
-  ctx.font = '500 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.font = '500 12px "JetBrains Mono", monospace';
   ctx.fillStyle = '#64748b';
   ctx.fillText(
     `Movable: ${formatINR(candidate.total_movable_assets)} | Immovable: ${formatINR(candidate.total_immovable_assets)}`,
@@ -251,29 +270,29 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
       : 'rgba(16, 185, 129, 0.3)';
   ctx.stroke();
 
-  ctx.font = '700 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.font = '700 12px "Plus Jakarta Sans", sans-serif';
   ctx.fillStyle = '#94a3b8';
-  ctx.fillText('⚖️ CRIMINAL PROCEEDINGS', m2X + 20, m2Y + 32);
+  ctx.fillText('CRIMINAL PROCEEDINGS', m2X + 20, m2Y + 32);
 
   if (candidate.serious_criminal_cases_count > 0) {
-    ctx.font = '900 28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.font = '700 24px "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = '#f87171';
     ctx.fillText(`${candidate.serious_criminal_cases_count} SERIOUS IPC CHARGES`, m2X + 20, m2Y + 76);
-    ctx.font = '500 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.font = '500 12px "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = '#fca5a5';
     ctx.fillText('Includes non-bailable offences (punishable ≥ 5 yrs)', m2X + 20, m2Y + 112);
   } else if (candidate.criminal_cases_count > 0) {
-    ctx.font = '900 28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.font = '700 24px "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = '#fbbf24';
     ctx.fillText(`${candidate.criminal_cases_count} PROTEST CITATIONS`, m2X + 20, m2Y + 76);
-    ctx.font = '500 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.font = '500 12px "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = '#fde68a';
     ctx.fillText('Political demonstrations / public agitation cases', m2X + 20, m2Y + 112);
   } else {
-    ctx.font = '900 30px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.font = '700 26px "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = '#34d399';
     ctx.fillText('0 CHARGES DECLARED', m2X + 20, m2Y + 76);
-    ctx.font = '500 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.font = '500 12px "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = '#a7f3d0';
     ctx.fillText('No pending criminal dockets declared in Form 26', m2X + 20, m2Y + 112);
   }
@@ -287,12 +306,12 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
   ctx.stroke();
 
-  ctx.font = '700 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.font = '700 12px "Plus Jakarta Sans", sans-serif';
   ctx.fillStyle = '#94a3b8';
-  ctx.fillText('🏛️ SANSAD ATTENDANCE', m3X + 20, m3Y + 32);
+  ctx.fillText('SANSAD ATTENDANCE', m3X + 20, m3Y + 32);
 
   if (candidate.attendance_rate !== undefined) {
-    ctx.font = '900 32px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace';
+    ctx.font = '700 32px "JetBrains Mono", monospace';
     ctx.fillStyle = '#ffffff';
     ctx.fillText(`${candidate.attendance_rate}%`, m3X + 20, m3Y + 76);
 
@@ -306,14 +325,14 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
     ctx.fillStyle = candidate.attendance_rate >= 80 ? '#10b981' : candidate.attendance_rate >= 60 ? '#3b82f6' : '#f59e0b';
     ctx.fill();
 
-    ctx.font = '500 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.font = '500 12px "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = '#94a3b8';
     ctx.fillText(`Debates: ${candidate.debates_count ?? 0} | Questions: ${candidate.questions_count ?? 0}`, m3X + 20, m3Y + 124);
   } else {
-    ctx.font = '800 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.font = '700 22px "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = '#64748b';
     ctx.fillText('NON-MP / CANDIDATE', m3X + 20, m3Y + 76);
-    ctx.font = '500 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.font = '500 12px "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = '#475569';
     ctx.fillText('Not a sitting member in current parliament term', m3X + 20, m3Y + 112);
   }
@@ -327,23 +346,23 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
   ctx.stroke();
 
-  ctx.font = '700 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.font = '700 12px "Plus Jakarta Sans", sans-serif';
   ctx.fillStyle = '#94a3b8';
-  ctx.fillText('🏗️ MPLADS FUND VELOCITY', m4X + 20, m4Y + 32);
+  ctx.fillText('MPLADS FUND VELOCITY', m4X + 20, m4Y + 32);
 
   if (candidate.mplads) {
-    ctx.font = '900 32px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace';
+    ctx.font = '700 32px "JetBrains Mono", monospace';
     ctx.fillStyle = candidate.mplads.utilization_rate < 60 ? '#f87171' : '#34d399';
     ctx.fillText(`${candidate.mplads.utilization_rate.toFixed(1)}% SPENT`, m4X + 20, m4Y + 76);
 
-    ctx.font = '500 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.font = '500 12px "JetBrains Mono", monospace';
     ctx.fillStyle = '#94a3b8';
     ctx.fillText(`Unspent Balance: ${formatINR(candidate.mplads.unspent_balance)}`, m4X + 20, m4Y + 112);
   } else {
-    ctx.font = '800 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.font = '700 22px "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = '#64748b';
     ctx.fillText('NO CENTRAL QUOTA', m4X + 20, m4Y + 76);
-    ctx.font = '500 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.font = '500 12px "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = '#475569';
     ctx.fillText('MoSPI central fund allocation not applicable', m4X + 20, m4Y + 112);
   }

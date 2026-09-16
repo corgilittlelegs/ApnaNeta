@@ -33,10 +33,14 @@ export function exportCandidateDossierPdf(candidate: Candidate): void {
 <head>
   <meta charset="UTF-8" />
   <title>Apna Neta Forensic Audit Dossier - ${candidate.name}</title>
+  <!-- Google Fonts: Newsreader, Plus Jakarta Sans, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Newsreader:ital,opsz,wght@0,6..72,600;0,6..72,700;1,6..72,500&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <style>
     @page {
       size: A4 portrait;
-      margin: 10mm 12mm 10mm 12mm;
+      margin: 8mm 10mm 8mm 10mm;
     }
     * {
       box-sizing: border-box;
@@ -44,12 +48,12 @@ export function exportCandidateDossierPdf(candidate: Candidate): void {
       print-color-adjust: exact;
     }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
       color: #0f172a;
       background: #ffffff;
       margin: 0;
       padding: 0;
-      font-size: 11px;
+      font-size: 10.5px;
       line-height: 1.4;
     }
     .dossier-page {
@@ -58,76 +62,82 @@ export function exportCandidateDossierPdf(candidate: Candidate): void {
       background: white;
     }
     .header-bar {
-      border-bottom: 2px solid #0f172a;
-      padding-bottom: 8px;
+      border-bottom: 2.5px solid #0A192F;
+      padding-bottom: 10px;
       margin-bottom: 12px;
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
     }
     .emblem-title {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
     }
-    .flag-badge {
-      font-size: 24px;
-      line-height: 1;
+    .emblem-svg {
+      width: 44px;
+      height: 44px;
+      flex-shrink: 0;
     }
     .title-group h1 {
-      font-size: 16px;
-      font-weight: 900;
+      font-family: 'Newsreader', Georgia, serif;
+      font-size: 19px;
+      font-weight: 700;
       margin: 0;
-      letter-spacing: -0.3px;
-      color: #0f172a;
-      text-transform: uppercase;
+      letter-spacing: -0.2px;
+      color: #0A192F;
     }
     .title-group p {
       margin: 2px 0 0 0;
       font-size: 9px;
-      color: #64748b;
+      color: #475569;
       font-weight: 600;
       letter-spacing: 0.5px;
+      text-transform: uppercase;
     }
     .audit-meta {
       text-align: right;
-      font-size: 9px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 8.5px;
+      font-family: 'JetBrains Mono', monospace;
       color: #475569;
+      line-height: 1.5;
     }
     .audit-meta .ref {
       font-weight: 700;
-      color: #0f172a;
+      color: #0A192F;
     }
 
     /* Candidate Identity Banner */
     .identity-card {
-      background: #f8fafc;
-      border: 1px solid #cbd5e1;
+      background: #F8FAFC;
+      border: 1px solid #CBD5E1;
+      border-left: 4px solid #0A192F;
       border-radius: 8px;
       padding: 10px 14px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
     .cand-name {
-      font-size: 15px;
-      font-weight: 800;
-      color: #0f172a;
+      font-family: 'Newsreader', Georgia, serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: #0A192F;
       margin: 0;
     }
     .cand-sub {
       font-size: 10px;
       color: #475569;
       margin-top: 2px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
     }
     .party-tag {
-      background: #0f172a;
+      background: #0A192F;
       color: #ffffff;
-      padding: 4px 10px;
+      padding: 5px 12px;
       border-radius: 6px;
-      font-size: 10px;
+      font-size: 9.5px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -135,12 +145,12 @@ export function exportCandidateDossierPdf(candidate: Candidate): void {
 
     /* Section Grid */
     .section-title {
-      font-size: 10px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      color: #334155;
-      border-bottom: 1px solid #e2e8f0;
+      font-family: 'Newsreader', Georgia, serif;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: #0A192F;
+      border-bottom: 1.5px solid #0A192F;
       padding-bottom: 3px;
       margin: 10px 0 6px 0;
     }
@@ -148,99 +158,105 @@ export function exportCandidateDossierPdf(candidate: Candidate): void {
     .grid-2 {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 8px;
+      gap: 8px;
+      margin-bottom: 6px;
     }
     .grid-3 {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
       gap: 8px;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
     /* Metric Boxes */
     .metric-box {
-      border: 1px solid #e2e8f0;
+      border: 1px solid #E2E8F0;
       border-radius: 6px;
       padding: 6px 10px;
       background: #ffffff;
     }
     .metric-label {
-      font-size: 8.5px;
+      font-size: 8px;
       text-transform: uppercase;
-      color: #64748b;
+      color: #64748B;
       font-weight: 700;
+      letter-spacing: 0.3px;
     }
     .metric-val {
-      font-size: 13px;
-      font-weight: 800;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      color: #0f172a;
+      font-size: 13.5px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: #0A192F;
       margin-top: 2px;
     }
     .metric-sub {
       font-size: 8px;
-      color: #94a3b8;
+      color: #94A3B8;
       margin-top: 1px;
     }
 
     /* Forensic Audit Flag Banner */
     .audit-status-banner {
       border-radius: 6px;
-      padding: 8px 12px;
-      margin-bottom: 10px;
+      padding: 7px 12px;
+      margin-bottom: 8px;
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
     .status-clear {
-      background: #ecfdf5;
-      border: 1px solid #a7f3d0;
-      color: #065f46;
+      background: #ECFDF5;
+      border: 1px solid #A7F3D0;
+      border-left: 4px solid #059669;
+      color: #065F46;
     }
     .status-flagged {
-      background: #fef2f2;
-      border: 1px solid #fecaca;
-      color: #991b1b;
+      background: #FFF1F2;
+      border: 1px solid #FECDD3;
+      border-left: 4px solid #E11D48;
+      color: #9F1239;
     }
     .status-title {
-      font-size: 11px;
+      font-size: 10.5px;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
     .status-desc {
-      font-size: 9px;
+      font-size: 8.5px;
       margin-top: 1px;
-      opacity: 0.9;
+      opacity: 0.95;
     }
 
     /* Tables */
     table.dossier-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 9.5px;
+      font-size: 9px;
       margin-top: 4px;
       margin-bottom: 8px;
     }
     table.dossier-table th {
-      background: #f1f5f9;
-      color: #334155;
+      background: #F1F5F9;
+      color: #0A192F;
       text-align: left;
       padding: 5px 8px;
       font-weight: 700;
-      border: 1px solid #cbd5e1;
+      border: 1px solid #CBD5E1;
+      font-size: 8.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
     }
     table.dossier-table td {
       padding: 5px 8px;
-      border: 1px solid #e2e8f0;
-      color: #1e293b;
+      border: 1px solid #E2E8F0;
+      color: #1E293B;
     }
     table.dossier-table tr:nth-child(even) {
-      background: #f8fafc;
+      background: #F8FAFC;
     }
     .mono {
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-family: 'JetBrains Mono', monospace;
       font-weight: 700;
     }
     .text-right {
@@ -249,25 +265,25 @@ export function exportCandidateDossierPdf(candidate: Candidate): void {
 
     /* Progress bar */
     .progress-track {
-      background: #e2e8f0;
-      height: 6px;
+      background: #E2E8F0;
+      height: 5px;
       border-radius: 3px;
       overflow: hidden;
       margin-top: 4px;
     }
     .progress-fill {
       height: 100%;
-      background: #2563eb;
+      background: #059669;
       border-radius: 3px;
     }
 
     /* Footer / Safe harbor */
     .dossier-footer {
-      border-top: 1px solid #cbd5e1;
-      padding-top: 8px;
-      margin-top: 10px;
+      border-top: 1.5px solid #0A192F;
+      padding-top: 6px;
+      margin-top: 8px;
       font-size: 7.5px;
-      color: #64748b;
+      color: #64748B;
       line-height: 1.35;
     }
     .footer-flex {
@@ -276,9 +292,10 @@ export function exportCandidateDossierPdf(candidate: Candidate): void {
       align-items: flex-end;
     }
     .safe-harbor-tag {
-      font-weight: 700;
-      color: #334155;
+      font-weight: 800;
+      color: #0A192F;
       text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
   </style>
 </head>
@@ -287,15 +304,32 @@ export function exportCandidateDossierPdf(candidate: Candidate): void {
     <!-- Header -->
     <div class="header-bar">
       <div class="emblem-title">
-        <div class="flag-badge">🇮🇳</div>
+        <!-- Dharma Aperture Vector Emblem -->
+        <svg class="emblem-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="50" cy="50" r="47" fill="#0A192F" stroke="#1E293B" stroke-width="2" />
+          <circle cx="50" cy="50" r="40" fill="none" stroke="#3B82F6" stroke-width="2" stroke-dasharray="4 2" />
+          <circle cx="50" cy="50" r="28" fill="none" stroke="#D97706" stroke-width="1.5" />
+          <circle cx="50" cy="50" r="10" fill="#059669" />
+          <g stroke="#FFFFFF" stroke-width="1.2">
+            <line x1="50" y1="14" x2="50" y2="86" />
+            <line x1="14" y1="50" x2="86" y2="50" />
+            <line x1="24.5" y1="24.5" x2="75.5" y2="75.5" />
+            <line x1="24.5" y1="75.5" x2="75.5" y2="24.5" />
+            <line x1="32" y1="18.8" x2="68" y2="81.2" />
+            <line x1="68" y1="18.8" x2="32" y2="81.2" />
+            <line x1="18.8" y1="32" x2="81.2" y2="68" />
+            <line x1="18.8" y1="68" x2="81.2" y2="32" />
+          </g>
+          <circle cx="50" cy="50" r="3.5" fill="#FFFFFF" />
+        </svg>
         <div class="title-group">
-          <h1>National Citizen Forensic Audit Dossier</h1>
-          <p>Autonomous Indian Election & Public Representative Verification System</p>
+          <h1>National Forensic Audit Dossier</h1>
+          <p>The Sovereign Civic Ledger of India • Form 26 Sworn Verification</p>
         </div>
       </div>
       <div class="audit-meta">
         <div>Ref: <span class="ref">${auditRef}</span></div>
-        <div>Generated: ${generatedDate} ${generatedTime}</div>
+        <div>Audited: ${generatedDate} ${generatedTime}</div>
         <div>Standard: Rule 4A, Conduct of Elections Rules 1961</div>
       </div>
     </div>
