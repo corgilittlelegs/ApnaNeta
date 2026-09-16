@@ -50,17 +50,36 @@ class GeminiVLMClient:
                 "[ymin, xmin, ymax, xmax] on a 0-1000 scale. Return strictly valid JSON."
             )
 
-            response = client.models.generate_content(
-                model=self.model_name,
-                contents=[
-                    types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg"),
-                    prompt,
-                ],
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    temperature=0.0,
-                ),
-            )
+            models_to_try = [
+                self.model_name,
+                "gemini-2.5-flash",
+                "gemini-1.5-flash",
+                "gemini-2.0-flash",
+            ]
+            response = None
+            last_err = None
+            for model_id in models_to_try:
+                try:
+                    response = client.models.generate_content(
+                        model=model_id,
+                        contents=[
+                            types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg"),
+                            prompt,
+                        ],
+                        config=types.GenerateContentConfig(
+                            response_mime_type="application/json",
+                            temperature=0.0,
+                        ),
+                    )
+                    if response and response.text:
+                        logger.info(f"Successfully generated extraction using model: {model_id}")
+                        break
+                except Exception as err:
+                    last_err = err
+                    logger.warning(f"Model {model_id} failed: {err}. Trying next candidate...")
+
+            if not response or not response.text:
+                raise last_err or RuntimeError("Gemini model extraction returned empty response.")
 
             import json
             raw_data = json.loads(response.text)
