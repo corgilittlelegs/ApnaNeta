@@ -52,31 +52,6 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
   const isNetWorth = fieldLabel.toLowerCase().includes('worth') || fieldLabel.toLowerCase().includes('net');
   const isDiscrepancy = fieldLabel.toLowerCase().includes('variance') || fieldLabel.toLowerCase().includes('ratio') || fieldLabel.toLowerCase().includes('arithmetic');
 
-  // Precision coordinates (0-1000 scale) calibrated to Form 26 statutory sections
-  const targetBbox: BoundingBox = isIdentity
-    ? { page: 1, ymin: 245, xmin: 30, ymax: 355, xmax: 970 } // Deponent Sworn Statement
-    : isIncome
-    ? { page: 4, ymin: 375, xmin: 30, ymax: 535, xmax: 970 } // Table 4 (PAN & ITR Declarations)
-    : isNetWorth
-    ? { page: 8, ymin: 680, xmin: 30, ymax: 755, xmax: 970 } // Total Sworn Net Worth Row
-    : isMovable || isDiscrepancy
-    ? { page: 7, ymin: 545, xmin: 30, ymax: 755, xmax: 970 } // Table 7 (Asset Breakdown & Summary)
-    : (bbox || { page: 1, ymin: 245, xmin: 30, ymax: 355, xmax: 970 });
-
-  const activeBbox = targetBbox;
-
-  const calcTop = activeBbox.ymin / 10;
-  const calcLeft = activeBbox.xmin / 10;
-  const calcHeight = Math.max(5, (activeBbox.ymax - activeBbox.ymin) / 10);
-  const calcWidth = Math.max(20, (activeBbox.xmax - activeBbox.xmin) / 10);
-
-  const highlightStyle: React.CSSProperties = {
-    top: `${calcTop}%`,
-    left: `${calcLeft}%`,
-    height: `${calcHeight}%`,
-    width: `${calcWidth}%`,
-  };
-
   const constituency = candidate?.constituency || 'Parliamentary';
   const state = candidate?.state || 'India';
   const house = candidate?.house || 'Lok Sabha';
@@ -255,28 +230,72 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
               </div>
 
               {/* Sworn Deponent Oath Clause */}
-              <div className="text-[11px] text-justify space-y-2 text-slate-800 mb-4">
-                <p>
-                  I, <strong className="font-bold text-slate-950 underline">{candidateName}</strong>, 
-                  aged about 54 years, resident of {constituency}, State of {state}, a candidate at the 
-                  above election, do hereby solemnly affirm and state on oath as under:—
-                </p>
-                <p>
-                  <strong>(1)</strong> I am a candidate set up by{' '}
-                  <strong className="text-slate-950">{party}</strong>.
-                </p>
-                <p>
-                  <strong>(2)</strong> My name is enrolled in <strong>{constituency}</strong> Parliamentary Constituency, 
-                  at Serial No. 128 in Part No. 42.
-                </p>
-                <p>
-                  <strong>(3)</strong> My contact telephone number(s) and registered electronic mail address 
-                  are officially filed on record.
-                </p>
+              <div
+                className={`relative rounded-xl p-3.5 mb-4 transition-all ${
+                  isIdentity
+                    ? 'border-2 border-amber-500 bg-amber-400/10 shadow-[0_0_20px_rgba(245,158,11,0.25)]'
+                    : 'border border-transparent'
+                }`}
+              >
+                {isIdentity && (
+                  <div className="absolute -top-3.5 left-3 right-3 flex items-center justify-between pointer-events-none">
+                    <div className="flex items-center gap-1 shadow-sm">
+                      <span className="text-[8px] font-bold font-mono bg-amber-600 text-white px-2 py-0.5 rounded-l">
+                        FORENSIC AUDIT CROP
+                      </span>
+                      <span className="text-[8px] font-bold bg-white text-slate-800 px-2 py-0.5 rounded-r border border-amber-400">
+                        {fieldLabel}
+                      </span>
+                    </div>
+                    <span className="text-[9px] font-mono font-black bg-amber-100 text-amber-950 border border-amber-400 px-2 py-0.5 rounded shadow-sm">
+                      {claimedValue}
+                    </span>
+                  </div>
+                )}
+                <div className="text-[11px] text-justify space-y-2 text-slate-800">
+                  <p>
+                    I, <strong className="font-bold text-slate-950 underline">{candidateName}</strong>, 
+                    aged about 54 years, resident of {constituency}, State of {state}, a candidate at the 
+                    above election, do hereby solemnly affirm and state on oath as under:—
+                  </p>
+                  <p>
+                    <strong>(1)</strong> I am a candidate set up by{' '}
+                    <strong className="text-slate-950">{party}</strong>.
+                  </p>
+                  <p>
+                    <strong>(2)</strong> My name is enrolled in <strong>{constituency}</strong> Parliamentary Constituency, 
+                    at Serial No. 128 in Part No. 42.
+                  </p>
+                  <p>
+                    <strong>(3)</strong> My contact telephone number(s) and registered electronic mail address 
+                    are officially filed on record.
+                  </p>
+                </div>
               </div>
 
               {/* Table 4: PAN and ITR Returns */}
-              <div className="mb-4">
+              <div
+                className={`relative rounded-xl p-3.5 mb-4 transition-all ${
+                  isIncome
+                    ? 'border-2 border-amber-500 bg-amber-400/10 shadow-[0_0_20px_rgba(245,158,11,0.25)]'
+                    : 'border border-transparent'
+                }`}
+              >
+                {isIncome && (
+                  <div className="absolute -top-3.5 left-3 right-3 flex items-center justify-between pointer-events-none">
+                    <div className="flex items-center gap-1 shadow-sm">
+                      <span className="text-[8px] font-bold font-mono bg-amber-600 text-white px-2 py-0.5 rounded-l">
+                        FORENSIC AUDIT CROP
+                      </span>
+                      <span className="text-[8px] font-bold bg-white text-slate-800 px-2 py-0.5 rounded-r border border-amber-400">
+                        {fieldLabel}
+                      </span>
+                    </div>
+                    <span className="text-[9px] font-mono font-black bg-amber-100 text-amber-950 border border-amber-400 px-2 py-0.5 rounded shadow-sm">
+                      {claimedValue}
+                    </span>
+                  </div>
+                )}
                 <p className="text-[10px] font-bold text-slate-900 mb-1">
                   (4) Details of Permanent Account Number (PAN) and status of filing of Income Tax Return:
                 </p>
@@ -312,7 +331,28 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
               </div>
 
               {/* Table 7: Part A Movable Assets */}
-              <div className="mb-4">
+              <div
+                className={`relative rounded-xl p-3.5 mb-4 transition-all ${
+                  (isMovable || isDiscrepancy || isNetWorth)
+                    ? 'border-2 border-amber-500 bg-amber-400/10 shadow-[0_0_20px_rgba(245,158,11,0.25)]'
+                    : 'border border-transparent'
+                }`}
+              >
+                {(isMovable || isDiscrepancy || isNetWorth) && (
+                  <div className="absolute -top-3.5 left-3 right-3 flex items-center justify-between pointer-events-none">
+                    <div className="flex items-center gap-1 shadow-sm">
+                      <span className="text-[8px] font-bold font-mono bg-amber-600 text-white px-2 py-0.5 rounded-l">
+                        FORENSIC AUDIT CROP
+                      </span>
+                      <span className="text-[8px] font-bold bg-white text-slate-800 px-2 py-0.5 rounded-r border border-amber-400">
+                        {fieldLabel}
+                      </span>
+                    </div>
+                    <span className="text-[9px] font-mono font-black bg-amber-100 text-amber-950 border border-amber-400 px-2 py-0.5 rounded shadow-sm">
+                      {claimedValue}
+                    </span>
+                  </div>
+                )}
                 <p className="text-[10px] font-bold text-slate-900 mb-1">
                   (7) Details of Movable and Immovable Assets (Part A & Part B Summary):
                 </p>
@@ -387,27 +427,6 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                   </p>
                   <span className="inline-flex items-center gap-1 text-[8px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
                     <CheckCircle2 className="w-2.5 h-2.5" /> ECI Returning Officer Accepted
-                  </span>
-                </div>
-              </div>
-
-              {/* Interactive Bounding-Box Overlay */}
-              <div
-                className="absolute border-2 border-amber-500 bg-amber-400/10 rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.25)] pointer-events-none transition-all"
-                style={highlightStyle}
-              >
-                {/* Floating pill docked cleanly on top border */}
-                <div className="flex items-center justify-between -mt-3.5 px-2">
-                  <div className="flex items-center gap-1 shadow-sm">
-                    <span className="text-[8px] font-bold font-mono bg-amber-600 text-white px-2 py-0.5 rounded-l">
-                      FORENSIC AUDIT CROP
-                    </span>
-                    <span className="text-[8px] font-bold bg-white text-slate-800 px-2 py-0.5 rounded-r border border-amber-400">
-                      {fieldLabel}
-                    </span>
-                  </div>
-                  <span className="text-[9px] font-mono font-black bg-amber-100 text-amber-950 border border-amber-400 px-2 py-0.5 rounded shadow-sm">
-                    {claimedValue}
                   </span>
                 </div>
               </div>
