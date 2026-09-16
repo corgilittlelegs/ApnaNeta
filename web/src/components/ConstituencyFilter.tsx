@@ -1,5 +1,5 @@
 import React from 'react';
-import { Filter, MapPin, X, AlertTriangle, TrendingUp, Landmark, ShieldAlert, Award } from 'lucide-react';
+import { MapPin, X } from 'lucide-react';
 
 export interface FilterState {
   state: string;

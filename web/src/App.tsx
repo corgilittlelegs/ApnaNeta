@@ -629,7 +629,7 @@ export const App: React.FC = () => {
       // 7. Wealth Tier Filter
       if (filterState.wealthTier === '100CR_PLUS') {
         if (c.total_net_worth < 1000000000) return false;
-      } else if (filterState.wealthTier === '100CR_TO_100CR' || filterState.wealthTier === '10CR_TO_100CR') {
+      } else if (filterState.wealthTier === '10CR_TO_100CR') {
         if (c.total_net_worth < 100000000 || c.total_net_worth >= 1000000000) return false;
       } else if (filterState.wealthTier === '1CR_TO_10CR') {
         if (c.total_net_worth < 10000000 || c.total_net_worth >= 100000000) return false;
