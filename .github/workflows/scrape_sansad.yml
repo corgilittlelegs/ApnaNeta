@@ -8,7 +8,7 @@ on:
       target_term:
         description: "Lok Sabha Term ('18th' sitting parliament, '17th', or 'all')"
         required: false
-        default: "18th"
+        default: "all"
 
 jobs:
   sync_sansad:

@@ -169,7 +169,7 @@ class SansadScraper:
                     try:
                         await supabase.update(
                             "candidates",
-                            {"state": state, "constituency": constituency, "party": party},
+                            {"state": state, "constituency": constituency, "party": party, "house": house_label},
                             {"id": f"eq.{candidate_id}"}
                         )
                         updated_candidates += 1
@@ -229,7 +229,7 @@ sansad_scraper = SansadScraper()
 if __name__ == "__main__":
     import asyncio
 
-    target_term = (os.getenv("TARGET_TERM") or "18th").strip().lower()
+    target_term = (os.getenv("TARGET_TERM") or "all").strip().lower()
 
     async def main():
         total = 0

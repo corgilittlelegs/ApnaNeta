@@ -343,6 +343,33 @@ const SAMPLE_CANDIDATES: Candidate[] = [
   },
 ];
 
+// Canonical lookup for prominent political figures to enrich unindexed rows
+const PROMINENT_PARTY_MAP: Record<
+  string,
+  { party: string; state?: string; constituency?: string; house?: 'Lok Sabha' | 'Rajya Sabha' | 'Vidhan Sabha' }
+> = {
+  'bhagwant mann': { party: 'Aam Aadmi Party', state: 'Punjab', constituency: 'Sangrur', house: 'Lok Sabha' },
+  'arvind kejriwal': { party: 'Aam Aadmi Party', state: 'Delhi', constituency: 'New Delhi', house: 'Vidhan Sabha' },
+  'narendra damodardas modi': { party: 'Bharatiya Janata Party', state: 'Uttar Pradesh', constituency: 'Varanasi', house: 'Lok Sabha' },
+  'narendra modi': { party: 'Bharatiya Janata Party', state: 'Uttar Pradesh', constituency: 'Varanasi', house: 'Lok Sabha' },
+  'rahul gandhi': { party: 'Indian National Congress', state: 'Uttar Pradesh', constituency: 'Rae Bareli', house: 'Lok Sabha' },
+  'akhilesh yadav': { party: 'Samajwadi Party', state: 'Uttar Pradesh', constituency: 'Kannauj', house: 'Lok Sabha' },
+  'mamata banerjee': { party: 'All India Trinamool Congress', state: 'West Bengal', constituency: 'Bhabanipur', house: 'Vidhan Sabha' },
+  'm. k. stalin': { party: 'Dravida Munnetra Kazhagam', state: 'Tamil Nadu', constituency: 'Kolathur', house: 'Vidhan Sabha' },
+  'mk stalin': { party: 'Dravida Munnetra Kazhagam', state: 'Tamil Nadu', constituency: 'Kolathur', house: 'Vidhan Sabha' },
+  'nitish kumar': { party: 'Janata Dal (United)', state: 'Bihar', constituency: 'Bihar', house: 'Vidhan Sabha' },
+  'sharad pawar': { party: 'Nationalist Congress Party (SP)', state: 'Maharashtra', constituency: 'Maharashtra', house: 'Rajya Sabha' },
+  'uddhav thackeray': { party: 'Shiv Sena (UBT)', state: 'Maharashtra', constituency: 'Maharashtra', house: 'Vidhan Sabha' },
+  'y. s. jagan mohan reddy': { party: 'YSRCP', state: 'Andhra Pradesh', constituency: 'Pulivendula', house: 'Vidhan Sabha' },
+  'pinarayi vijayan': { party: 'Communist Party of India (Marxist)', state: 'Kerala', constituency: 'Dharmadom', house: 'Vidhan Sabha' },
+  'himanta biswa sarma': { party: 'Bharatiya Janata Party', state: 'Assam', constituency: 'Jalukbari', house: 'Vidhan Sabha' },
+  'shashi tharoor': { party: 'Indian National Congress', state: 'Kerala', constituency: 'Thiruvananthapuram', house: 'Lok Sabha' },
+  'mahua moitra': { party: 'All India Trinamool Congress', state: 'West Bengal', constituency: 'Krishnanagar', house: 'Lok Sabha' },
+  'supriya sule': { party: 'Nationalist Congress Party (SP)', state: 'Maharashtra', constituency: 'Baramati', house: 'Lok Sabha' },
+  'kanimozhi karunanidhi': { party: 'Dravida Munnetra Kazhagam', state: 'Tamil Nadu', constituency: 'Thoothukkudi', house: 'Lok Sabha' },
+  'asaduddin owaisi': { party: 'All India Majlis-E-Ittehadul Muslimeen', state: 'Telangana', constituency: 'Hyderabad', house: 'Lok Sabha' },
+};
+
 export const App: React.FC = () => {
   const [candidates, setCandidates] = useState<Candidate[]>(SAMPLE_CANDIDATES);
   const [totalDatabaseCount, setTotalDatabaseCount] = useState<number>(0);
@@ -469,14 +496,40 @@ export const App: React.FC = () => {
                     }))
                   : undefined;
 
+              const known = PROMINENT_PARTY_MAP[row.name ? row.name.toLowerCase().trim() : ''];
+              const resolvedParty =
+                row.party && row.party !== 'Parliamentarian' && row.party !== 'None' && row.party !== 'null'
+                  ? row.party
+                  : (known?.party || 'Independent');
+              const resolvedState =
+                row.state && row.state !== 'India' && row.state !== 'National'
+                  ? row.state
+                  : (known?.state || row.state || 'India');
+              const resolvedConstituency =
+                row.constituency && row.constituency !== 'Parliament of India' && row.constituency !== 'National'
+                  ? row.constituency
+                  : (known?.constituency || row.constituency || 'National');
+
+              const rawHouse = row.house ? String(row.house).trim() : '';
+              let resolvedHouse: 'Lok Sabha' | 'Rajya Sabha' | 'Vidhan Sabha' = known?.house || 'Lok Sabha';
+              if (!known?.house) {
+                if (rawHouse === 'Rajya Sabha') {
+                  resolvedHouse = 'Rajya Sabha';
+                } else if (rawHouse.includes('Vidhan')) {
+                  resolvedHouse = 'Vidhan Sabha';
+                } else {
+                  resolvedHouse = 'Lok Sabha';
+                }
+              }
+
               return {
                 id: String(row.id),
                 name: row.name,
                 alias: row.alias || undefined,
-                constituency: row.constituency === 'Parliament of India' ? (row.state || 'National') : row.constituency,
-                state: row.state || 'India',
-                house: (row.house && row.house.includes('Rajya') ? 'Rajya Sabha' : 'Lok Sabha') as any,
-                party: row.party || 'Parliamentarian',
+                constituency: resolvedConstituency,
+                state: resolvedState,
+                house: resolvedHouse,
+                party: resolvedParty,
                 filing_year: aff?.filing_year || 2024,
                 total_movable_assets: totalMovable,
                 total_immovable_assets: totalImmovable,
