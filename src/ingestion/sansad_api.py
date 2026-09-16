@@ -3,7 +3,7 @@ import io
 import os
 import sys
 import logging
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 import httpx
 from src.utils.rate_limiter import PoliteRateLimiter
 from src.storage.supabase_client import supabase
@@ -61,6 +61,12 @@ def normalize_name(name: str) -> str:
     return " ".join(cleaned.split())
 
 
+def name_tokens_key(name: str) -> str:
+    """Returns sorted tokens of the name to match names written in reverse/honorific order."""
+    tokens = sorted(normalize_name(name).split())
+    return " ".join(tokens)
+
+
 class SansadScraper:
     """
     Continuous governance tracker for Indian Parliament (Lok Sabha & Rajya Sabha).
@@ -71,26 +77,50 @@ class SansadScraper:
     def __init__(self, rate_limiter: Optional[PoliteRateLimiter] = None):
         self.rate_limiter = rate_limiter or PoliteRateLimiter(min_delay=0.5, max_delay=1.5)
 
-    async def fetch_existing_candidates_index(self) -> Dict[str, Dict[str, Any]]:
+    async def fetch_existing_candidates_index(self) -> Tuple[Dict[str, Dict[str, Any]], Dict[str, Dict[str, Any]]]:
         """
-        Loads all candidates from Supabase into an in-memory lookup index by normalized name.
+        Loads all candidates from Supabase into in-memory lookup indices:
+        1. Exact normalized name index
+        2. Sorted token set index (handles 'Last First' vs 'First Last')
+        Paginates in batches of 1,000 to handle large databases.
         """
-        logger.info("Fetching existing candidates index from Supabase...")
-        try:
-            records = await supabase.select(
-                "candidates",
-                {"select": "id,name,state,constituency,party", "limit": "10000"}
-            )
-            index: Dict[str, Dict[str, Any]] = {}
-            for row in records:
-                norm = normalize_name(row.get("name", ""))
-                if norm:
-                    index[norm] = row
-            logger.info(f"Loaded {len(index)} indexed candidates from Supabase.")
-            return index
-        except Exception as e:
-            logger.warning(f"Could not load candidates index: {e}. Will create candidates dynamically.")
-            return {}
+        logger.info("Fetching existing candidates index from Supabase (paginated)...")
+        exact_index: Dict[str, Dict[str, Any]] = {}
+        token_index: Dict[str, Dict[str, Any]] = {}
+        offset = 0
+        batch_size = 1000
+
+        while True:
+            try:
+                records = await supabase.select(
+                    "candidates",
+                    {
+                        "select": "id,name,state,constituency,party",
+                        "limit": str(batch_size),
+                        "offset": str(offset),
+                    }
+                )
+                if not records:
+                    break
+
+                for row in records:
+                    raw_cand_name = row.get("name", "")
+                    norm = normalize_name(raw_cand_name)
+                    t_key = name_tokens_key(raw_cand_name)
+                    if norm:
+                        exact_index[norm] = row
+                    if t_key:
+                        token_index[t_key] = row
+
+                offset += len(records)
+                if len(records) < batch_size:
+                    break
+            except Exception as e:
+                logger.warning(f"Error while paginating candidates at offset {offset}: {e}")
+                break
+
+        logger.info(f"Loaded {len(exact_index)} total indexed candidates from Supabase.")
+        return exact_index, token_index
 
     async def sync_from_prs_activity(self, url: str, house_label: str = "Lok Sabha") -> int:
         """
@@ -103,7 +133,7 @@ class SansadScraper:
             csv_text = resp.text
 
         reader = csv.DictReader(io.StringIO(csv_text), delimiter=";")
-        candidates_index = await self.fetch_existing_candidates_index()
+        exact_index, token_index = await self.fetch_existing_candidates_index()
 
         sansad_batch: List[Dict[str, Any]] = []
         synced_count = 0
@@ -125,15 +155,17 @@ class SansadScraper:
             end_date = parse_date(row.get("End of Term", ""))
 
             norm = normalize_name(raw_name)
+            t_key = name_tokens_key(raw_name)
             candidate_id: Optional[str] = None
 
-            # 1. Match against existing candidate
-            if norm in candidates_index:
-                matched_cand = candidates_index[norm]
+            # 1. Multi-tier match: exact normalized -> sorted token key
+            matched_cand = exact_index.get(norm) or token_index.get(t_key)
+
+            if matched_cand:
                 candidate_id = matched_cand.get("id")
 
                 # Enrich candidate's constituency and party if previously generic
-                if matched_cand.get("constituency") in ("Parliament of India", "India", None):
+                if matched_cand.get("constituency") in ("Parliament of India", "India", "", None):
                     try:
                         await supabase.update(
                             "candidates",
@@ -156,24 +188,22 @@ class SansadScraper:
                     inserted = await supabase.insert("candidates", [new_candidate])
                     if inserted:
                         candidate_id = inserted[0].get("id")
-                        candidates_index[norm] = inserted[0]
+                        exact_index[norm] = inserted[0]
+                        token_index[t_key] = inserted[0]
                 except Exception as e:
                     logger.warning(f"Error creating candidate anchor for {raw_name}: {e}")
 
-            # 3. Build sansad_records entry
+            # 3. Build sansad_records entry with UNIFORM keys for PostgREST batching (PGRST102 compliant)
             record: Dict[str, Any] = {
+                "candidate_id": candidate_id,
                 "house": house_label,
                 "attendance_rate": attendance_pct,
                 "questions_count": questions_cnt,
                 "debates_count": debates_cnt,
                 "private_member_bills": pmb_cnt,
+                "tenure_start": start_date,
+                "tenure_end": end_date,
             }
-            if candidate_id:
-                record["candidate_id"] = candidate_id
-            if start_date:
-                record["tenure_start"] = start_date
-            if end_date:
-                record["tenure_end"] = end_date
 
             sansad_batch.append(record)
 
@@ -199,7 +229,7 @@ sansad_scraper = SansadScraper()
 if __name__ == "__main__":
     import asyncio
 
-    target_term = os.getenv("TARGET_TERM", "18th").strip().lower()
+    target_term = (os.getenv("TARGET_TERM") or "18th").strip().lower()
 
     async def main():
         total = 0
