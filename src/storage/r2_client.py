@@ -22,7 +22,7 @@ class R2StorageClient:
         self.account_id = account_id or settings.R2_ACCOUNT_ID
         self.access_key = access_key or settings.R2_ACCESS_KEY_ID
         self.secret_key = secret_key or settings.R2_SECRET_ACCESS_KEY
-        self.bucket_name = bucket_name or settings.R2_BUCKET_NAME
+        self.bucket_name = bucket_name or settings.R2_BUCKET_NAME or "apnaneta-affidavits"
         self._s3_client = None
 
     @property
