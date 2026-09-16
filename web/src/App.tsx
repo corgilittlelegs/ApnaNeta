@@ -213,6 +213,7 @@ export const App: React.FC = () => {
     value: string;
     pdfUrl: string;
     bbox?: BoundingBox;
+    candidate?: Candidate;
   }>({
     isOpen: false,
     candidateName: '',
@@ -221,13 +222,21 @@ export const App: React.FC = () => {
     pdfUrl: '',
   });
 
-  const handleOpenProof = (candidateName: string, fieldLabel: string, value: string, pdfUrl: string) => {
+  const handleOpenProof = (
+    candidateName: string,
+    fieldLabel: string,
+    value: string,
+    pdfUrl: string,
+    candidate?: Candidate
+  ) => {
     setProofModal({
       isOpen: true,
       candidateName,
       fieldLabel,
       value,
       pdfUrl,
+      bbox: candidate?.proof_bbox,
+      candidate,
     });
   };
 
@@ -362,6 +371,7 @@ export const App: React.FC = () => {
         fieldLabel={proofModal.fieldLabel}
         claimedValue={proofModal.value}
         bbox={proofModal.bbox}
+        candidate={proofModal.candidate}
       />
 
       {/* Footer */}

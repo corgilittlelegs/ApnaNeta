@@ -5,7 +5,7 @@ import { DiscrepancyBadge } from './DiscrepancyBadge';
 
 interface CandidateCardProps {
   candidate: Candidate;
-  onVerifyProof: (candidateName: string, fieldLabel: string, value: string, pdfUrl: string) => void;
+  onVerifyProof: (candidateName: string, fieldLabel: string, value: string, pdfUrl: string, candidate?: Candidate) => void;
 }
 
 export const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, onVerifyProof }) => {
@@ -88,7 +88,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, onVerif
         <DiscrepancyBadge
           candidate={candidate}
           onVerify={(label, value) =>
-            onVerifyProof(candidate.name, label, value, candidate.pdf_source_url)
+            onVerifyProof(candidate.name, label, value, candidate.pdf_source_url, candidate)
           }
         />
       </div>
@@ -102,7 +102,8 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, onVerif
               candidate.name,
               'Sworn Identity & Declaration',
               candidate.name,
-              candidate.pdf_source_url
+              candidate.pdf_source_url,
+              candidate
             )
           }
           className="text-blue-600 hover:text-blue-800 font-medium hover:underline flex items-center gap-1"
