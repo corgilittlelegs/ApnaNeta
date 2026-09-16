@@ -46,11 +46,12 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
   };
 
   // Determine dynamic highlight style based on whether it's identity, assets, or discrepancy
-  const isIdentity = fieldLabel.toLowerCase().includes('identity') || fieldLabel.toLowerCase().includes('sworn');
-  const isIncome = fieldLabel.toLowerCase().includes('income') || fieldLabel.toLowerCase().includes('tax') || fieldLabel.toLowerCase().includes('pan');
-  const isMovable = fieldLabel.toLowerCase().includes('movable');
-  const isNetWorth = fieldLabel.toLowerCase().includes('worth') || fieldLabel.toLowerCase().includes('net');
-  const isDiscrepancy = fieldLabel.toLowerCase().includes('variance') || fieldLabel.toLowerCase().includes('ratio') || fieldLabel.toLowerCase().includes('arithmetic');
+  const lowerLabel = fieldLabel.toLowerCase();
+  const isIdentity = lowerLabel.includes('identity') || lowerLabel.includes('sworn') || lowerLabel.includes('nomination');
+  const isIncome = !isIdentity && (lowerLabel.includes('income') || lowerLabel.includes('tax') || lowerLabel.includes('pan') || lowerLabel.includes('itr'));
+  const isMovable = !isIdentity && (lowerLabel.includes('movable') || lowerLabel.includes('immovable'));
+  const isNetWorth = !isIdentity && (lowerLabel.includes('net worth') || lowerLabel.includes('total worth') || lowerLabel.includes('net-worth'));
+  const isDiscrepancy = !isIdentity && (lowerLabel.includes('variance') || lowerLabel.includes('arithmetic') || lowerLabel.includes('wealth-to-income') || lowerLabel.includes('wdr') || lowerLabel.includes('discrepancy') || /\bratio\b/.test(lowerLabel));
 
   const constituency = candidate?.constituency || 'Parliamentary';
   const state = candidate?.state || 'India';
