@@ -146,13 +146,71 @@ export function exportCandidateDossierPdf(candidate: Candidate): void {
     /* Section Grid */
     .section-title {
       font-family: 'Newsreader', Georgia, serif;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.5px;
       color: #0A192F;
-      border-bottom: 1.5px solid #0A192F;
-      padding-bottom: 3px;
-      margin: 10px 0 6px 0;
+      background: #F1F5F9;
+      border: 1px solid #CBD5E1;
+      border-left: 3.5px solid #0A192F;
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin: 12px 0 6px 0;
+      text-transform: uppercase;
+    }
+
+    .seal-badge {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .seal-circle {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 2px dashed #059669;
+      padding: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .seal-circle.flagged {
+      border-color: #E11D48;
+    }
+    .seal-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: #ECFDF5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #A7F3D0;
+    }
+    .seal-inner.flagged {
+      background: #FFF1F2;
+      border-color: #FECDD3;
+    }
+    .seal-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 13px;
+      line-height: 1;
+      color: #065F46;
+    }
+    .seal-num.flagged {
+      color: #9F1239;
+    }
+    .seal-lbl {
+      font-size: 6px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      color: #047857;
+      text-transform: uppercase;
+    }
+    .seal-lbl.flagged {
+      color: #E11D48;
     }
 
     .grid-2 {
@@ -342,7 +400,15 @@ export function exportCandidateDossierPdf(candidate: Candidate): void {
           <strong>${candidate.house}</strong> • ${candidate.constituency} Constituency, ${candidate.state} • Election Year: <strong>${candidate.filing_year}</strong>
         </div>
       </div>
-      <div class="party-tag">${candidate.party || 'Independent'}</div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div class="party-tag">${candidate.party || 'Independent'}</div>
+        <div class="seal-circle ${candidate.serious_criminal_cases_count > 0 ? 'flagged' : ''}">
+          <div class="seal-inner ${candidate.serious_criminal_cases_count > 0 ? 'flagged' : ''}">
+            <span class="seal-num ${candidate.serious_criminal_cases_count > 0 ? 'flagged' : ''}">${candidate.serious_criminal_cases_count}</span>
+            <span class="seal-lbl ${candidate.serious_criminal_cases_count > 0 ? 'flagged' : ''}">CHARGES</span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Forensic Status Banner -->

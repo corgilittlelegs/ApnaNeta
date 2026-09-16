@@ -57,14 +57,14 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
 
   // 1. Background Fill: Sovereign Navy Deep Gradient
   const bgGrad = ctx.createLinearGradient(0, 0, 1080, 1080);
-  bgGrad.addColorStop(0, '#07101E');
+  bgGrad.addColorStop(0, '#06101E');
   bgGrad.addColorStop(0.5, '#0A192F');
   bgGrad.addColorStop(1, '#050D1A');
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, size, size);
 
   // Subtle decorative background grid pattern
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.025)';
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
   ctx.lineWidth = 1;
   for (let x = 40; x < size; x += 40) {
     ctx.beginPath();
@@ -80,404 +80,288 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
   }
 
   // 2. Top Indian National Tricolor Accent Bar
-  ctx.fillStyle = '#D97706'; // Kashmiri Saffron
-  ctx.fillRect(0, 0, 360, 8);
-  ctx.fillStyle = '#ffffff'; // White
-  ctx.fillRect(360, 0, 360, 8);
-  ctx.fillStyle = '#059669'; // Verification Jade
-  ctx.fillRect(720, 0, 360, 8);
+  ctx.fillStyle = '#FF9933'; // Saffron
+  ctx.fillRect(0, 0, 360, 10);
+  ctx.fillStyle = '#FFFFFF'; // White
+  ctx.fillRect(360, 0, 360, 10);
+  ctx.fillStyle = '#138808'; // Green
+  ctx.fillRect(720, 0, 360, 10);
 
-  // 3. Header Civic Branding
   const pad = 60;
 
-  // Dharma Aperture Emblem on Canvas
-  const cx = pad + 26;
-  const cy = 44 + 26;
+  // 3. Header: Dharma Aperture & Brand
+  const cx = pad + 30;
+  const cy = 68;
+
+  // Draw Gold Ashoka Chakra / Dharma Aperture Emblem
   ctx.beginPath();
-  ctx.arc(cx, cy, 25, 0, Math.PI * 2);
+  ctx.arc(cx, cy, 28, 0, Math.PI * 2);
   ctx.fillStyle = '#0A192F';
   ctx.fill();
-  ctx.strokeStyle = '#3B82F6';
-  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = '#D4AF37'; // Gold
+  ctx.lineWidth = 2.5;
   ctx.stroke();
 
   ctx.beginPath();
-  ctx.arc(cx, cy, 15, 0, Math.PI * 2);
-  ctx.strokeStyle = '#D97706';
+  ctx.arc(cx, cy, 18, 0, Math.PI * 2);
+  ctx.strokeStyle = '#D4AF37';
   ctx.lineWidth = 1.2;
   ctx.stroke();
 
   ctx.beginPath();
-  ctx.arc(cx, cy, 5.5, 0, Math.PI * 2);
+  ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+  ctx.fillStyle = '#059669'; // Jade
+  ctx.fill();
+
+  // 24 Spokes in Gold
+  ctx.strokeStyle = '#D4AF37';
+  ctx.lineWidth = 1.2;
+  for (let i = 0; i < 24; i++) {
+    const angle = (i * Math.PI) / 12;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(angle) * 6, cy + Math.sin(angle) * 6);
+    ctx.lineTo(cx + Math.cos(angle) * 27, cy + Math.sin(angle) * 27);
+    ctx.stroke();
+  }
+
+  // Title text: APNA NETA | THE CIVIC LEDGER
+  ctx.font = 'bold 36px "Plus Jakarta Sans", sans-serif';
+  ctx.fillStyle = '#D4AF37'; // Gold
+  ctx.fillText('APNA NETA', pad + 76, 78);
+
+  ctx.font = '300 36px "Plus Jakarta Sans", sans-serif';
+  ctx.fillStyle = '#D4AF37';
+  ctx.fillText('|', pad + 300, 77);
+
+  ctx.font = 'bold 36px "Plus Jakarta Sans", sans-serif';
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillText('THE CIVIC LEDGER', pad + 322, 78);
+
+  // Green VERIFIED Pill Badge on Right
+  const badgeW = 160;
+  const badgeH = 44;
+  const badgeX = size - pad - badgeW;
+  const badgeY = 46;
+  roundRect(ctx, badgeX, badgeY, badgeW, badgeH, 22);
   ctx.fillStyle = '#059669';
   ctx.fill();
 
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-  ctx.lineWidth = 1.2;
-  for (let i = 0; i < 8; i++) {
-    const angle = (i * Math.PI) / 4;
-    ctx.beginPath();
-    ctx.moveTo(cx + Math.cos(angle) * 5.5, cy + Math.sin(angle) * 5.5);
-    ctx.lineTo(cx + Math.cos(angle) * 24, cy + Math.sin(angle) * 24);
-    ctx.stroke();
-  }
-
-  // Branding Text
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'alphabetic';
-  ctx.font = 'bold 24px Newsreader, Georgia, serif';
-  ctx.fillStyle = '#ffffff';
-  ctx.fillText('APNA NETA', pad + 68, 72);
-
-  ctx.font = '700 11px "Plus Jakarta Sans", -apple-system, sans-serif';
-  ctx.fillStyle = '#60a5fa';
-  if ('letterSpacing' in ctx) {
-    try {
-      (ctx as any).letterSpacing = '1.5px';
-    } catch {}
-  }
-  ctx.fillText('THE SOVEREIGN CIVIC LEDGER • ECI AUDIT', pad + 68, 89);
-  if ('letterSpacing' in ctx) {
-    try {
-      (ctx as any).letterSpacing = '0px';
-    } catch {}
-  }
-
-  // Verification Shield Tag (Right)
-  roundRect(ctx, size - pad - 220, 50, 220, 38, 10);
-  ctx.fillStyle = 'rgba(5, 150, 105, 0.15)';
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(5, 150, 105, 0.5)';
-  ctx.lineWidth = 1;
-  ctx.stroke();
-
-  ctx.font = '700 12px "Plus Jakarta Sans", sans-serif';
-  ctx.fillStyle = '#34d399';
+  ctx.font = 'bold 18px "Plus Jakarta Sans", sans-serif';
+  ctx.fillStyle = '#FFFFFF';
   ctx.textAlign = 'center';
-  ctx.fillText('✓ ECI AFFIDAVIT VERIFIED', size - pad - 110, 74);
-
-  // Divider Line
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(pad, 115);
-  ctx.lineTo(size - pad, 115);
-  ctx.stroke();
-
-  // 4. Candidate Identity Hero Section
-  let curY = 160;
-
-  // Party Badge (with safety truncation for very long party names)
-  let partyText = (candidate.party || 'Independent').toUpperCase();
-  ctx.font = '700 12px "Plus Jakarta Sans", sans-serif';
-  if (ctx.measureText(partyText).width > 350) {
-    while (partyText.length > 5 && ctx.measureText(partyText + '…').width > 350) {
-      partyText = partyText.slice(0, -1);
-    }
-    partyText += '…';
-  }
-  const partyWidth = ctx.measureText(partyText).width + 24;
-  roundRect(ctx, pad, curY - 22, partyWidth, 30, 8);
-  ctx.fillStyle = 'rgba(30, 58, 138, 0.4)';
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(96, 165, 250, 0.5)';
-  ctx.stroke();
-
+  ctx.fillText('✓ VERIFIED', badgeX + badgeW / 2, badgeY + 28);
   ctx.textAlign = 'left';
-  ctx.fillStyle = '#93c5fd';
-  ctx.fillText(partyText, pad + 12, curY - 2);
 
-  // Sworn Filing Year Badge (next to party)
-  const yearText = `FORM 26 • ${candidate.filing_year} SWORN FILING`;
-  roundRect(ctx, pad + partyWidth + 12, curY - 22, 230, 30, 8);
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
+  // 4. Candidate Identity Hero Card
+  let curY = 135;
+  const candCardW = size - pad * 2;
+  const candCardH = 145;
+  roundRect(ctx, pad, curY, candCardW, candCardH, 20);
+  ctx.fillStyle = 'rgba(13, 32, 61, 0.9)';
   ctx.fill();
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+  ctx.strokeStyle = '#C89D3C'; // Gold Border
+  ctx.lineWidth = 2;
   ctx.stroke();
 
-  ctx.fillStyle = '#cbd5e1';
-  ctx.font = '600 11px "JetBrains Mono", monospace';
-  ctx.fillText(yearText, pad + partyWidth + 24, curY - 2);
+  // Circular Avatar Container on Left
+  const avX = pad + 65;
+  const avY = curY + candCardH / 2;
+  const avR = 48;
 
-  // Candidate Name (with responsive font scaling)
-  curY += 45;
-  const nameLen = candidate.name.length;
-  if (nameLen > 30) {
-    ctx.font = 'bold 28px Newsreader, Georgia, serif';
-  } else if (nameLen > 22) {
-    ctx.font = 'bold 32px Newsreader, Georgia, serif';
-  } else {
-    ctx.font = 'bold 38px Newsreader, Georgia, serif';
-  }
-  ctx.fillStyle = '#ffffff';
-  let displayName = candidate.name;
-  if (displayName.length > 40) displayName = displayName.slice(0, 38) + '…';
-  ctx.fillText(displayName, pad, curY);
-
-  // Constituency & State Subtitle
-  curY += 28;
-  ctx.font = '500 17px "Plus Jakarta Sans", sans-serif';
-  ctx.fillStyle = '#94a3b8';
-  ctx.fillText(`${candidate.constituency}, ${candidate.state} • ${candidate.house}`, pad, curY);
-
-  // 5. Four Key Metric Tiles (2x2 Grid)
-  curY += 35;
-  const gridW = size - pad * 2;
-  const tileW = (gridW - 20) / 2;
-  const tileH = 145;
-
-  // Metric 1: Declared Net Worth (Top Left)
-  const m1X = pad;
-  const m1Y = curY;
-  roundRect(ctx, m1X, m1Y, tileW, tileH, 16);
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+  ctx.beginPath();
+  ctx.arc(avX, avY, avR, 0, Math.PI * 2);
+  ctx.fillStyle = '#1E3A5F';
   ctx.fill();
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+  ctx.strokeStyle = '#D4AF37';
+  ctx.lineWidth = 2;
   ctx.stroke();
 
-  ctx.font = '700 12px "Plus Jakarta Sans", sans-serif';
-  ctx.fillStyle = '#94a3b8';
-  ctx.fillText('DECLARED NET WORTH', m1X + 20, m1Y + 32);
+  // Silhouette inside Avatar
+  ctx.beginPath();
+  ctx.arc(avX, avY - 10, 18, 0, Math.PI * 2);
+  ctx.fillStyle = '#D4AF37';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(avX, avY + 36, 32, Math.PI, Math.PI * 2);
+  ctx.fillStyle = '#D4AF37';
+  ctx.fill();
 
-  ctx.font = '700 32px "JetBrains Mono", monospace';
-  ctx.fillStyle = '#38bdf8';
-  ctx.fillText(formatINR(candidate.total_net_worth), m1X + 20, m1Y + 76);
+  // Candidate Details
+  const candTextX = pad + 135;
+  ctx.font = 'bold 36px "Newsreader", Georgia, serif';
+  ctx.fillStyle = '#FFFFFF';
+  let nameText = candidate.name;
+  if (nameText.length > 28) nameText = nameText.substring(0, 26) + '...';
+  ctx.fillText(nameText, candTextX, curY + 54);
 
-  ctx.font = '500 12px "JetBrains Mono", monospace';
-  ctx.fillStyle = '#64748b';
+  // Constituency Subtitle in Gold/Ochre
+  ctx.font = '500 20px "Newsreader", Georgia, serif';
+  ctx.fillStyle = '#E5B842';
+  const subTitle = `Member of Parliament, ${candidate.constituency} Constituency (${candidate.state})`;
+  ctx.fillText(subTitle, candTextX, curY + 88);
+
+  // Party Tag & Filing Year Tag
+  ctx.font = 'bold 13px "Plus Jakarta Sans", sans-serif';
+  ctx.fillStyle = '#94A3B8';
   ctx.fillText(
-    `Movable: ${formatINR(candidate.total_movable_assets)} | Immovable: ${formatINR(candidate.total_immovable_assets)}`,
-    m1X + 20,
-    m1Y + 112
+    `${(candidate.party || 'Independent').toUpperCase()} • FORM 26 SWORN FILING (${candidate.filing_year})`,
+    candTextX,
+    curY + 118
   );
 
-  // Metric 2: Criminal Record (Top Right)
-  const m2X = pad + tileW + 20;
-  const m2Y = curY;
-  roundRect(ctx, m2X, m2Y, tileW, tileH, 16);
-  ctx.fillStyle =
+  // 5. Four High-Impact Metric Cards (2x2 Grid) with Gold Header Caps
+  curY += candCardH + 30;
+  const tileW = (candCardW - 24) / 2;
+  const tileH = 240;
+  const capH = 48;
+
+  function drawMetricCard(
+    x: number,
+    y: number,
+    title: string,
+    valueText: string,
+    valueColor: string,
+    subText: string,
+    subColor?: string
+  ) {
+    // Outer card
+    roundRect(ctx!, x, y, tileW, tileH, 18);
+    ctx!.fillStyle = '#081426';
+    ctx!.fill();
+    ctx!.strokeStyle = '#C89D3C'; // Gold Border
+    ctx!.lineWidth = 2;
+    ctx!.stroke();
+
+    // Gold Header Cap
+    ctx!.save();
+    ctx!.beginPath();
+    roundRect(ctx!, x, y, tileW, tileH, 18);
+    ctx!.clip();
+
+    ctx!.fillStyle = '#C89D3C'; // Solid Gold Header
+    ctx!.fillRect(x, y, tileW, capH);
+
+    ctx!.font = 'bold 20px "Plus Jakarta Sans", sans-serif';
+    ctx!.fillStyle = '#0A192F'; // Dark Sovereign text on Gold
+    ctx!.fillText(title, x + 24, y + 32);
+    ctx!.restore();
+
+    // Value text
+    ctx!.font = 'bold 44px "Plus Jakarta Sans", sans-serif';
+    ctx!.fillStyle = valueColor;
+    ctx!.fillText(valueText, x + 24, y + capH + 75);
+
+    // Subtext
+    ctx!.font = '500 17px "Plus Jakarta Sans", sans-serif';
+    ctx!.fillStyle = subColor || '#94A3B8';
+    ctx!.fillText(subText, x + 24, y + capH + 125);
+  }
+
+  // Card 1: Declared Net Worth (Top-Left)
+  drawMetricCard(
+    pad,
+    curY,
+    'Declared Net Worth',
+    formatINR(candidate.total_net_worth),
+    '#FEF08A', // Warm Cream/Gold
+    `Movable: ${formatINR(candidate.total_movable_assets)} | Immovable: ${formatINR(candidate.total_immovable_assets)}`,
+    '#93C5FD'
+  );
+
+  // Card 2: Criminal Proceedings (Top-Right)
+  const m2X = pad + tileW + 24;
+  const crimText =
     candidate.serious_criminal_cases_count > 0
-      ? 'rgba(239, 68, 68, 0.08)'
+      ? `${candidate.serious_criminal_cases_count} Serious Charges`
       : candidate.criminal_cases_count > 0
-      ? 'rgba(245, 158, 11, 0.08)'
-      : 'rgba(16, 185, 129, 0.08)';
-  ctx.fill();
-  ctx.strokeStyle =
+      ? `${candidate.criminal_cases_count} Protest Cases`
+      : '0 Charges Declared';
+  const crimColor =
     candidate.serious_criminal_cases_count > 0
-      ? 'rgba(239, 68, 68, 0.3)'
+      ? '#F87171'
       : candidate.criminal_cases_count > 0
-      ? 'rgba(245, 158, 11, 0.3)'
-      : 'rgba(16, 185, 129, 0.3)';
-  ctx.stroke();
+      ? '#FBBF24'
+      : '#34D399';
+  const crimSub =
+    candidate.serious_criminal_cases_count > 0
+      ? 'Includes heinous IPC non-bailable charges'
+      : 'Clean Form 26 Sworn Affidavit on ECI Record';
 
-  ctx.font = '700 12px "Plus Jakarta Sans", sans-serif';
-  ctx.fillStyle = '#94a3b8';
-  ctx.fillText('CRIMINAL PROCEEDINGS', m2X + 20, m2Y + 32);
+  drawMetricCard(
+    m2X,
+    curY,
+    'Criminal Proceedings',
+    crimText,
+    crimColor,
+    crimSub,
+    crimColor === '#34D399' ? '#A7F3D0' : '#FECDD3'
+  );
 
-  if (candidate.serious_criminal_cases_count > 0) {
-    ctx.font = '700 24px "Plus Jakarta Sans", sans-serif';
-    ctx.fillStyle = '#f87171';
-    ctx.fillText(`${candidate.serious_criminal_cases_count} SERIOUS IPC CHARGES`, m2X + 20, m2Y + 76);
-    ctx.font = '500 12px "Plus Jakarta Sans", sans-serif';
-    ctx.fillStyle = '#fca5a5';
-    ctx.fillText('Includes non-bailable offences (punishable ≥ 5 yrs)', m2X + 20, m2Y + 112);
-  } else if (candidate.criminal_cases_count > 0) {
-    ctx.font = '700 24px "Plus Jakarta Sans", sans-serif';
-    ctx.fillStyle = '#fbbf24';
-    ctx.fillText(`${candidate.criminal_cases_count} PROTEST CITATIONS`, m2X + 20, m2Y + 76);
-    ctx.font = '500 12px "Plus Jakarta Sans", sans-serif';
-    ctx.fillStyle = '#fde68a';
-    ctx.fillText('Political demonstrations / public agitation cases', m2X + 20, m2Y + 112);
-  } else {
-    ctx.font = '700 26px "Plus Jakarta Sans", sans-serif';
-    ctx.fillStyle = '#34d399';
-    ctx.fillText('0 CHARGES DECLARED', m2X + 20, m2Y + 76);
-    ctx.font = '500 12px "Plus Jakarta Sans", sans-serif';
-    ctx.fillStyle = '#a7f3d0';
-    ctx.fillText('No pending criminal dockets declared in Form 26', m2X + 20, m2Y + 112);
-  }
+  // Row 2
+  const row2Y = curY + tileH + 24;
 
-  // Metric 3: Sansad Attendance (Bottom Left)
-  const m3X = pad;
-  const m3Y = curY + tileH + 16;
-  roundRect(ctx, m3X, m3Y, tileW, tileH, 16);
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-  ctx.stroke();
+  // Card 3: Parliamentary Attendance (Bottom-Left)
+  const attVal = candidate.attendance_rate !== undefined ? `${candidate.attendance_rate}%` : 'N/A';
+  const attSub =
+    candidate.attendance_rate !== undefined
+      ? `${candidate.debates_count ?? 0} Debates • ${candidate.questions_count ?? 0} Questions in Sansad`
+      : 'Non-sitting candidate in current Lok Sabha';
+  drawMetricCard(
+    pad,
+    row2Y,
+    'Parliamentary Attendance',
+    attVal,
+    '#34D399',
+    attSub,
+    '#CBD5E1'
+  );
 
-  ctx.font = '700 12px "Plus Jakarta Sans", sans-serif';
-  ctx.fillStyle = '#94a3b8';
-  ctx.fillText('SANSAD ATTENDANCE', m3X + 20, m3Y + 32);
+  // Card 4: Local Development Funds (Bottom-Right)
+  const mpladsVal = candidate.mplads ? `${candidate.mplads.utilization_rate.toFixed(1)}% Spent` : 'N/A';
+  const mpladsSub = candidate.mplads
+    ? `Unspent Balance: ${formatINR(candidate.mplads.unspent_balance)}`
+    : 'Central MoSPI quota not applicable';
+  drawMetricCard(
+    m2X,
+    row2Y,
+    'Local Development Funds',
+    mpladsVal,
+    '#34D399',
+    mpladsSub,
+    '#CBD5E1'
+  );
 
-  if (candidate.attendance_rate !== undefined) {
-    ctx.font = '700 32px "JetBrains Mono", monospace';
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(`${candidate.attendance_rate}%`, m3X + 20, m3Y + 76);
-
-    // Mini progress bar
-    roundRect(ctx, m3X + 20, m3Y + 92, tileW - 40, 8, 4);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-    ctx.fill();
-
-    const barFillW = Math.max(0, Math.min(tileW - 40, (tileW - 40) * (candidate.attendance_rate / 100)));
-    roundRect(ctx, m3X + 20, m3Y + 92, barFillW, 8, 4);
-    ctx.fillStyle = candidate.attendance_rate >= 80 ? '#10b981' : candidate.attendance_rate >= 60 ? '#3b82f6' : '#f59e0b';
-    ctx.fill();
-
-    ctx.font = '500 12px "Plus Jakarta Sans", sans-serif';
-    ctx.fillStyle = '#94a3b8';
-    ctx.fillText(`Debates: ${candidate.debates_count ?? 0} | Questions: ${candidate.questions_count ?? 0}`, m3X + 20, m3Y + 124);
-  } else {
-    ctx.font = '700 22px "Plus Jakarta Sans", sans-serif';
-    ctx.fillStyle = '#64748b';
-    ctx.fillText('NON-MP / CANDIDATE', m3X + 20, m3Y + 76);
-    ctx.font = '500 12px "Plus Jakarta Sans", sans-serif';
-    ctx.fillStyle = '#475569';
-    ctx.fillText('Not a sitting member in current parliament term', m3X + 20, m3Y + 112);
-  }
-
-  // Metric 4: MPLADS Velocity (Bottom Right)
-  const m4X = pad + tileW + 20;
-  const m4Y = curY + tileH + 16;
-  roundRect(ctx, m4X, m4Y, tileW, tileH, 16);
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-  ctx.stroke();
-
-  ctx.font = '700 12px "Plus Jakarta Sans", sans-serif';
-  ctx.fillStyle = '#94a3b8';
-  ctx.fillText('MPLADS FUND VELOCITY', m4X + 20, m4Y + 32);
-
-  if (candidate.mplads) {
-    ctx.font = '700 32px "JetBrains Mono", monospace';
-    ctx.fillStyle = candidate.mplads.utilization_rate < 60 ? '#f87171' : '#34d399';
-    ctx.fillText(`${candidate.mplads.utilization_rate.toFixed(1)}% SPENT`, m4X + 20, m4Y + 76);
-
-    ctx.font = '500 12px "JetBrains Mono", monospace';
-    ctx.fillStyle = '#94a3b8';
-    ctx.fillText(`Unspent Balance: ${formatINR(candidate.mplads.unspent_balance)}`, m4X + 20, m4Y + 112);
-  } else {
-    ctx.font = '700 22px "Plus Jakarta Sans", sans-serif';
-    ctx.fillStyle = '#64748b';
-    ctx.fillText('NO CENTRAL QUOTA', m4X + 20, m4Y + 76);
-    ctx.font = '500 12px "Plus Jakarta Sans", sans-serif';
-    ctx.fillStyle = '#475569';
-    ctx.fillText('MoSPI central fund allocation not applicable', m4X + 20, m4Y + 112);
-  }
-
-  // 6. Forensic Math Reconciler Stamp (Horizontal Banner)
-  curY = m3Y + tileH + 24;
-  const stampH = 120;
-  roundRect(ctx, pad, curY, gridW, stampH, 18);
+  // 6. Bottom Reconciler Banner
+  const bannerY = row2Y + tileH + 28;
+  const bannerH = 68;
+  roundRect(ctx, pad, bannerY, candCardW, bannerH, 16);
 
   if (candidate.has_arithmetic_discrepancy) {
-    ctx.fillStyle = 'rgba(239, 68, 68, 0.12)';
+    ctx.fillStyle = '#E11D48'; // Crimson
     ctx.fill();
-    ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    ctx.font = '900 18px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-    ctx.fillStyle = '#f87171';
-    ctx.fillText('⚠️ ARITHMETIC DISCREPANCY FLAGGED IN SWORN AFFIDAVIT', pad + 24, curY + 36);
-
-    ctx.font = '500 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-    ctx.fillStyle = '#fca5a5';
-    ctx.fillText(
-      `Part A itemized disclosure sums do NOT match Part B abstract summary. Delta: ${formatINR(
-        (candidate.delta_movable || 0) + (candidate.delta_immovable || 0)
-      )}`,
-      pad + 24,
-      curY + 66
-    );
-
-    ctx.font = '600 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace';
-    ctx.fillStyle = '#f87171';
-    ctx.fillText('Flagged by Apna Neta Double-Entry Forensic Reconciler Engine', pad + 24, curY + 94);
+    ctx.font = 'bold 22px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = '#FFFFFF';
+    ctx.textAlign = 'center';
+    ctx.fillText('⚠️ ARITHMETIC DISCREPANCY DETECTED IN SWORN FORM 26', size / 2, bannerY + 42);
   } else {
-    ctx.fillStyle = 'rgba(16, 185, 129, 0.12)';
+    ctx.fillStyle = '#D4AF37'; // Solid Gold
     ctx.fill();
-    ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    ctx.font = '900 18px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-    ctx.fillStyle = '#34d399';
-    ctx.fillText('✓ CLEAN AUDIT: PART A & PART B DISCLOSURES RECONCILED', pad + 24, curY + 36);
-
-    ctx.font = '500 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-    ctx.fillStyle = '#a7f3d0';
-    ctx.fillText(
-      'Every itemized asset in Part A mathematically equals the sworn abstract total in Part B.',
-      pad + 24,
-      curY + 66
-    );
-
-    ctx.font = '600 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace';
-    ctx.fillStyle = '#34d399';
-    ctx.fillText('Sworn under oath before Election Commission of India Returning Officer', pad + 24, curY + 94);
+    ctx.font = 'bold 22px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = '#0A192F'; // Dark Navy text on Gold
+    ctx.textAlign = 'center';
+    ctx.fillText('DOUBLE-ENTRY AUDIT: SWORN DISCLOSURES RECONCILED', size / 2, bannerY + 42);
   }
+  ctx.textAlign = 'left';
 
-  // 7. Multi-Term Wealth Growth Line (if available)
-  const latestGrowth =
-    candidate.historical_wealth && candidate.historical_wealth.length > 0
-      ? candidate.historical_wealth[candidate.historical_wealth.length - 1]
-      : null;
-
-  curY += stampH + 20;
-
-  if (latestGrowth) {
-    roundRect(ctx, pad, curY, gridW, 55, 12);
-    ctx.fillStyle = latestGrowth.is_rapid_accumulation
-      ? 'rgba(239, 68, 68, 0.08)'
-      : 'rgba(59, 130, 246, 0.08)';
-    ctx.fill();
-    ctx.strokeStyle = latestGrowth.is_rapid_accumulation
-      ? 'rgba(239, 68, 68, 0.25)'
-      : 'rgba(59, 130, 246, 0.25)';
-    ctx.stroke();
-
-    ctx.font = '700 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-    ctx.fillStyle = latestGrowth.is_rapid_accumulation ? '#f87171' : '#60a5fa';
-    const surgeTag = latestGrowth.is_rapid_accumulation ? '⚡ RAPID WEALTH SURGE' : '📈 WEALTH TRAJECTORY';
-    ctx.fillText(
-      `${surgeTag}: +${latestGrowth.percentage_increase}% growth (${latestGrowth.from_year} → ${latestGrowth.to_year})`,
-      pad + 20,
-      curY + 33
-    );
-
-    if (latestGrowth.cagr_percent) {
-      ctx.font = '600 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace';
-      ctx.textAlign = 'right';
-      ctx.fillText(`Annual CAGR: ${latestGrowth.cagr_percent}%`, size - pad - 20, curY + 33);
-      ctx.textAlign = 'left';
-    }
-    curY += 55;
-  }
-
-  // 8. Footer Safe Harbor & Provenance Bar
-  const footerY = size - 70;
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(pad, footerY);
-  ctx.lineTo(size - pad, footerY);
-  ctx.stroke();
-
-  ctx.font = '600 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-  ctx.fillStyle = '#64748b';
+  // 7. Safe Harbor Footer
+  const footY = size - 30;
+  ctx.font = '600 13px "Plus Jakarta Sans", sans-serif';
+  ctx.fillStyle = '#64748B';
   ctx.fillText(
-    'CITIZEN VERIFICATION PORTAL • apnaneta.in • REPRODUCED UNDER SEC 79 IT ACT & SEC 3(c)(ii) DPDP ACT 2023',
+    'CITIZEN VERIFICATION PORTAL • apnaneta.in • REPRODUCED UNDER SEC 79 IT ACT & DPDP ACT 2023',
     pad,
-    footerY + 28
+    footY
   );
-
-  ctx.textAlign = 'right';
-  ctx.font = '700 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace';
-  ctx.fillStyle = '#94a3b8';
-  ctx.fillText('NON-PARTISAN TRANSPARENCY INITIATIVE', size - pad, footerY + 28);
 
   return canvas;
 }
