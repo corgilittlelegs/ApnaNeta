@@ -87,5 +87,23 @@ class SupabaseClient:
             response.raise_for_status()
             return response.json()
 
+    async def update(self, table: str, values: Dict[str, Any], params: Dict[str, str]) -> List[Dict[str, Any]]:
+        """Update records in a Supabase table matching params."""
+        if not self.rest_url or not self.key:
+            return []
+            
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.patch(
+                f"{self.rest_url}/{table}",
+                headers=self._headers(),
+                params=params,
+                json=values,
+            )
+            if response.is_error:
+                import logging
+                logging.getLogger(__name__).error(f"Supabase PATCH {table} error ({response.status_code}): {response.text}")
+            response.raise_for_status()
+            return response.json() if response.text else []
+
 
 supabase = SupabaseClient()

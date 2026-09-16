@@ -134,7 +134,7 @@ export const App: React.FC = () => {
       setIsLoading(true);
       try {
         const res = await fetch(
-          `${cleanUrl}/rest/v1/candidates?select=*&order=name.asc&limit=10000`,
+          `${cleanUrl}/rest/v1/candidates?select=*,sansad_records(attendance_rate,debates_count,questions_count)&order=name.asc&limit=10000`,
           {
             headers: {
               apikey: rawKey,
@@ -162,31 +162,35 @@ export const App: React.FC = () => {
 
           const dbCandidates: Candidate[] = data
             .filter((row: any) => !sampleNames.has((row.name || '').toLowerCase()))
-            .map((row: any) => ({
-              id: String(row.id),
-              name: row.name,
-              alias: row.alias || undefined,
-              constituency: row.constituency === 'Parliament of India' ? (row.state || 'National') : row.constituency,
-              state: row.state || 'India',
-              house: (row.house && row.house.includes('Rajya') ? 'Rajya Sabha' : 'Lok Sabha') as any,
-              party: row.party || 'Parliamentarian',
-              filing_year: 2024,
-              total_movable_assets: 0.0,
-              total_immovable_assets: 0.0,
-              total_liabilities: 0.0,
-              total_net_worth: 0.0,
-              total_five_year_income: 0.0,
-              criminal_cases_count: 0,
-              serious_criminal_cases_count: 0,
-              protest_cases_count: 0,
-              attendance_rate: 85.0,
-              has_arithmetic_discrepancy: false,
-              delta_movable: 0.0,
-              delta_immovable: 0.0,
-              wealth_discrepancy_ratio: 1.0,
-              has_anomalous_wealth_ratio: false,
-              pdf_source_url: 'https://affidavit.eci.gov.in',
-            }));
+            .map((row: any) => {
+              const sansad = Array.isArray(row.sansad_records) && row.sansad_records.length > 0 ? row.sansad_records[0] : null;
+              const attendance = sansad?.attendance_rate != null ? Number(sansad.attendance_rate) : undefined;
+              return {
+                id: String(row.id),
+                name: row.name,
+                alias: row.alias || undefined,
+                constituency: row.constituency === 'Parliament of India' ? (row.state || 'National') : row.constituency,
+                state: row.state || 'India',
+                house: (row.house && row.house.includes('Rajya') ? 'Rajya Sabha' : 'Lok Sabha') as any,
+                party: row.party || 'Parliamentarian',
+                filing_year: 2024,
+                total_movable_assets: 0.0,
+                total_immovable_assets: 0.0,
+                total_liabilities: 0.0,
+                total_net_worth: 0.0,
+                total_five_year_income: 0.0,
+                criminal_cases_count: 0,
+                serious_criminal_cases_count: 0,
+                protest_cases_count: 0,
+                attendance_rate: attendance,
+                has_arithmetic_discrepancy: false,
+                delta_movable: 0.0,
+                delta_immovable: 0.0,
+                wealth_discrepancy_ratio: 1.0,
+                has_anomalous_wealth_ratio: false,
+                pdf_source_url: 'https://affidavit.eci.gov.in',
+              };
+            });
 
           setCandidates([...SAMPLE_CANDIDATES, ...dbCandidates]);
           setIsLiveConnected(true);
