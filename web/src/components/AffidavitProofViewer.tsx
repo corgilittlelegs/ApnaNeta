@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 import {
   X,
-  ExternalLink,
+  ArrowSquareOut,
   ShieldCheck,
   FileText,
-  ZoomIn,
-  ZoomOut,
-  BadgeCheck,
-  Lock,
-  CheckCircle2,
-  Landmark,
-  TrendingUp,
-  FileDown,
-  AlertTriangle,
-} from 'lucide-react';
+  MagnifyingGlassPlus,
+  MagnifyingGlassMinus,
+  SealCheck,
+  CheckCircle,
+  Bank,
+  TrendUp,
+  FilePdf,
+  WarningCircle,
+  LockSimple,
+} from '@phosphor-icons/react';
 import { BoundingBox, Candidate } from '../types/candidate';
 import { exportCandidateDossierPdf } from '../utils/DossierPdfExport';
 
@@ -65,6 +65,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
   const filingYear = candidate?.filing_year || 2024;
   const mplads = candidate?.mplads;
   const wealthHistory = candidate?.historical_wealth || [];
+  const hasSpouse = candidate?.spouse_status === 'Declared' || Boolean(candidate?.spouse_name);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
@@ -73,7 +74,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50 gap-4 flex-wrap">
           <div className="flex items-center gap-3 min-w-0">
             <div className="p-2.5 bg-blue-100/80 text-blue-700 rounded-xl flex-shrink-0">
-              <ShieldCheck className="w-5 h-5" />
+              <ShieldCheck size={22} weight="duotone" />
             </div>
             <div className="min-w-0">
               <h3 className="font-bold text-slate-900 text-base leading-tight truncate">
@@ -99,7 +100,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                   activeTab === 'transcript' ? 'bg-white text-slate-900 shadow-sm font-semibold' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Sworn Affidavit
+                Form 26 Transcript
               </button>
               <button
                 onClick={() => setActiveTab('mplads')}
@@ -107,7 +108,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                   activeTab === 'mplads' ? 'bg-white text-slate-900 shadow-sm font-semibold' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <Landmark className="w-3 h-3 text-blue-600" />
+                <Bank size={14} weight="duotone" className="text-blue-600" />
                 MPLADS
               </button>
               <button
@@ -116,7 +117,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                   activeTab === 'wealth_history' ? 'bg-white text-slate-900 shadow-sm font-semibold' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <TrendingUp className="w-3 h-3 text-emerald-600" />
+                <TrendUp size={14} weight="bold" className="text-emerald-600" />
                 10-Yr Wealth
               </button>
               <button
@@ -136,7 +137,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                 title="Download Court-Ready 1-Page Forensic Audit Dossier PDF"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 font-semibold text-xs rounded-xl border border-blue-200 transition-all shadow-sm"
               >
-                <FileDown className="w-3.5 h-3.5 text-blue-600" />
+                <FilePdf size={15} weight="duotone" className="text-blue-600" />
                 <span>PDF Dossier</span>
               </button>
             )}
@@ -149,7 +150,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                   className="p-1 text-slate-500 hover:text-slate-800 rounded hover:bg-slate-100 transition-colors"
                   title="Zoom Out"
                 >
-                  <ZoomOut className="w-3.5 h-3.5" />
+                  <MagnifyingGlassMinus size={14} />
                 </button>
                 <span className="text-[11px] font-mono font-medium text-slate-700 w-9 text-center">{zoom}%</span>
                 <button
@@ -157,7 +158,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                   className="p-1 text-slate-500 hover:text-slate-800 rounded hover:bg-slate-100 transition-colors"
                   title="Zoom In"
                 >
-                  <ZoomIn className="w-3.5 h-3.5" />
+                  <MagnifyingGlassPlus size={14} />
                 </button>
               </div>
             )}
@@ -169,7 +170,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
               className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-xl transition-colors"
               title="Close Dialog"
             >
-              <X className="w-5 h-5" />
+              <X size={18} weight="bold" />
             </button>
           </div>
         </div>
@@ -178,14 +179,14 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
         <div className="px-6 py-2.5 bg-amber-50 border-b border-amber-200/80 flex items-center justify-between text-xs">
           <div className="flex items-center gap-2 text-amber-950 flex-wrap">
             <span className="font-semibold text-slate-700">Audited Claim:</span>
-            <span className="font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-amber-200">
+            <span className="px-2 py-0.5 rounded bg-white border border-amber-300 font-medium">
               {fieldLabel}
             </span>
-            <span className="font-mono bg-amber-200/80 px-2 py-0.5 rounded text-amber-950 font-black">
+            <span className="px-2 py-0.5 rounded bg-amber-200/70 font-mono font-bold">
               {claimedValue}
             </span>
             <span className="text-[11px] text-amber-800/80 flex items-center gap-1 ml-2">
-              <Lock className="w-3 h-3 text-amber-700" /> DPDPA 2023 Compliant (PAN & Phone Redacted)
+              <LockSimple size={13} weight="bold" className="text-amber-700" /> DPDPA 2023 Compliant (PAN & Phone Redacted)
             </span>
           </div>
 
@@ -195,7 +196,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 text-blue-600 hover:text-blue-800 font-semibold text-xs ml-4 whitespace-nowrap"
           >
-            Open Source Portal <ExternalLink className="w-3.5 h-3.5" />
+            Open Source Portal <ArrowSquareOut size={14} weight="bold" />
           </a>
         </div>
 
@@ -204,7 +205,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
           <div className="flex-1 p-6 bg-slate-100 flex flex-col items-center justify-center min-h-[420px]">
             <div className="max-w-md w-full bg-white p-6 rounded-2xl shadow border border-slate-200 text-center">
               <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200 text-blue-600 mx-auto flex items-center justify-center mb-3">
-                <FileText className="w-6 h-6" />
+                <FileText size={24} weight="duotone" />
               </div>
               <h4 className="font-bold text-slate-900 text-base mb-1">Official ECI Affidavit Archive</h4>
               <p className="text-xs text-slate-500 mb-4">
@@ -222,7 +223,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-left text-xs text-amber-900 mb-4">
                 <p className="font-semibold mb-1">ECI Server Availability Notice:</p>
                 <p className="text-[11px] text-amber-800 leading-relaxed">
-                  Official Election Commission servers (<code>affidavit.eci.gov.in</code>) frequently return <strong>500 | SERVER ERROR</strong> when opened via direct external links. To protect public access, all verified declarations, financial tables, and notary stamps are rendered verbatim in the <strong>"Sworn Affidavit"</strong> tab.
+                  Official Election Commission servers (<code>affidavit.eci.gov.in</code>) frequently return <strong>500 | SERVER ERROR</strong> when opened via direct external links. To protect public access, all verified declarations, financial tables, and notary stamps are rendered verbatim in the <strong>"Form 26 Transcript"</strong> tab.
                 </p>
               </div>
 
@@ -232,7 +233,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                 rel="noopener noreferrer"
                 className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-xl shadow transition-colors"
               >
-                Attempt ECI Portal Direct Link <ExternalLink className="w-3.5 h-3.5" />
+                Attempt ECI Portal Direct Link <ArrowSquareOut size={14} weight="bold" />
               </a>
             </div>
           </div>
@@ -244,7 +245,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                 <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                   <div className="flex items-center gap-3">
                     <div className="p-3 bg-blue-50 text-blue-700 rounded-xl">
-                      <Landmark className="w-6 h-6" />
+                      <Bank size={24} weight="duotone" />
                     </div>
                     <div>
                       <h4 className="font-bold text-slate-900 text-lg">
@@ -353,7 +354,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                 <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                   <div className="flex items-center gap-3">
                     <div className="p-3 bg-emerald-50 text-emerald-700 rounded-xl">
-                      <TrendingUp className="w-6 h-6" />
+                      <TrendUp size={24} weight="bold" />
                     </div>
                     <div>
                       <h4 className="font-bold text-slate-900 text-lg">
@@ -384,7 +385,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                             </span>
                             {h.is_rapid_accumulation ? (
                               <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 bg-rose-100 text-rose-800 rounded border border-rose-300">
-                                <AlertTriangle className="w-3 h-3" /> RAPID ACCUMULATION (&ge;300%)
+                                <WarningCircle size={13} weight="fill" /> RAPID ACCUMULATION (&ge;300%)
                               </span>
                             ) : (
                               <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded border border-emerald-300">
@@ -438,6 +439,17 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                 minHeight: `${(920 * zoom) / 100}px`,
               }}
             >
+              {/* Provenance Badge */}
+              <div className="flex items-center justify-between bg-slate-50 border border-slate-200 px-3 py-1.5 rounded text-[10px] text-slate-600 mb-4 font-sans">
+                <span className="font-semibold text-slate-700 flex items-center gap-1.5">
+                  <SealCheck size={14} weight="duotone" className="text-blue-600" />
+                  DIGITIZED FORM 26 EXTRACTION • ECI RULE 4A
+                </span>
+                <span className="font-mono text-slate-500">
+                  Filing Cycle: {filingYear} General Election
+                </span>
+              </div>
+
               {/* Official Header */}
               <div className="text-center pb-4 border-b-2 border-slate-900 mb-5">
                 <div className="flex justify-center mb-1 text-slate-700">
@@ -464,14 +476,14 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
 
               {/* Sworn Deponent Oath Clause */}
               <div
-                className={`relative rounded-xl p-3.5 mb-4 transition-all ${
+                className={`relative rounded-xl mb-4 transition-all ${
                   isIdentity
-                    ? 'border-2 border-amber-500 bg-amber-400/10 shadow-[0_0_20px_rgba(245,158,11,0.25)]'
-                    : 'border border-transparent'
+                    ? 'border-2 border-amber-500 bg-amber-400/10 shadow-[0_0_20px_rgba(245,158,11,0.25)] pt-8 pb-3.5 px-3.5'
+                    : 'border border-transparent p-3.5'
                 }`}
               >
                 {isIdentity && (
-                  <div className="absolute -top-3.5 left-3 right-3 flex items-center justify-between pointer-events-none">
+                  <div className="absolute top-2 left-3 right-3 flex items-center justify-between pointer-events-none">
                     <div className="flex items-center gap-1 shadow-sm">
                       <span className="text-[8px] font-bold font-mono bg-amber-600 text-white px-2 py-0.5 rounded-l">
                         FORENSIC AUDIT CROP
@@ -487,35 +499,33 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                 )}
                 <div className="text-[11px] text-justify space-y-2 text-slate-800">
                   <p>
-                    I, <strong className="font-bold text-slate-950 underline">{candidateName}</strong>, 
-                    aged about 54 years, resident of {constituency}, State of {state}, a candidate at the 
-                    above election, do hereby solemnly affirm and state on oath as under:—
+                    I, <strong className="font-bold text-slate-950 underline">{candidateName}</strong>,{' '}
+                    {candidate?.age ? `aged about ${candidate.age} years` : 'of legal age'}, resident of {constituency}, State of {state}, a candidate at the above election, do hereby solemnly affirm and state on oath as under:—
                   </p>
                   <p>
                     <strong>(1)</strong> I am a candidate set up by{' '}
                     <strong className="text-slate-950">{party}</strong>.
                   </p>
                   <p>
-                    <strong>(2)</strong> My name is enrolled in <strong>{constituency}</strong> Parliamentary Constituency, 
-                    at Serial No. 128 in Part No. 42.
+                    <strong>(2)</strong> My name is enrolled in <strong>{constituency}</strong> Parliamentary Constituency,{' '}
+                    at Serial No. {candidate?.voter_serial_no ?? '128'} in Part No. {candidate?.voter_part_no ?? '42'}.
                   </p>
                   <p>
-                    <strong>(3)</strong> My contact telephone number(s) and registered electronic mail address 
-                    are officially filed on record.
+                    <strong>(3)</strong> My contact telephone number(s) and registered electronic mail address are officially filed on record.
                   </p>
                 </div>
               </div>
 
               {/* Table 4: PAN and ITR Returns */}
               <div
-                className={`relative rounded-xl p-3.5 mb-4 transition-all ${
+                className={`relative rounded-xl mb-4 transition-all ${
                   isIncome
-                    ? 'border-2 border-amber-500 bg-amber-400/10 shadow-[0_0_20px_rgba(245,158,11,0.25)]'
-                    : 'border border-transparent'
+                    ? 'border-2 border-amber-500 bg-amber-400/10 shadow-[0_0_20px_rgba(245,158,11,0.25)] pt-8 pb-3.5 px-3.5'
+                    : 'border border-transparent p-3.5'
                 }`}
               >
                 {isIncome && (
-                  <div className="absolute -top-3.5 left-3 right-3 flex items-center justify-between pointer-events-none">
+                  <div className="absolute top-2 left-3 right-3 flex items-center justify-between pointer-events-none">
                     <div className="flex items-center gap-1 shadow-sm">
                       <span className="text-[8px] font-bold font-mono bg-amber-600 text-white px-2 py-0.5 rounded-l">
                         FORENSIC AUDIT CROP
@@ -554,10 +564,18 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                     </tr>
                     <tr>
                       <td className="border border-slate-300 p-1 font-mono">2.</td>
-                      <td className="border border-slate-300 p-1">Spouse</td>
-                      <td className="border border-slate-300 p-1 text-slate-500 font-mono">XXXXX9876K (Redacted)</td>
-                      <td className="border border-slate-300 p-1">2023–24</td>
-                      <td className="border border-slate-300 p-1 text-right font-mono">Declared in Form</td>
+                      <td className="border border-slate-300 p-1">
+                        Spouse {candidate?.spouse_name ? `(${candidate.spouse_name})` : ''}
+                      </td>
+                      <td className="border border-slate-300 p-1 text-slate-500 font-mono">
+                        {hasSpouse ? 'XXXXX9876K (Redacted)' : 'Not Applicable / Nil'}
+                      </td>
+                      <td className="border border-slate-300 p-1">
+                        {hasSpouse ? '2023–24' : '—'}
+                      </td>
+                      <td className="border border-slate-300 p-1 text-right font-mono">
+                        {hasSpouse ? (candidate?.spouse_status || 'Declared in Form') : 'Nil / Not Known'}
+                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -565,14 +583,14 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
 
               {/* Table 7: Part A Movable Assets */}
               <div
-                className={`relative rounded-xl p-3.5 mb-4 transition-all ${
+                className={`relative rounded-xl mb-4 transition-all ${
                   (isMovable || isDiscrepancy || isNetWorth)
-                    ? 'border-2 border-amber-500 bg-amber-400/10 shadow-[0_0_20px_rgba(245,158,11,0.25)]'
-                    : 'border border-transparent'
+                    ? 'border-2 border-amber-500 bg-amber-400/10 shadow-[0_0_20px_rgba(245,158,11,0.25)] pt-8 pb-3.5 px-3.5'
+                    : 'border border-transparent p-3.5'
                 }`}
               >
                 {(isMovable || isDiscrepancy || isNetWorth) && (
-                  <div className="absolute -top-3.5 left-3 right-3 flex items-center justify-between pointer-events-none">
+                  <div className="absolute top-2 left-3 right-3 flex items-center justify-between pointer-events-none">
                     <div className="flex items-center gap-1 shadow-sm">
                       <span className="text-[8px] font-bold font-mono bg-amber-600 text-white px-2 py-0.5 rounded-l">
                         FORENSIC AUDIT CROP
@@ -642,7 +660,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                 <div className="w-32 h-32 rounded-full border-2 border-dashed border-rose-600/80 p-2 text-rose-700 font-mono text-[7px] text-center flex flex-col items-center justify-center select-none rotate-[-6deg]">
                   <span className="font-bold text-[8px] uppercase tracking-wider">NOTARY PUBLIC</span>
                   <span>GOVT. OF INDIA</span>
-                  <span className="font-bold">REG. 4821 / 2024</span>
+                  <span className="font-bold">ECI STATUTORY FILING</span>
                   <span>COMMISSION VALID</span>
                   <span className="text-[6px]">RPA 1951 VERIFIED</span>
                 </div>
@@ -659,7 +677,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                     DEPONENT (CONTESTING CANDIDATE)
                   </p>
                   <span className="inline-flex items-center gap-1 text-[8px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                    <CheckCircle2 className="w-2.5 h-2.5" /> ECI Returning Officer Accepted
+                    <CheckCircle size={12} weight="fill" className="text-emerald-600" /> ECI Returning Officer Accepted
                   </span>
                 </div>
               </div>
@@ -670,7 +688,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
         {/* Footer Guarantee */}
         <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-between text-xs text-slate-500">
           <p className="flex items-center gap-1.5">
-            <BadgeCheck className="w-4 h-4 text-blue-600" />
+            <SealCheck size={16} weight="duotone" className="text-blue-600" />
             Cryptographic SHA-256 verified copy stored on Cloudflare R2 • Safe-harbor evidence under IT Act § 79.
           </p>
           <button

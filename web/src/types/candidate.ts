@@ -38,6 +38,14 @@ export interface Candidate {
   party?: string;
   filing_year: number;
   
+  // Sworn Affidavit Demographics
+  age?: number;
+  spouse_name?: string;
+  spouse_status?: 'not_applicable' | 'declared' | 'none' | string;
+  education?: string;
+  voter_serial_no?: number | string;
+  voter_part_no?: number | string;
+  
   // Financial profile
   total_movable_assets: number;
   total_immovable_assets: number;

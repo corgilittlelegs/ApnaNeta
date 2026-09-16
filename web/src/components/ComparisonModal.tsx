@@ -389,7 +389,7 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
                         }
                         className="text-blue-600 hover:text-blue-800 font-semibold text-[11px] hover:underline inline-flex items-center gap-0.5"
                       >
-                        Affidavit Scan &rarr;
+                        Form 26 Proof &rarr;
                       </button>
                     </div>
                   </div>

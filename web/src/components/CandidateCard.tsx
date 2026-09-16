@@ -257,7 +257,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
             className="text-blue-700 hover:text-blue-900 font-semibold hover:underline flex items-center gap-1 active:scale-95"
           >
             <FileMagnifyingGlass size={14} weight="bold" />
-            <span>Affidavit Scan →</span>
+            <span>Form 26 Proof →</span>
           </button>
         </div>
       </div>
