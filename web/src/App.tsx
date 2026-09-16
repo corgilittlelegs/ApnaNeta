@@ -7,7 +7,20 @@ import { ComparisonModal } from './components/ComparisonModal';
 import { ReportCardModal } from './components/ReportCardModal';
 import { LeaderboardsView } from './components/LeaderboardsView';
 import { Candidate, BoundingBox } from './types/candidate';
-import { Cpu, Database, Loader2, Layers, X, ArrowRight } from 'lucide-react';
+import {
+  Cpu,
+  Database,
+  SpinnerGap,
+  Stack,
+  X,
+  ArrowRight,
+  ShieldCheck,
+  Scales,
+  Trophy,
+  SquaresFour,
+  Bank,
+  CheckCircle,
+} from '@phosphor-icons/react';
 
 // Seed sample data for interactive citizen demonstration
 const SAMPLE_CANDIDATES: Candidate[] = [
@@ -862,7 +875,7 @@ export const App: React.FC = () => {
   }, [candidates, searchQuery, selectedHouse, filterState]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900 font-sans pb-20 md:pb-0">
       <Navbar
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -872,56 +885,67 @@ export const App: React.FC = () => {
         onViewChange={setActiveView}
       />
 
-      {/* Hero / System Overview */}
-      <section className="bg-white border-b border-slate-200 py-8 px-4 sm:px-6 lg:px-8">
+      {/* Civic Pulse Masthead / Telemetry Overview */}
+      <section className="bg-white border-b border-slate-200/90 py-8 px-4 sm:px-6 lg:px-8 shadow-2xs">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="inline-flex items-center gap-1 text-[11px] font-mono font-semibold uppercase bg-emerald-50 text-emerald-800 border border-emerald-200/80 px-2 py-0.5 rounded-md">
+                  <ShieldCheck size={14} weight="duotone" className="text-emerald-600" />
+                  Section 79 Evidentiary Safe Harbor
+                </span>
+                <span className="text-xs text-slate-400 font-sans hidden sm:inline">• ECI Form 26 Sworn Disclosures</span>
+              </div>
+              <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tight leading-tight">
                 Empirical Political Accountability & Forensic Audits
               </h1>
-              <p className="text-slate-500 text-sm mt-1 max-w-2xl">
-                Continuous ingestion across ECI affidavits, Sansad parliamentary records, and MoSPI fund flows.
-                Every metric is backed by cryptographic PDF coordinates under Section 79 Safe Harbor.
+              <p className="text-slate-600 text-xs sm:text-sm mt-1.5 max-w-2xl font-sans leading-relaxed">
+                Automated civic intelligence cross-referencing ECI affidavits, Sansad parliamentary participation, and MoSPI public fund flows. Every metric is bound to cryptographic PDF coordinates.
               </p>
             </div>
 
-            {/* Cloud Status Badges */}
+            {/* Cloud Engine Telemetry Badges */}
             <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
-              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl font-semibold">
-                <Cpu className="w-3.5 h-3.5 text-emerald-600" />
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl font-semibold shadow-2xs">
+                <Cpu size={15} weight="duotone" className="text-emerald-600" />
                 Gemini 3.8 Flash Active
               </div>
-              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold ${isLiveConnected ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-blue-50 text-blue-700 border border-blue-200'}`}>
-                <Database className="w-3.5 h-3.5 text-blue-600" />
+              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold shadow-2xs ${isLiveConnected ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-blue-50 text-blue-800 border border-blue-200'}`}>
+                <Database size={15} weight="duotone" className="text-blue-600" />
                 {isLiveConnected ? `Supabase Live (${(totalDatabaseCount || candidates.length).toLocaleString()} MPs)` : 'Supabase & R2 Online'}
               </div>
             </div>
           </div>
 
-          {/* Quick Metrics Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80">
-              <span className="text-xs text-slate-500 font-medium">MPs & Candidates Indexed</span>
-              <p className="text-xl font-bold font-mono text-slate-900 mt-1">{(totalDatabaseCount || candidates.length).toLocaleString()}</p>
-              <span className="text-[10px] text-emerald-600 font-medium">
-                {isLiveConnected ? 'Live from Supabase' : 'Live from OpenSanctions'}
+          {/* Quick Telemetry Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-6">
+            <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80 shadow-2xs">
+              <span className="text-[11px] text-slate-500 font-medium block">MPs & Candidates Indexed</span>
+              <p className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-slate-900 mt-1">
+                {(totalDatabaseCount || candidates.length).toLocaleString()}
+              </p>
+              <span className="text-[10px] text-emerald-700 font-medium">
+                {isLiveConnected ? 'Live from Supabase' : 'Verified OpenSanctions'}
               </span>
             </div>
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80">
-              <span className="text-xs text-slate-500 font-medium">Double-Entry Audits</span>
-              <p className="text-xl font-bold font-mono text-slate-900 mt-1">100%</p>
+
+            <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80 shadow-2xs">
+              <span className="text-[11px] text-slate-500 font-medium block">Double-Entry Audits</span>
+              <p className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-slate-900 mt-1">100%</p>
               <span className="text-[10px] text-slate-500">Automated arithmetic checks</span>
             </div>
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80">
-              <span className="text-xs text-slate-500 font-medium">MoSPI MPLADS & CAGR</span>
-              <p className="text-xl font-bold font-mono text-slate-900 mt-1">10-Yr Flow</p>
-              <span className="text-[10px] text-blue-600 font-medium">Velocity & Wealth Surge</span>
+
+            <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80 shadow-2xs">
+              <span className="text-[11px] text-slate-500 font-medium block">MoSPI MPLADS Velocity</span>
+              <p className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-slate-900 mt-1">10-Yr Flow</p>
+              <span className="text-[10px] text-blue-700 font-medium">Constituency Fund Tracking</span>
             </div>
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80">
-              <span className="text-xs text-slate-500 font-medium">Monthly Operating Cost</span>
-              <p className="text-xl font-bold font-mono text-emerald-600 mt-1">$0.00</p>
-              <span className="text-[10px] text-slate-500">100% Free Tier Cloud</span>
+
+            <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80 shadow-2xs">
+              <span className="text-[11px] text-slate-500 font-medium block">Monthly Operating Cost</span>
+              <p className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-emerald-700 mt-1">$0.00</p>
+              <span className="text-[10px] text-slate-500">100% Free Public Good</span>
             </div>
           </div>
         </div>
@@ -939,7 +963,7 @@ export const App: React.FC = () => {
           />
         ) : (
           <>
-            {/* Interactive Constituency & Forensic Explorer */}
+            {/* Interactive Constituency & Forensic Filter Dock */}
             <ConstituencyFilter
               filters={filterState}
               onFilterChange={setFilterState}
@@ -951,21 +975,21 @@ export const App: React.FC = () => {
 
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <h2 className="text-lg font-bold text-slate-900">
-                  Candidate Profiles & Audited Declarations ({filteredCandidates.length})
+                <h2 className="font-serif text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                  Parliamentary Profiles & Audited Declarations ({filteredCandidates.length.toLocaleString()})
                 </h2>
                 {isLoading && (
-                  <span className="flex items-center gap-1.5 text-xs text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
-                    <Loader2 className="w-3 h-3 animate-spin text-blue-600" /> Connecting to Supabase...
+                  <span className="flex items-center gap-1.5 text-xs text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
+                    <SpinnerGap size={14} weight="bold" className="animate-spin text-blue-700" /> Connecting...
                   </span>
                 )}
               </div>
-              <span className="text-xs text-slate-500">Click any card to inspect photo proof or export dossier</span>
+              <span className="text-xs text-slate-500 hidden sm:inline">Click any card to inspect photo proof or export dossier</span>
             </div>
 
             {filteredCandidates.length === 0 ? (
-              <div className="p-12 text-center bg-white rounded-2xl border border-slate-200">
-                <p className="text-slate-500 text-sm">No politicians found matching your selected filters.</p>
+              <div className="p-12 text-center bg-white rounded-2xl border border-slate-200 shadow-2xs">
+                <p className="text-slate-600 text-sm font-medium">No parliamentarians found matching your selected filters.</p>
               </div>
             ) : (
               <>
@@ -986,7 +1010,7 @@ export const App: React.FC = () => {
                   <div className="mt-10 text-center">
                     <button
                       onClick={() => setDisplayLimit((prev) => prev + 50)}
-                      className="px-8 py-3.5 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 text-slate-800 text-sm font-semibold rounded-2xl shadow-sm hover:shadow transition-all duration-200 cursor-pointer"
+                      className="px-8 py-3.5 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 text-slate-800 text-sm font-semibold rounded-2xl shadow-sm hover:shadow transition-all duration-200 cursor-pointer active:scale-95"
                     >
                       Load More Parliamentarians ({filteredCandidates.length - displayLimit} remaining)
                     </button>
@@ -1000,9 +1024,9 @@ export const App: React.FC = () => {
 
       {/* Sticky Bottom Comparison Drawer */}
       {selectedForComparison.length > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-slate-900 text-white rounded-2xl shadow-2xl px-4 sm:px-6 py-3 border border-slate-700 flex items-center gap-3 sm:gap-5 animate-in slide-in-from-bottom-6 max-w-[95vw]">
+        <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-40 bg-[#0A192F] text-white rounded-2xl shadow-2xl px-4 sm:px-6 py-3 border border-slate-700 flex items-center gap-3 sm:gap-5 animate-in slide-in-from-bottom-6 max-w-[95vw]">
           <div className="flex items-center gap-2">
-            <Layers className="w-4 h-4 text-blue-400 flex-shrink-0" />
+            <Stack size={18} weight="duotone" className="text-blue-400 flex-shrink-0" />
             <span className="text-xs font-semibold hidden md:inline">Compare:</span>
             <div className="flex items-center gap-1.5 overflow-x-auto max-w-[200px] sm:max-w-xs md:max-w-md">
               {selectedForComparison.map((c) => (
@@ -1016,7 +1040,7 @@ export const App: React.FC = () => {
                     className="text-slate-400 hover:text-rose-400 p-0.5 rounded transition-colors"
                     title="Remove"
                   >
-                    <X className="w-3 h-3" />
+                    <X size={12} weight="bold" />
                   </button>
                 </div>
               ))}
@@ -1026,10 +1050,10 @@ export const App: React.FC = () => {
           <div className="flex items-center gap-2 flex-shrink-0">
             <button
               onClick={() => setIsComparisonOpen(true)}
-              className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
             >
               <span>Side-by-Side ({selectedForComparison.length})</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowRight size={13} weight="bold" />
             </button>
             <button
               onClick={handleClearComparison}
@@ -1040,6 +1064,46 @@ export const App: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Mobile Sticky Bottom Navigation Dock */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-[#0A192F]/95 backdrop-blur-md border-t border-slate-800 flex items-center justify-around h-16 px-2 text-white shadow-lg">
+        <button
+          onClick={() => setActiveView('directory')}
+          className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${
+            activeView === 'directory' ? 'text-blue-400 font-bold' : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <SquaresFour size={20} weight={activeView === 'directory' ? 'fill' : 'duotone'} />
+          <span className="text-[10px] mt-0.5 font-sans">Directory</span>
+        </button>
+
+        <button
+          onClick={() => setActiveView('leaderboards')}
+          className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${
+            activeView === 'leaderboards' ? 'text-amber-400 font-bold' : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <Trophy size={20} weight={activeView === 'leaderboards' ? 'fill' : 'duotone'} />
+          <span className="text-[10px] mt-0.5 font-sans">Leaderboards</span>
+        </button>
+
+        <button
+          onClick={() => {
+            if (selectedForComparison.length > 0) {
+              setIsComparisonOpen(true);
+            }
+          }}
+          className="flex flex-col items-center justify-center flex-1 py-1 text-slate-400 hover:text-slate-200 relative"
+        >
+          <Scales size={20} weight="duotone" />
+          <span className="text-[10px] mt-0.5 font-sans">Compare</span>
+          {selectedForComparison.length > 0 && (
+            <span className="absolute top-1 right-5 w-4 h-4 bg-blue-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center font-mono">
+              {selectedForComparison.length}
+            </span>
+          )}
+        </button>
+      </nav>
 
       {/* Comparison Modal */}
       <ComparisonModal
@@ -1071,10 +1135,10 @@ export const App: React.FC = () => {
       />
 
       {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 py-6 px-4 text-center text-xs text-slate-500">
+      <footer className="bg-white border-t border-slate-200 py-6 px-4 text-center text-xs text-slate-500 font-sans">
         <p>
           Apna Neta is an open-source non-partisan civic technology project. All declarations are reproduced
-          verbatim from sworn ECI filings under Section 3(c)(ii) of the Digital Personal Data Protection Act, 2023.
+          verbatim from sworn ECI Form 26 filings under Section 3(c)(ii) of the Digital Personal Data Protection Act, 2023.
         </p>
       </footer>
     </div>

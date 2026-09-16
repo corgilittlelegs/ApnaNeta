@@ -106,18 +106,18 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
   // Branding Text
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
-  ctx.font = '900 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.font = 'bold 24px Newsreader, Georgia, serif';
   ctx.fillStyle = '#ffffff';
   ctx.fillText('APNA NETA', pad + 68, 72);
 
-  ctx.font = '700 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-  ctx.fillStyle = '#38bdf8';
+  ctx.font = '700 11px "Plus Jakarta Sans", -apple-system, sans-serif';
+  ctx.fillStyle = '#60a5fa';
   if ('letterSpacing' in ctx) {
     try {
       (ctx as any).letterSpacing = '1.5px';
     } catch {}
   }
-  ctx.fillText('ECI SWORN CITIZEN AUDIT', pad + 68, 89);
+  ctx.fillText('THE SOVEREIGN CIVIC LEDGER • ECI AUDIT', pad + 68, 89);
   if ('letterSpacing' in ctx) {
     try {
       (ctx as any).letterSpacing = '0px';
@@ -184,11 +184,11 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
   curY += 45;
   const nameLen = candidate.name.length;
   if (nameLen > 30) {
-    ctx.font = '900 28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.font = 'bold 28px Newsreader, Georgia, serif';
   } else if (nameLen > 22) {
-    ctx.font = '900 32px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.font = 'bold 32px Newsreader, Georgia, serif';
   } else {
-    ctx.font = '900 38px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.font = 'bold 38px Newsreader, Georgia, serif';
   }
   ctx.fillStyle = '#ffffff';
   let displayName = candidate.name;

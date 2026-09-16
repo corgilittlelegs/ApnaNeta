@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, X } from 'lucide-react';
+import { MapPin, X, Funnel, WarningCircle, Scales, TrendUp, Sparkle } from '@phosphor-icons/react';
 
 export interface FilterState {
   state: string;
@@ -43,39 +43,95 @@ export const ConstituencyFilter: React.FC<ConstituencyFilterProps> = ({
     });
   };
 
+  const handleQuickPill = (flag: FilterState['forensicFlag']) => {
+    onFilterChange({
+      ...filters,
+      forensicFlag: filters.forensicFlag === flag ? 'ALL' : flag,
+    });
+  };
+
   return (
     <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-4 mb-6 transition-all">
+      {/* Header Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg">
-            <MapPin className="w-4 h-4" />
+        <div className="flex items-center gap-2.5">
+          <div className="p-1.5 bg-blue-50 text-blue-700 rounded-lg border border-blue-100">
+            <MapPin size={16} weight="duotone" />
           </div>
           <div>
-            <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800">
-              Constituency & Forensic Explorer
+            <h3 className="font-serif font-bold text-sm tracking-tight text-slate-900">
+              Constituency & Forensic Filter Dock
             </h3>
-            <p className="text-[11px] text-slate-500">
-              Filter across India's 543 Lok Sabha seats, financial tiers, and forensic audit flags
+            <p className="text-[11px] text-slate-500 font-sans">
+              Audit across India's 543 Lok Sabha seats, financial disclosures, and algorithmic flags
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs font-mono font-bold px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md">
-            {totalMatches} matching MP{totalMatches === 1 ? '' : 's'}
+          <span className="text-xs font-mono tabular-nums font-bold px-2.5 py-1 bg-slate-100 text-slate-800 rounded-lg border border-slate-200">
+            {totalMatches.toLocaleString()} matching MP{totalMatches === 1 ? '' : 's'}
           </span>
           {hasActiveFilters && (
             <button
               onClick={resetFilters}
-              className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-2.5 py-1 rounded-lg transition-colors"
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-700 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-2.5 py-1 rounded-lg border border-rose-200/60 transition-colors"
             >
-              <X className="w-3 h-3" /> Reset Filters
+              <X size={12} weight="bold" /> Reset All
             </button>
           )}
         </div>
       </div>
 
-      {/* Filter Selectors Grid */}
+      {/* 1-Tap Quick Filter Pills (Touch Scrollable on Mobile) */}
+      <div className="flex items-center gap-2 overflow-x-auto py-3 no-scrollbar text-xs border-b border-slate-100 whitespace-nowrap">
+        <span className="text-[10px] uppercase font-mono font-semibold text-slate-400 pl-0.5">Quick Filters:</span>
+        <button
+          onClick={() => handleQuickPill('ALL')}
+          className={`px-3 py-1 rounded-full text-xs font-semibold transition-all border ${
+            filters.forensicFlag === 'ALL'
+              ? 'bg-[#0A192F] text-white border-[#0A192F] shadow-2xs'
+              : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+          }`}
+        >
+          All 543 Lok Sabha
+        </button>
+        <button
+          onClick={() => handleQuickPill('DISCREPANCY')}
+          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold transition-all border ${
+            filters.forensicFlag === 'DISCREPANCY'
+              ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
+              : 'bg-amber-50 text-amber-800 border-amber-200/80 hover:bg-amber-100'
+          }`}
+        >
+          <WarningCircle size={13} weight="fill" />
+          <span>Arithmetic Discrepancies</span>
+        </button>
+        <button
+          onClick={() => handleQuickPill('RAPID_WEALTH')}
+          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold transition-all border ${
+            filters.forensicFlag === 'RAPID_WEALTH'
+              ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
+              : 'bg-blue-50 text-blue-800 border-blue-200/80 hover:bg-blue-100'
+          }`}
+        >
+          <TrendUp size={13} weight="bold" />
+          <span>Rapid Wealth Surge (≥300%)</span>
+        </button>
+        <button
+          onClick={() => handleQuickPill('CRIMINAL')}
+          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold transition-all border ${
+            filters.forensicFlag === 'CRIMINAL'
+              ? 'bg-rose-600 text-white border-rose-600 shadow-2xs'
+              : 'bg-rose-50 text-rose-800 border-rose-200/80 hover:bg-rose-100'
+          }`}
+        >
+          <Scales size={13} weight="duotone" />
+          <span>Declared Charges</span>
+        </button>
+      </div>
+
+      {/* Advanced Filter Selectors Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 pt-3">
         {/* State Selection */}
         <div>
@@ -88,10 +144,10 @@ export const ConstituencyFilter: React.FC<ConstituencyFilterProps> = ({
               onFilterChange({
                 ...filters,
                 state: e.target.value,
-                constituency: 'ALL', // Reset constituency when state changes
+                constituency: 'ALL',
               })
             }
-            className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-slate-800 font-medium focus:bg-white focus:ring-2 focus:ring-blue-100 outline-none transition-all cursor-pointer"
+            className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-slate-800 font-medium focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none transition-all cursor-pointer hover:border-slate-300"
           >
             <option value="ALL">All States / UTs ({availableStates.length})</option>
             {availableStates.map((s) => (
@@ -110,7 +166,7 @@ export const ConstituencyFilter: React.FC<ConstituencyFilterProps> = ({
           <select
             value={filters.constituency}
             onChange={(e) => onFilterChange({ ...filters, constituency: e.target.value })}
-            className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-slate-800 font-medium focus:bg-white focus:ring-2 focus:ring-blue-100 outline-none transition-all cursor-pointer"
+            className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-slate-800 font-medium focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none transition-all cursor-pointer hover:border-slate-300"
           >
             <option value="ALL">All Constituencies</option>
             {availableConstituencies.map((c) => (
@@ -129,7 +185,7 @@ export const ConstituencyFilter: React.FC<ConstituencyFilterProps> = ({
           <select
             value={filters.party}
             onChange={(e) => onFilterChange({ ...filters, party: e.target.value })}
-            className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-slate-800 font-medium focus:bg-white focus:ring-2 focus:ring-blue-100 outline-none transition-all cursor-pointer"
+            className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-slate-800 font-medium focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none transition-all cursor-pointer hover:border-slate-300"
           >
             <option value="ALL">All Parties</option>
             {availableParties.map((p) => (
@@ -153,7 +209,7 @@ export const ConstituencyFilter: React.FC<ConstituencyFilterProps> = ({
                 forensicFlag: e.target.value as FilterState['forensicFlag'],
               })
             }
-            className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-slate-800 font-medium focus:bg-white focus:ring-2 focus:ring-blue-100 outline-none transition-all cursor-pointer"
+            className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-slate-800 font-medium focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none transition-all cursor-pointer hover:border-slate-300"
           >
             <option value="ALL">All Candidates</option>
             <option value="DISCREPANCY">⚠️ Discrepancy Flagged</option>
@@ -177,7 +233,7 @@ export const ConstituencyFilter: React.FC<ConstituencyFilterProps> = ({
                 wealthTier: e.target.value as FilterState['wealthTier'],
               })
             }
-            className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-slate-800 font-medium focus:bg-white focus:ring-2 focus:ring-blue-100 outline-none transition-all cursor-pointer"
+            className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-slate-800 font-medium focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none transition-all cursor-pointer hover:border-slate-300"
           >
             <option value="ALL">All Wealth Tiers</option>
             <option value="100CR_PLUS">&ge; ₹100 Crore</option>
@@ -190,3 +246,4 @@ export const ConstituencyFilter: React.FC<ConstituencyFilterProps> = ({
     </div>
   );
 };
+
