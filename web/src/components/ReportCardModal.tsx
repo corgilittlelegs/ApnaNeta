@@ -18,6 +18,7 @@ import {
   copyReportCardImageToClipboard,
   getReportCardFactSheet,
   getWhatsAppShareUrl,
+  getTwitterShareUrl,
 } from '../utils/ReportCardExport';
 
 interface ReportCardModalProps {
@@ -66,18 +67,25 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
 
   const handleDownload = async () => {
     if (!candidate) return;
-    await downloadReportCard(candidate);
+    await downloadReportCard(candidate, dataUrl || undefined);
   };
 
   const handleShareWhatsApp = async () => {
     if (!candidate) return;
     // Attempt native file share on mobile first
-    const shared = await shareReportCardViaNative(candidate);
-    if (!shared) {
+    const shareResult = await shareReportCardViaNative(candidate);
+    if (shareResult === 'unsupported') {
       // Fallback to WhatsApp URL intent
       const url = getWhatsAppShareUrl(candidate);
       window.open(url, '_blank', 'noopener,noreferrer');
     }
+    // If shareResult === 'cancelled', user dismissed the OS share sheet - do not force popup
+  };
+
+  const handleShareTwitter = () => {
+    if (!candidate) return;
+    const url = getTwitterShareUrl(candidate);
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   const handleCopyImage = async () => {
@@ -146,11 +154,11 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
 
         {/* Action Controls */}
         <div className="p-4 sm:p-5 bg-white border-t border-slate-200 space-y-3">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
             {/* Download */}
             <button
               onClick={handleDownload}
-              className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-xl shadow-sm transition-all"
+              className="flex items-center justify-center gap-1.5 px-2.5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-xl shadow-sm transition-all cursor-pointer"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Download</span>
@@ -159,16 +167,28 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
             {/* WhatsApp */}
             <button
               onClick={handleShareWhatsApp}
-              className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-all"
+              className="flex items-center justify-center gap-1.5 px-2.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-all cursor-pointer"
             >
               <Share2 className="w-3.5 h-3.5" />
               <span>WhatsApp</span>
             </button>
 
+            {/* Post to X */}
+            <button
+              onClick={handleShareTwitter}
+              className="flex items-center justify-center gap-1.5 px-2.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-all cursor-pointer"
+              title="Share Report Card on X (Twitter)"
+            >
+              <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+              </svg>
+              <span>Post to X</span>
+            </button>
+
             {/* Copy Image */}
             <button
               onClick={handleCopyImage}
-              className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 transition-all"
+              className="flex items-center justify-center gap-1.5 px-2.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 transition-all cursor-pointer"
             >
               {copiedImage ? (
                 <>
@@ -186,7 +206,7 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
             {/* Copy Fact Sheet */}
             <button
               onClick={handleCopyFactSheet}
-              className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 transition-all"
+              className="flex items-center justify-center gap-1.5 px-2.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 transition-all cursor-pointer col-span-2 sm:col-span-1"
             >
               {copiedText ? (
                 <>

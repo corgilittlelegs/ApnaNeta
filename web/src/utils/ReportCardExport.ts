@@ -7,9 +7,10 @@ import { Candidate } from '../types/candidate';
  */
 
 const formatINR = (val: number) => {
-  if (val >= 10000000) return `₹${(val / 10000000).toFixed(2)} Cr`;
-  if (val >= 100000) return `₹${(val / 100000).toFixed(2)} Lakh`;
-  return `₹${val.toLocaleString('en-IN')}`;
+  const num = Number(val || 0);
+  if (num >= 10000000) return `₹${(num / 10000000).toFixed(2)} Cr`;
+  if (num >= 100000) return `₹${(num / 100000).toFixed(2)} Lakh`;
+  return `₹${num.toLocaleString('en-IN')}`;
 };
 
 /**
@@ -111,9 +112,17 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
 
   ctx.font = '700 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
   ctx.fillStyle = '#38bdf8';
-  ctx.letterSpacing = '1.5px';
+  if ('letterSpacing' in ctx) {
+    try {
+      (ctx as any).letterSpacing = '1.5px';
+    } catch {}
+  }
   ctx.fillText('ECI SWORN CITIZEN AUDIT', pad + 68, 89);
-  ctx.letterSpacing = '0px';
+  if ('letterSpacing' in ctx) {
+    try {
+      (ctx as any).letterSpacing = '0px';
+    } catch {}
+  }
 
   // Verification Shield Tag (Right)
   roundRect(ctx, size - pad - 210, 50, 210, 38, 10);
@@ -139,10 +148,16 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
   // 4. Candidate Identity Hero Section
   let curY = 160;
 
-  // Party Badge
-  const partyText = (candidate.party || 'Independent').toUpperCase();
+  // Party Badge (with safety truncation for very long party names)
+  let partyText = (candidate.party || 'Independent').toUpperCase();
   ctx.font = '800 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-  const partyWidth = Math.min(ctx.measureText(partyText).width + 24, 400);
+  if (ctx.measureText(partyText).width > 350) {
+    while (partyText.length > 5 && ctx.measureText(partyText + '…').width > 350) {
+      partyText = partyText.slice(0, -1);
+    }
+    partyText += '…';
+  }
+  const partyWidth = ctx.measureText(partyText).width + 24;
   roundRect(ctx, pad, curY - 22, partyWidth, 30, 8);
   ctx.fillStyle = 'rgba(59, 130, 246, 0.2)';
   ctx.fill();
@@ -165,12 +180,19 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
   ctx.font = '600 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
   ctx.fillText(yearText, pad + partyWidth + 24, curY - 2);
 
-  // Candidate Name
+  // Candidate Name (with responsive font scaling)
   curY += 45;
-  ctx.font = '900 38px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  const nameLen = candidate.name.length;
+  if (nameLen > 30) {
+    ctx.font = '900 28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  } else if (nameLen > 22) {
+    ctx.font = '900 32px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  } else {
+    ctx.font = '900 38px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  }
   ctx.fillStyle = '#ffffff';
   let displayName = candidate.name;
-  if (displayName.length > 34) displayName = displayName.slice(0, 32) + '…';
+  if (displayName.length > 40) displayName = displayName.slice(0, 38) + '…';
   ctx.fillText(displayName, pad, curY);
 
   // Constituency & State Subtitle
@@ -346,7 +368,7 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
     ctx.fillStyle = '#fca5a5';
     ctx.fillText(
       `Part A itemized disclosure sums do NOT match Part B abstract summary. Delta: ${formatINR(
-        candidate.delta_movable + candidate.delta_immovable
+        (candidate.delta_movable || 0) + (candidate.delta_immovable || 0)
       )}`,
       pad + 24,
       curY + 66
@@ -456,8 +478,8 @@ export async function generateReportCardBlob(candidate: Candidate): Promise<Blob
   });
 }
 
-export async function downloadReportCard(candidate: Candidate): Promise<void> {
-  const dataUrl = await generateReportCardDataUrl(candidate);
+export async function downloadReportCard(candidate: Candidate, existingDataUrl?: string): Promise<void> {
+  const dataUrl = existingDataUrl || (await generateReportCardDataUrl(candidate));
   const a = document.createElement('a');
   const safeName = candidate.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
   a.download = `apna_neta_report_card_${safeName}_${candidate.filing_year}.png`;
@@ -467,13 +489,15 @@ export async function downloadReportCard(candidate: Candidate): Promise<void> {
   document.body.removeChild(a);
 }
 
+export type NativeShareResult = 'shared' | 'cancelled' | 'unsupported';
+
 /**
  * Share via native Web Share API on mobile devices (e.g. Android Chrome, iOS Safari).
  * Enables direct image sending into WhatsApp, Twitter, or Instagram.
  */
-export async function shareReportCardViaNative(candidate: Candidate): Promise<boolean> {
+export async function shareReportCardViaNative(candidate: Candidate): Promise<NativeShareResult> {
   if (typeof navigator === 'undefined' || !navigator.share) {
-    return false;
+    return 'unsupported';
   }
 
   try {
@@ -484,23 +508,27 @@ export async function shareReportCardViaNative(candidate: Candidate): Promise<bo
     const shareData = {
       title: `${candidate.name} Civic Report Card`,
       text: `Audit Report Card for ${candidate.name} (${candidate.party || 'IND'}, ${candidate.constituency}). Verified from official sworn ECI Form 26 affidavit on Apna Neta.`,
-      url: 'https://apnaneta.in',
+      url: 'https://apnaneta.corgi-littlelegs.workers.dev',
       files: [file],
     };
 
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share(shareData);
-      return true;
+      return 'shared';
     }
-  } catch (err) {
-    console.warn('Native share failed or was cancelled:', err);
+  } catch (err: any) {
+    if (err && (err.name === 'AbortError' || String(err).includes('abort'))) {
+      return 'cancelled';
+    }
+    console.warn('Native share failed:', err);
   }
 
-  return false;
+  return 'unsupported';
 }
 
 /**
  * Copy the generated PNG directly to the system clipboard.
+ * Uses Promise.resolve(blob) to support WebKit/Safari and Blink/Chrome.
  */
 export async function copyReportCardImageToClipboard(candidate: Candidate): Promise<boolean> {
   if (typeof navigator === 'undefined' || !navigator.clipboard || !navigator.clipboard.write) {
@@ -511,7 +539,7 @@ export async function copyReportCardImageToClipboard(candidate: Candidate): Prom
     const blob = await generateReportCardBlob(candidate);
     await navigator.clipboard.write([
       new ClipboardItem({
-        'image/png': blob,
+        'image/png': Promise.resolve(blob),
       }),
     ]);
     return true;
@@ -526,9 +554,10 @@ export async function copyReportCardImageToClipboard(candidate: Candidate): Prom
  */
 export function getReportCardFactSheet(candidate: Candidate): string {
   const formatVal = (val: number) => {
-    if (val >= 10000000) return `₹${(val / 10000000).toFixed(2)} Cr`;
-    if (val >= 100000) return `₹${(val / 100000).toFixed(2)} Lakh`;
-    return `₹${val.toLocaleString('en-IN')}`;
+    const num = Number(val || 0);
+    if (num >= 10000000) return `₹${(num / 10000000).toFixed(2)} Cr`;
+    if (num >= 100000) return `₹${(num / 100000).toFixed(2)} Lakh`;
+    return `₹${num.toLocaleString('en-IN')}`;
   };
 
   const lines = [
@@ -562,11 +591,11 @@ export function getReportCardFactSheet(candidate: Candidate): string {
     ``,
     `🔍 *Audit Verdict:* ${
       candidate.has_arithmetic_discrepancy
-        ? `⚠️ ARITHMETIC DISCREPANCY FLAGGED (Delta: ${formatVal(candidate.delta_movable + candidate.delta_immovable)})`
+        ? `⚠️ ARITHMETIC DISCREPANCY FLAGGED (Delta: ${formatVal((candidate.delta_movable || 0) + (candidate.delta_immovable || 0))})`
         : `✅ CLEAN AUDIT (Part A & Part B disclosures match)`
     }`,
     `━━━━━━━━━━━━━━━━━━━━━`,
-    `Verified against sworn ECI Form 26 affidavit at https://apnaneta.in`,
+    `Verified against sworn ECI Form 26 affidavit at https://apnaneta.corgi-littlelegs.workers.dev`,
   ];
 
   return lines.join('\n');
@@ -574,5 +603,15 @@ export function getReportCardFactSheet(candidate: Candidate): string {
 
 export function getWhatsAppShareUrl(candidate: Candidate): string {
   const text = getReportCardFactSheet(candidate);
-  return `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+  return `https://wa.me/?text=${encodeURIComponent(text)}`;
+}
+
+export function getTwitterShareUrl(candidate: Candidate): string {
+  const safeParty = candidate.party ? ` (${candidate.party})` : '';
+  const netWorth = formatINR(candidate.total_net_worth);
+  const auditVerdict = candidate.has_arithmetic_discrepancy ? '⚠️ Discrepancy Flagged' : '✅ 100% Clean Audit';
+  
+  const text = `Official ECI sworn affidavit audit report for ${candidate.name}${safeParty} from ${candidate.constituency}, ${candidate.state}.\n\n💰 Declared Net Worth: ${netWorth}\n⚖️ Audit Verdict: ${auditVerdict}\n\nInspect verified court proofs on Apna Neta:`;
+  const url = 'https://apnaneta.corgi-littlelegs.workers.dev';
+  return `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}&hashtags=ApnaNeta,Transparency,ECI`;
 }
