@@ -31,7 +31,7 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          TARGET_TERM: ${{ inputs.target_term }}
+          TARGET_TERM: ${{ inputs.target_term || 'all' }}
           PYTHONPATH: .
         run: |
           python -m src.ingestion.sansad_api

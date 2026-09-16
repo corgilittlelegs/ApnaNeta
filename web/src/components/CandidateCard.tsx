@@ -38,7 +38,20 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, onVerif
               )}
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              {candidate.house} • <span className="font-medium text-slate-700">{candidate.constituency}</span>, {candidate.state}
+              {candidate.house} •{' '}
+              {candidate.constituency &&
+              candidate.constituency !== candidate.state &&
+              candidate.constituency !== 'National' &&
+              candidate.constituency !== 'Parliament of India' ? (
+                <>
+                  <span className="font-medium text-slate-700">{candidate.constituency}</span>
+                  {candidate.state && candidate.state !== 'India' ? `, ${candidate.state}` : ''}
+                </>
+              ) : (
+                <span className="font-medium text-slate-700">
+                  {candidate.state && candidate.state !== 'India' ? candidate.state : (candidate.constituency || 'India')}
+                </span>
+              )}
             </p>
           </div>
           <span className="text-xs font-semibold px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200/60 rounded-lg">

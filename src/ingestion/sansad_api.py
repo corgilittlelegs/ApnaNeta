@@ -12,6 +12,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger("SansadSync")
 
 # Verified PRS India Parliamentary Activity Datasets (Public Domain & Accurate)
+PRS_LS_ALL_URL = "https://raw.githubusercontent.com/Vonter/india-representatives-activity/main/csv/Lok%20Sabha.csv"
 PRS_LS_18TH_URL = "https://raw.githubusercontent.com/Vonter/india-representatives-activity/main/csv/Lok%20Sabha/18th.csv"
 PRS_LS_17TH_URL = "https://raw.githubusercontent.com/Vonter/india-representatives-activity/main/csv/Lok%20Sabha/17th.csv"
 
@@ -164,12 +165,24 @@ class SansadScraper:
             if matched_cand:
                 candidate_id = matched_cand.get("id")
 
-                # Enrich candidate's constituency and party if previously generic
-                if matched_cand.get("constituency") in ("Parliament of India", "India", "", None):
+                # Enrich candidate's constituency and party if previously generic or missing
+                cand_party = matched_cand.get("party")
+                cand_constituency = matched_cand.get("constituency")
+                needs_party_update = (not cand_party or cand_party in ("Parliamentarian", "Independent", "None", "null", "")) and party != "Independent"
+                needs_constituency_update = cand_constituency in ("Parliament of India", "India", "National", "", None)
+
+                if needs_party_update or needs_constituency_update or matched_cand.get("house") != house_label:
                     try:
+                        update_payload: Dict[str, Any] = {"house": house_label}
+                        if needs_party_update or not cand_party:
+                            update_payload["party"] = party
+                        if needs_constituency_update:
+                            update_payload["constituency"] = constituency
+                            update_payload["state"] = state
+
                         await supabase.update(
                             "candidates",
-                            {"state": state, "constituency": constituency, "party": party, "house": house_label},
+                            update_payload,
                             {"id": f"eq.{candidate_id}"}
                         )
                         updated_candidates += 1
@@ -233,12 +246,16 @@ if __name__ == "__main__":
 
     async def main():
         total = 0
-        if target_term in ("18th", "all"):
-            logger.info("Starting synchronization of 18th Lok Sabha (2024–Present)...")
-            total += await sansad_scraper.sync_from_prs_activity(PRS_LS_18TH_URL, house_label="Lok Sabha")
-        if target_term in ("17th", "all"):
-            logger.info("Starting synchronization of 17th Lok Sabha (2019–2024)...")
-            total += await sansad_scraper.sync_from_prs_activity(PRS_LS_17TH_URL, house_label="Lok Sabha")
+        if target_term == "all":
+            logger.info("Starting synchronization of ALL Lok Sabha terms (15th, 16th, 17th, 18th - 2,206 MPs)...")
+            total += await sansad_scraper.sync_from_prs_activity(PRS_LS_ALL_URL, house_label="Lok Sabha")
+        else:
+            if target_term == "18th":
+                logger.info("Starting synchronization of 18th Lok Sabha (2024–Present)...")
+                total += await sansad_scraper.sync_from_prs_activity(PRS_LS_18TH_URL, house_label="Lok Sabha")
+            elif target_term == "17th":
+                logger.info("Starting synchronization of 17th Lok Sabha (2019–2024)...")
+                total += await sansad_scraper.sync_from_prs_activity(PRS_LS_17TH_URL, house_label="Lok Sabha")
         logger.info(f"All Sansad synchronization complete! Total records inserted: {total}")
 
     try:
