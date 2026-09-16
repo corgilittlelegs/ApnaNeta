@@ -42,9 +42,14 @@ export interface Candidate {
   age?: number;
   spouse_name?: string;
   spouse_status?: 'not_applicable' | 'declared' | 'none' | string;
+  spouse_pan_status?: string;
+  spouse_income_status?: string;
   education?: string;
   voter_serial_no?: number | string;
   voter_part_no?: number | string;
+  residence_address?: string;
+  enrolled_constituency?: string;
+  filing_date?: string;
   
   // Financial profile
   total_movable_assets: number;

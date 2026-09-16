@@ -476,38 +476,40 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
 
               {/* Sworn Deponent Oath Clause */}
               <div
-                className={`relative rounded-xl mb-4 transition-all ${
+                className={`rounded-xl mb-4 transition-all overflow-hidden ${
                   isIdentity
-                    ? 'border-2 border-amber-500 bg-amber-400/10 shadow-[0_0_20px_rgba(245,158,11,0.25)] pt-8 pb-3.5 px-3.5'
-                    : 'border border-transparent p-3.5'
+                    ? 'border-2 border-amber-500 bg-amber-400/5 shadow-[0_0_20px_rgba(245,158,11,0.25)]'
+                    : 'border border-transparent'
                 }`}
               >
                 {isIdentity && (
-                  <div className="absolute top-2 left-3 right-3 flex items-center justify-between pointer-events-none">
-                    <div className="flex items-center gap-1 shadow-sm">
-                      <span className="text-[8px] font-bold font-mono bg-amber-600 text-white px-2 py-0.5 rounded-l">
+                  <div className="bg-amber-100/90 border-b border-amber-300 px-3.5 py-1.5 flex items-center justify-between font-sans">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] font-bold font-mono bg-amber-600 text-white px-2 py-0.5 rounded shadow-sm">
                         FORENSIC AUDIT CROP
                       </span>
-                      <span className="text-[8px] font-bold bg-white text-slate-800 px-2 py-0.5 rounded-r border border-amber-400">
+                      <span className="text-[9px] font-bold text-amber-950">
                         {fieldLabel}
                       </span>
                     </div>
-                    <span className="text-[9px] font-mono font-black bg-amber-100 text-amber-950 border border-amber-400 px-2 py-0.5 rounded shadow-sm">
+                    <span className="text-[10px] font-mono font-bold bg-white text-amber-950 border border-amber-300 px-2 py-0.5 rounded shadow-sm">
                       {claimedValue}
                     </span>
                   </div>
                 )}
-                <div className="text-[11px] text-justify space-y-2 text-slate-800">
+                <div className="p-3.5 text-[11px] text-justify space-y-2 text-slate-800">
                   <p>
                     I, <strong className="font-bold text-slate-950 underline">{candidateName}</strong>,{' '}
-                    {candidate?.age ? `aged about ${candidate.age} years` : 'of legal age'}, resident of {constituency}, State of {state}, a candidate at the above election, do hereby solemnly affirm and state on oath as under:—
+                    {candidate?.age ? `aged about ${candidate.age} years` : 'of legal age'}, resident of{' '}
+                    <strong>{candidate?.residence_address || `${constituency}, State of ${state}`}</strong>, a candidate at the above election, do hereby solemnly affirm and state on oath as under:—
                   </p>
                   <p>
                     <strong>(1)</strong> I am a candidate set up by{' '}
                     <strong className="text-slate-950">{party}</strong>.
                   </p>
                   <p>
-                    <strong>(2)</strong> My name is enrolled in <strong>{constituency}</strong> Parliamentary Constituency,{' '}
+                    <strong>(2)</strong> My name is enrolled in{' '}
+                    <strong>{candidate?.enrolled_constituency || `${constituency} Parliamentary Constituency`}</strong>,{' '}
                     at Serial No. {candidate?.voter_serial_no ?? '128'} in Part No. {candidate?.voter_part_no ?? '42'}.
                   </p>
                   <p>
@@ -518,140 +520,144 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
 
               {/* Table 4: PAN and ITR Returns */}
               <div
-                className={`relative rounded-xl mb-4 transition-all ${
+                className={`rounded-xl mb-4 transition-all overflow-hidden ${
                   isIncome
-                    ? 'border-2 border-amber-500 bg-amber-400/10 shadow-[0_0_20px_rgba(245,158,11,0.25)] pt-8 pb-3.5 px-3.5'
-                    : 'border border-transparent p-3.5'
+                    ? 'border-2 border-amber-500 bg-amber-400/5 shadow-[0_0_20px_rgba(245,158,11,0.25)]'
+                    : 'border border-transparent'
                 }`}
               >
                 {isIncome && (
-                  <div className="absolute top-2 left-3 right-3 flex items-center justify-between pointer-events-none">
-                    <div className="flex items-center gap-1 shadow-sm">
-                      <span className="text-[8px] font-bold font-mono bg-amber-600 text-white px-2 py-0.5 rounded-l">
+                  <div className="bg-amber-100/90 border-b border-amber-300 px-3.5 py-1.5 flex items-center justify-between font-sans">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] font-bold font-mono bg-amber-600 text-white px-2 py-0.5 rounded shadow-sm">
                         FORENSIC AUDIT CROP
                       </span>
-                      <span className="text-[8px] font-bold bg-white text-slate-800 px-2 py-0.5 rounded-r border border-amber-400">
+                      <span className="text-[9px] font-bold text-amber-950">
                         {fieldLabel}
                       </span>
                     </div>
-                    <span className="text-[9px] font-mono font-black bg-amber-100 text-amber-950 border border-amber-400 px-2 py-0.5 rounded shadow-sm">
+                    <span className="text-[10px] font-mono font-bold bg-white text-amber-950 border border-amber-300 px-2 py-0.5 rounded shadow-sm">
                       {claimedValue}
                     </span>
                   </div>
                 )}
-                <p className="text-[10px] font-bold text-slate-900 mb-1">
-                  (4) Details of Permanent Account Number (PAN) and status of filing of Income Tax Return:
-                </p>
-                <table className="w-full text-[9px] border-collapse border border-slate-400 text-left font-sans">
-                  <thead>
-                    <tr className="bg-slate-100 text-slate-700">
-                      <th className="border border-slate-300 p-1 w-8">Sl.</th>
-                      <th className="border border-slate-300 p-1">Names</th>
-                      <th className="border border-slate-300 p-1">PAN Status</th>
-                      <th className="border border-slate-300 p-1">Financial Year</th>
-                      <th className="border border-slate-300 p-1 text-right">Total Income Shown in ITR</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td className="border border-slate-300 p-1 font-mono">1.</td>
-                      <td className="border border-slate-300 p-1 font-semibold">{candidateName} (Self)</td>
-                      <td className="border border-slate-300 p-1 text-slate-500 font-mono">XXXXX1234F (Redacted)</td>
-                      <td className="border border-slate-300 p-1">2023–24</td>
-                      <td className="border border-slate-300 p-1 text-right font-mono font-bold">
-                        {formatINR(candidate?.total_five_year_income || 0)}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="border border-slate-300 p-1 font-mono">2.</td>
-                      <td className="border border-slate-300 p-1">
-                        Spouse {candidate?.spouse_name ? `(${candidate.spouse_name})` : ''}
-                      </td>
-                      <td className="border border-slate-300 p-1 text-slate-500 font-mono">
-                        {hasSpouse ? 'XXXXX9876K (Redacted)' : 'Not Applicable / Nil'}
-                      </td>
-                      <td className="border border-slate-300 p-1">
-                        {hasSpouse ? '2023–24' : '—'}
-                      </td>
-                      <td className="border border-slate-300 p-1 text-right font-mono">
-                        {hasSpouse ? (candidate?.spouse_status || 'Declared in Form') : 'Nil / Not Known'}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                <div className="p-3.5">
+                  <p className="text-[10px] font-bold text-slate-900 mb-1.5">
+                    (4) Details of Permanent Account Number (PAN) and status of filing of Income Tax Return:
+                  </p>
+                  <table className="w-full text-[9px] border-collapse border border-slate-400 text-left font-sans">
+                    <thead>
+                      <tr className="bg-slate-100 text-slate-700">
+                        <th className="border border-slate-300 p-1 w-8">Sl.</th>
+                        <th className="border border-slate-300 p-1">Names</th>
+                        <th className="border border-slate-300 p-1">PAN Status</th>
+                        <th className="border border-slate-300 p-1">Assessment Cycle (5 FYs)</th>
+                        <th className="border border-slate-300 p-1 text-right">Total 5-Yr Income Declared in ITRs</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td className="border border-slate-300 p-1 font-mono">1.</td>
+                        <td className="border border-slate-300 p-1 font-semibold">{candidateName} (Self)</td>
+                        <td className="border border-slate-300 p-1 text-slate-500 font-mono">XXXXX1234F (Redacted)</td>
+                        <td className="border border-slate-300 p-1">FY 2018–19 to 2022–23</td>
+                        <td className="border border-slate-300 p-1 text-right font-mono font-bold">
+                          {formatINR(candidate?.total_five_year_income || 0)}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="border border-slate-300 p-1 font-mono">2.</td>
+                        <td className="border border-slate-300 p-1">
+                          Spouse {candidate?.spouse_name ? `(${candidate.spouse_name})` : ''}
+                        </td>
+                        <td className="border border-slate-300 p-1 text-slate-500 font-mono">
+                          {candidate?.spouse_pan_status || (hasSpouse ? 'XXXXX9876K (Redacted)' : 'Not Applicable / Nil')}
+                        </td>
+                        <td className="border border-slate-300 p-1">
+                          {hasSpouse ? 'FY 2018–19 to 2022–23' : '—'}
+                        </td>
+                        <td className="border border-slate-300 p-1 text-right font-mono">
+                          {candidate?.spouse_income_status || (hasSpouse ? (candidate?.spouse_status || 'Declared in Form') : 'Nil / Not Known')}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
               {/* Table 7: Part A Movable Assets */}
               <div
-                className={`relative rounded-xl mb-4 transition-all ${
+                className={`rounded-xl mb-4 transition-all overflow-hidden ${
                   (isMovable || isDiscrepancy || isNetWorth)
-                    ? 'border-2 border-amber-500 bg-amber-400/10 shadow-[0_0_20px_rgba(245,158,11,0.25)] pt-8 pb-3.5 px-3.5'
-                    : 'border border-transparent p-3.5'
+                    ? 'border-2 border-amber-500 bg-amber-400/5 shadow-[0_0_20px_rgba(245,158,11,0.25)]'
+                    : 'border border-transparent'
                 }`}
               >
                 {(isMovable || isDiscrepancy || isNetWorth) && (
-                  <div className="absolute top-2 left-3 right-3 flex items-center justify-between pointer-events-none">
-                    <div className="flex items-center gap-1 shadow-sm">
-                      <span className="text-[8px] font-bold font-mono bg-amber-600 text-white px-2 py-0.5 rounded-l">
+                  <div className="bg-amber-100/90 border-b border-amber-300 px-3.5 py-1.5 flex items-center justify-between font-sans">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] font-bold font-mono bg-amber-600 text-white px-2 py-0.5 rounded shadow-sm">
                         FORENSIC AUDIT CROP
                       </span>
-                      <span className="text-[8px] font-bold bg-white text-slate-800 px-2 py-0.5 rounded-r border border-amber-400">
+                      <span className="text-[9px] font-bold text-amber-950">
                         {fieldLabel}
                       </span>
                     </div>
-                    <span className="text-[9px] font-mono font-black bg-amber-100 text-amber-950 border border-amber-400 px-2 py-0.5 rounded shadow-sm">
+                    <span className="text-[10px] font-mono font-bold bg-white text-amber-950 border border-amber-300 px-2 py-0.5 rounded shadow-sm">
                       {claimedValue}
                     </span>
                   </div>
                 )}
-                <p className="text-[10px] font-bold text-slate-900 mb-1">
-                  (7) Details of Movable and Immovable Assets (Part A & Part B Summary):
-                </p>
-                <table className="w-full text-[9px] border-collapse border border-slate-400 text-left font-sans">
-                  <thead>
-                    <tr className="bg-slate-100 text-slate-700">
-                      <th className="border border-slate-300 p-1">Asset Classification</th>
-                      <th className="border border-slate-300 p-1 text-right">Declared Value</th>
-                      <th className="border border-slate-300 p-1 text-center">Verification Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td className="border border-slate-300 p-1 font-medium">Part A: Gross Total Movable Assets</td>
-                      <td className="border border-slate-300 p-1 text-right font-mono font-bold text-slate-950">
-                        {formatINR(candidate?.total_movable_assets || 0)}
-                      </td>
-                      <td className="border border-slate-300 p-1 text-center text-emerald-700 font-semibold">
-                        Reconciled
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="border border-slate-300 p-1 font-medium">Part B: Gross Total Immovable Assets</td>
-                      <td className="border border-slate-300 p-1 text-right font-mono font-bold text-slate-950">
-                        {formatINR(candidate?.total_immovable_assets || 0)}
-                      </td>
-                      <td className="border border-slate-300 p-1 text-center text-emerald-700 font-semibold">
-                        Reconciled
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="border border-slate-300 p-1 text-slate-600">Less: Total Liabilities & Dues</td>
-                      <td className="border border-slate-300 p-1 text-right font-mono text-rose-700">
-                        {formatINR(candidate?.total_liabilities || 0)}
-                      </td>
-                      <td className="border border-slate-300 p-1 text-center text-slate-500">Verified</td>
-                    </tr>
-                    <tr className="bg-amber-50/60 font-bold">
-                      <td className="border border-slate-300 p-1.5 text-slate-950">Total Sworn Net Worth</td>
-                      <td className="border border-slate-300 p-1.5 text-right font-mono text-slate-950 text-[10px]">
-                        {formatINR(candidate?.total_net_worth || 0)}
-                      </td>
-                      <td className="border border-slate-300 p-1.5 text-center text-blue-700">
-                        Audited
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                <div className="p-3.5">
+                  <p className="text-[10px] font-bold text-slate-900 mb-1.5">
+                    (7) Details of Movable and Immovable Assets (Part A & Part B Summary):
+                  </p>
+                  <table className="w-full text-[9px] border-collapse border border-slate-400 text-left font-sans">
+                    <thead>
+                      <tr className="bg-slate-100 text-slate-700">
+                        <th className="border border-slate-300 p-1">Asset Classification</th>
+                        <th className="border border-slate-300 p-1 text-right">Declared Value</th>
+                        <th className="border border-slate-300 p-1 text-center">Verification Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td className="border border-slate-300 p-1 font-medium">Part A: Gross Total Movable Assets</td>
+                        <td className="border border-slate-300 p-1 text-right font-mono font-bold text-slate-950">
+                          {formatINR(candidate?.total_movable_assets || 0)}
+                        </td>
+                        <td className="border border-slate-300 p-1 text-center text-emerald-700 font-semibold">
+                          Reconciled
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="border border-slate-300 p-1 font-medium">Part B: Gross Total Immovable Assets</td>
+                        <td className="border border-slate-300 p-1 text-right font-mono font-bold text-slate-950">
+                          {formatINR(candidate?.total_immovable_assets || 0)}
+                        </td>
+                        <td className="border border-slate-300 p-1 text-center text-emerald-700 font-semibold">
+                          Reconciled
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="border border-slate-300 p-1 text-slate-600">Less: Total Liabilities & Dues</td>
+                        <td className="border border-slate-300 p-1 text-right font-mono text-rose-700">
+                          {formatINR(candidate?.total_liabilities || 0)}
+                        </td>
+                        <td className="border border-slate-300 p-1 text-center text-slate-500">Verified</td>
+                      </tr>
+                      <tr className="bg-amber-50/60 font-bold">
+                        <td className="border border-slate-300 p-1.5 text-slate-950">Total Sworn Net Worth</td>
+                        <td className="border border-slate-300 p-1.5 text-right font-mono text-slate-950 text-[10px]">
+                          {formatINR(candidate?.total_net_worth || 0)}
+                        </td>
+                        <td className="border border-slate-300 p-1.5 text-center text-blue-700">
+                          Audited
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
               {/* Verification Stamp & Signature Block */}
@@ -668,7 +674,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                 {/* Deponent Verification & Signature */}
                 <div className="text-right text-[10px] space-y-1">
                   <p className="text-slate-500 text-[9px] italic">
-                    Solemnly affirmed before me at {constituency} on {filingYear}.
+                    Solemnly affirmed before me at {constituency} on {candidate?.filing_date ?? `${filingYear}`}.
                   </p>
                   <p className="font-serif italic font-bold text-slate-900 text-sm pt-2">
                     Sd/- {candidateName}
