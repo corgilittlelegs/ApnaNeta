@@ -1,5 +1,5 @@
 export interface BoundingBox {
-  page: number;
+  page?: number;
   ymin: number;
   xmin: number;
   ymax: number;
@@ -42,6 +42,8 @@ export interface Candidate {
   
   // Document proofs
   pdf_source_url: string;
+  r2_storage_key?: string;
+  r2_url?: string;
   proof_bbox?: BoundingBox;
   variance_proof_bbox?: BoundingBox;
 }

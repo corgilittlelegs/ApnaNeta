@@ -51,13 +51,13 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
   const isNetWorth = fieldLabel.toLowerCase().includes('worth') || fieldLabel.toLowerCase().includes('asset');
 
   // Coordinates (0-1000 percentage scale)
-  const defaultBbox = isIdentity
-    ? { ymin: 190, xmin: 50, ymax: 290, xmax: 950 }
+  const defaultBbox: BoundingBox = isIdentity
+    ? { page: 1, ymin: 190, xmin: 50, ymax: 290, xmax: 950 }
     : isMovable
-    ? { ymin: 520, xmin: 50, ymax: 620, xmax: 950 }
+    ? { page: 7, ymin: 520, xmin: 50, ymax: 620, xmax: 950 }
     : isNetWorth
-    ? { ymin: 690, xmin: 50, ymax: 780, xmax: 950 }
-    : { ymin: 190, xmin: 50, ymax: 290, xmax: 950 };
+    ? { page: 8, ymin: 690, xmin: 50, ymax: 780, xmax: 950 }
+    : { page: 1, ymin: 190, xmin: 50, ymax: 290, xmax: 950 };
 
   const activeBbox: BoundingBox = bbox || defaultBbox;
 
@@ -194,13 +194,20 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                 <p className="truncate"><span className="text-slate-400">Storage:</span> Cloudflare R2 Zero-Egress Bucket</p>
               </div>
 
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-left text-xs text-amber-900 mb-4">
+                <p className="font-semibold mb-1">ECI Server Availability Notice:</p>
+                <p className="text-[11px] text-amber-800 leading-relaxed">
+                  Official Election Commission servers (<code>affidavit.eci.gov.in</code>) frequently return <strong>500 | SERVER ERROR</strong> when opened via direct external links. To protect public access, all verified declarations, financial tables, and notary stamps are rendered verbatim in the <strong>"Sworn Affidavit Proof"</strong> tab.
+                </p>
+              </div>
+
               <a
                 href={pdfUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow transition-colors"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-xl shadow transition-colors"
               >
-                View Live on ECI Portal <ExternalLink className="w-3.5 h-3.5" />
+                Attempt ECI Portal Direct Link <ExternalLink className="w-3.5 h-3.5" />
               </a>
             </div>
           </div>
