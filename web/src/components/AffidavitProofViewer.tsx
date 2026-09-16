@@ -63,41 +63,41 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
       <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[92vh]">
         {/* Header Bar */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 text-blue-700 rounded-xl">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50 gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="p-2.5 bg-blue-100/80 text-blue-700 rounded-xl flex-shrink-0">
               <ShieldCheck className="w-5 h-5" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-slate-900 text-base">
-                  Primary Source Verification: Form 26 Affidavit
-                </h3>
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full border border-emerald-300">
+            <div className="min-w-0">
+              <h3 className="font-bold text-slate-900 text-base leading-tight truncate">
+                Form 26 Affidavit Verification
+              </h3>
+              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                <span className="text-xs text-slate-500 truncate">
+                  {candidateName} • {constituency}, {state} ({house}) • {filingYear}
+                </span>
+                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-md border border-emerald-300 whitespace-nowrap">
                   Section 79 Safe Harbor
                 </span>
               </div>
-              <p className="text-xs text-slate-500">
-                {candidateName} • {constituency}, {state} ({house}) • Filing Year: {filingYear}
-              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3 flex-shrink-0">
             {/* View Mode Tabs */}
-            <div className="flex items-center bg-slate-200 p-0.5 rounded-lg text-xs font-medium mr-2">
+            <div className="flex items-center bg-slate-200/90 p-1 rounded-xl text-xs font-medium">
               <button
                 onClick={() => setActiveTab('transcript')}
-                className={`px-3 py-1 rounded-md transition-all ${
-                  activeTab === 'transcript' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                className={`px-3 py-1.5 rounded-lg transition-all ${
+                  activeTab === 'transcript' ? 'bg-white text-slate-900 shadow-sm font-semibold' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 Sworn Affidavit Proof
               </button>
               <button
                 onClick={() => setActiveTab('raw_pdf')}
-                className={`px-3 py-1 rounded-md transition-all ${
-                  activeTab === 'raw_pdf' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                className={`px-3 py-1.5 rounded-lg transition-all ${
+                  activeTab === 'raw_pdf' ? 'bg-white text-slate-900 shadow-sm font-semibold' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 Raw ECI File
@@ -106,18 +106,18 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
 
             {/* Zoom Controls */}
             {activeTab === 'transcript' && (
-              <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg px-2 py-1">
+              <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl px-2 py-1 shadow-sm">
                 <button
                   onClick={() => setZoom((z) => Math.max(75, z - 15))}
-                  className="text-slate-500 hover:text-slate-800"
+                  className="p-1 text-slate-500 hover:text-slate-800 rounded hover:bg-slate-100 transition-colors"
                   title="Zoom Out"
                 >
                   <ZoomOut className="w-3.5 h-3.5" />
                 </button>
-                <span className="text-[11px] font-mono text-slate-700 w-9 text-center">{zoom}%</span>
+                <span className="text-[11px] font-mono font-medium text-slate-700 w-9 text-center">{zoom}%</span>
                 <button
                   onClick={() => setZoom((z) => Math.min(135, z + 15))}
-                  className="text-slate-500 hover:text-slate-800"
+                  className="p-1 text-slate-500 hover:text-slate-800 rounded hover:bg-slate-100 transition-colors"
                   title="Zoom In"
                 >
                   <ZoomIn className="w-3.5 h-3.5" />
@@ -125,9 +125,12 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
               </div>
             )}
 
+            <div className="h-6 w-px bg-slate-200" />
+
             <button
               onClick={onClose}
-              className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-lg transition-colors ml-1"
+              className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-xl transition-colors"
+              title="Close Dialog"
             >
               <X className="w-5 h-5" />
             </button>
