@@ -1,0 +1,31 @@
+name: Sync MoSPI MPLADS Fund Tracking
+
+on:
+  schedule:
+    - cron: '0 14 1 * *' # Monthly trigger on the 1st of each month at 14:00 UTC
+  workflow_dispatch:
+
+jobs:
+  sync_mplads:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Ingestion Dependencies
+        run: |
+          pip install httpx pydantic pydantic-settings
+
+      - name: Execute MPLADS Velocity Sync
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          PYTHONPATH: .
+        run: |
+          python -m src.ingestion.mospi_mplads

@@ -9,8 +9,13 @@ import {
   BadgeCheck,
   Lock,
   CheckCircle2,
+  Landmark,
+  TrendingUp,
+  FileDown,
+  AlertTriangle,
 } from 'lucide-react';
 import { BoundingBox, Candidate } from '../types/candidate';
+import { exportCandidateDossierPdf } from '../utils/DossierPdfExport';
 
 interface AffidavitProofViewerProps {
   isOpen: boolean;
@@ -34,7 +39,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
   candidate,
 }) => {
   const [zoom, setZoom] = useState<number>(100);
-  const [activeTab, setActiveTab] = useState<'transcript' | 'raw_pdf'>('transcript');
+  const [activeTab, setActiveTab] = useState<'transcript' | 'mplads' | 'wealth_history' | 'raw_pdf'>('transcript');
 
   if (!isOpen) return null;
 
@@ -58,19 +63,21 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
   const house = candidate?.house || 'Lok Sabha';
   const party = candidate?.party || 'Independent';
   const filingYear = candidate?.filing_year || 2024;
+  const mplads = candidate?.mplads;
+  const wealthHistory = candidate?.historical_wealth || [];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
       <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[92vh]">
         {/* Header Bar */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50 gap-4">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50 gap-4 flex-wrap">
           <div className="flex items-center gap-3 min-w-0">
             <div className="p-2.5 bg-blue-100/80 text-blue-700 rounded-xl flex-shrink-0">
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div className="min-w-0">
               <h3 className="font-bold text-slate-900 text-base leading-tight truncate">
-                Form 26 Affidavit Verification
+                Forensic Civic Intelligence Verification
               </h3>
               <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                 <span className="text-xs text-slate-500 truncate">
@@ -83,7 +90,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-3 flex-shrink-0">
+          <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
             {/* View Mode Tabs */}
             <div className="flex items-center bg-slate-200/90 p-1 rounded-xl text-xs font-medium">
               <button
@@ -92,7 +99,25 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                   activeTab === 'transcript' ? 'bg-white text-slate-900 shadow-sm font-semibold' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Sworn Affidavit Proof
+                Sworn Affidavit
+              </button>
+              <button
+                onClick={() => setActiveTab('mplads')}
+                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${
+                  activeTab === 'mplads' ? 'bg-white text-slate-900 shadow-sm font-semibold' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Landmark className="w-3 h-3 text-blue-600" />
+                MPLADS
+              </button>
+              <button
+                onClick={() => setActiveTab('wealth_history')}
+                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${
+                  activeTab === 'wealth_history' ? 'bg-white text-slate-900 shadow-sm font-semibold' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <TrendingUp className="w-3 h-3 text-emerald-600" />
+                10-Yr Wealth
               </button>
               <button
                 onClick={() => setActiveTab('raw_pdf')}
@@ -100,9 +125,21 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                   activeTab === 'raw_pdf' ? 'bg-white text-slate-900 shadow-sm font-semibold' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Raw ECI File
+                Raw ECI
               </button>
             </div>
+
+            {/* 1-Click PDF Export Button */}
+            {candidate && (
+              <button
+                onClick={() => exportCandidateDossierPdf(candidate)}
+                title="Download Court-Ready 1-Page Forensic Audit Dossier PDF"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 font-semibold text-xs rounded-xl border border-blue-200 transition-all shadow-sm"
+              >
+                <FileDown className="w-3.5 h-3.5 text-blue-600" />
+                <span>PDF Dossier</span>
+              </button>
+            )}
 
             {/* Zoom Controls */}
             {activeTab === 'transcript' && (
@@ -162,7 +199,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
           </a>
         </div>
 
-        {/* Modal Body */}
+        {/* Modal Body: Switch between tabs */}
         {activeTab === 'raw_pdf' ? (
           <div className="flex-1 p-6 bg-slate-100 flex flex-col items-center justify-center min-h-[420px]">
             <div className="max-w-md w-full bg-white p-6 rounded-2xl shadow border border-slate-200 text-center">
@@ -185,7 +222,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-left text-xs text-amber-900 mb-4">
                 <p className="font-semibold mb-1">ECI Server Availability Notice:</p>
                 <p className="text-[11px] text-amber-800 leading-relaxed">
-                  Official Election Commission servers (<code>affidavit.eci.gov.in</code>) frequently return <strong>500 | SERVER ERROR</strong> when opened via direct external links. To protect public access, all verified declarations, financial tables, and notary stamps are rendered verbatim in the <strong>"Sworn Affidavit Proof"</strong> tab.
+                  Official Election Commission servers (<code>affidavit.eci.gov.in</code>) frequently return <strong>500 | SERVER ERROR</strong> when opened via direct external links. To protect public access, all verified declarations, financial tables, and notary stamps are rendered verbatim in the <strong>"Sworn Affidavit"</strong> tab.
                 </p>
               </div>
 
@@ -197,6 +234,198 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
               >
                 Attempt ECI Portal Direct Link <ExternalLink className="w-3.5 h-3.5" />
               </a>
+            </div>
+          </div>
+        ) : activeTab === 'mplads' ? (
+          /* MoSPI MPLADS Fund Tracking Tab */
+          <div className="flex-1 overflow-auto p-6 bg-slate-50 min-h-[420px]">
+            <div className="max-w-2xl mx-auto space-y-6">
+              <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-blue-50 text-blue-700 rounded-xl">
+                      <Landmark className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-lg">
+                        MoSPI MPLADS Development Fund Flow
+                      </h4>
+                      <p className="text-xs text-slate-500">
+                        Official records from Ministry of Statistics & Programme Implementation
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-mono font-bold px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg">
+                    Term 2019–2024
+                  </span>
+                </div>
+
+                {mplads ? (
+                  <div className="space-y-5 pt-5">
+                    {/* Velocity Meter */}
+                    <div>
+                      <div className="flex items-center justify-between text-xs mb-1.5">
+                        <span className="font-semibold text-slate-700">Fund Expenditure Velocity</span>
+                        <span
+                          className={`font-mono font-bold text-sm ${
+                            mplads.utilization_rate < 60 ? 'text-rose-600' : 'text-emerald-700'
+                          }`}
+                        >
+                          {mplads.utilization_rate.toFixed(1)}% Utilized
+                        </span>
+                      </div>
+                      <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+                        <div
+                          className={`h-full rounded-full transition-all ${
+                            mplads.utilization_rate < 60 ? 'bg-rose-500' : 'bg-emerald-500'
+                          }`}
+                          style={{ width: `${Math.min(100, mplads.utilization_rate)}%` }}
+                        />
+                      </div>
+                      <div className="flex justify-between text-[10px] text-slate-400 mt-1">
+                        <span>0%</span>
+                        <span>60% Benchmark</span>
+                        <span>100% Fully Utilized</span>
+                      </div>
+                    </div>
+
+                    {/* Breakdown Metrics */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                        <span className="text-[10px] text-slate-500 font-medium block">Entitled Allocation</span>
+                        <span className="text-sm font-bold font-mono text-slate-900 mt-0.5 block">
+                          {formatINR(mplads.entitled_amount)}
+                        </span>
+                        <span className="text-[9px] text-slate-400">₹5 Cr / Year</span>
+                      </div>
+                      <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                        <span className="text-[10px] text-slate-500 font-medium block">Funds Released</span>
+                        <span className="text-sm font-bold font-mono text-blue-700 mt-0.5 block">
+                          {formatINR(mplads.released_amount)}
+                        </span>
+                        <span className="text-[9px] text-slate-400">GoI Released</span>
+                      </div>
+                      <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                        <span className="text-[10px] text-slate-500 font-medium block">Actual Spent</span>
+                        <span className="text-sm font-bold font-mono text-emerald-700 mt-0.5 block">
+                          {formatINR(mplads.expenditure_amount)}
+                        </span>
+                        <span className="text-[9px] text-slate-400">Works executed</span>
+                      </div>
+                      <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                        <span className="text-[10px] text-slate-500 font-medium block">Unspent Balance</span>
+                        <span className="text-sm font-bold font-mono text-rose-700 mt-0.5 block">
+                          {formatINR(mplads.unspent_balance)}
+                        </span>
+                        <span className="text-[9px] text-slate-400">Remaining in treasury</span>
+                      </div>
+                    </div>
+
+                    {/* Community Works Completed */}
+                    <div className="p-4 bg-blue-50/60 rounded-xl border border-blue-200/80 flex items-center justify-between text-xs">
+                      <div>
+                        <span className="font-bold text-blue-950 block">Community Infrastructure Works</span>
+                        <span className="text-blue-800 text-[11px]">
+                          Schools, drinking water projects, community halls, and rural roads
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-mono font-bold text-base text-blue-900">
+                          {mplads.works_completed} / {mplads.works_recommended}
+                        </span>
+                        <span className="text-[10px] text-blue-700 block">Completed / Recommended</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-8 text-center text-slate-500 text-xs">
+                    <p>No MoSPI MPLADS record loaded yet for this constituency.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : activeTab === 'wealth_history' ? (
+          /* 10-Year Wealth Trajectory Tab */
+          <div className="flex-1 overflow-auto p-6 bg-slate-50 min-h-[420px]">
+            <div className="max-w-2xl mx-auto space-y-6">
+              <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-emerald-50 text-emerald-700 rounded-xl">
+                      <TrendingUp className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-lg">
+                        Multi-Term Wealth Trajectory (2014 &rarr; 2024)
+                      </h4>
+                      <p className="text-xs text-slate-500">
+                        Compound Annual Growth Rate (CAGR) & longitudinal asset accumulation
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {wealthHistory.length > 0 ? (
+                  <div className="space-y-4 pt-5">
+                    {wealthHistory.map((h, idx) => (
+                      <div
+                        key={idx}
+                        className={`p-4 rounded-xl border ${
+                          h.is_rapid_accumulation
+                            ? 'bg-rose-50/70 border-rose-200'
+                            : 'bg-slate-50 border-slate-200'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-900 text-sm">
+                              {h.from_year} &rarr; {h.to_year} Election Cycle
+                            </span>
+                            {h.is_rapid_accumulation ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 bg-rose-100 text-rose-800 rounded border border-rose-300">
+                                <AlertTriangle className="w-3 h-3" /> RAPID ACCUMULATION (&ge;300%)
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded border border-emerald-300">
+                                Verified Trajectory
+                              </span>
+                            )}
+                          </div>
+                          <span className="font-mono font-bold text-xs text-slate-800">
+                            CAGR: {h.cagr_percent ? `${h.cagr_percent}% / yr` : 'N/A'}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 text-xs font-mono">
+                          <div className="bg-white p-2 rounded-lg border border-slate-200">
+                            <span className="text-[9px] text-slate-400 block font-sans">Initial Assets</span>
+                            <span className="font-bold text-slate-800">{formatINR(h.initial_assets)}</span>
+                          </div>
+                          <div className="bg-white p-2 rounded-lg border border-slate-200">
+                            <span className="text-[9px] text-slate-400 block font-sans">Final Assets</span>
+                            <span className="font-bold text-slate-900">{formatINR(h.final_assets)}</span>
+                          </div>
+                          <div className="bg-white p-2 rounded-lg border border-slate-200">
+                            <span className="text-[9px] text-slate-400 block font-sans">Net Growth</span>
+                            <span
+                              className={`font-bold ${
+                                h.is_rapid_accumulation ? 'text-rose-700' : 'text-emerald-700'
+                              }`}
+                            >
+                              +{h.percentage_increase}%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-8 text-center text-slate-500 text-xs">
+                    <p>Single-term candidate or multi-term matching in progress.</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         ) : (

@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Navbar } from './components/Navbar';
 import { CandidateCard } from './components/CandidateCard';
 import { AffidavitProofViewer } from './components/AffidavitProofViewer';
+import { ConstituencyFilter, FilterState } from './components/ConstituencyFilter';
 import { Candidate, BoundingBox } from './types/candidate';
 import { Cpu, Database, Loader2 } from 'lucide-react';
 
@@ -31,6 +32,38 @@ const SAMPLE_CANDIDATES: Candidate[] = [
     has_anomalous_wealth_ratio: false,
     pdf_source_url: 'https://affidavit.eci.gov.in/CandidateCustomFilter?electionType=24-PC-GENERAL-1-2024',
     proof_bbox: { page: 1, ymin: 245, xmin: 30, ymax: 355, xmax: 970 },
+    mplads: {
+      entitled_amount: 250000000.0,
+      released_amount: 220000000.0,
+      expenditure_amount: 218500000.0,
+      unspent_balance: 1500000.0,
+      utilization_rate: 99.3,
+      works_recommended: 52,
+      works_completed: 49,
+      term_years: '2019-2024',
+    },
+    historical_wealth: [
+      {
+        from_year: 2014,
+        to_year: 2019,
+        initial_assets: 16564685.0,
+        final_assets: 25136119.0,
+        absolute_increase: 8571434.0,
+        percentage_increase: 51.7,
+        cagr_percent: 8.7,
+        is_rapid_accumulation: false,
+      },
+      {
+        from_year: 2019,
+        to_year: 2024,
+        initial_assets: 25136119.0,
+        final_assets: 30206000.0,
+        absolute_increase: 5069881.0,
+        percentage_increase: 20.2,
+        cagr_percent: 3.7,
+        is_rapid_accumulation: false,
+      },
+    ],
   },
   {
     id: '2',
@@ -56,6 +89,38 @@ const SAMPLE_CANDIDATES: Candidate[] = [
     has_anomalous_wealth_ratio: false,
     pdf_source_url: 'https://affidavit.eci.gov.in/CandidateCustomFilter?electionType=24-PC-GENERAL-1-2024',
     proof_bbox: { page: 1, ymin: 245, xmin: 30, ymax: 355, xmax: 970 },
+    mplads: {
+      entitled_amount: 250000000.0,
+      released_amount: 200000000.0,
+      expenditure_amount: 168000000.0,
+      unspent_balance: 32000000.0,
+      utilization_rate: 84.0,
+      works_recommended: 44,
+      works_completed: 39,
+      term_years: '2019-2024',
+    },
+    historical_wealth: [
+      {
+        from_year: 2014,
+        to_year: 2019,
+        initial_assets: 94000000.0,
+        final_assets: 158800000.0,
+        absolute_increase: 64800000.0,
+        percentage_increase: 68.9,
+        cagr_percent: 11.1,
+        is_rapid_accumulation: false,
+      },
+      {
+        from_year: 2019,
+        to_year: 2024,
+        initial_assets: 158800000.0,
+        final_assets: 203800000.0,
+        absolute_increase: 45000000.0,
+        percentage_increase: 28.3,
+        cagr_percent: 5.1,
+        is_rapid_accumulation: false,
+      },
+    ],
   },
   {
     id: '3',
@@ -82,6 +147,28 @@ const SAMPLE_CANDIDATES: Candidate[] = [
     has_anomalous_wealth_ratio: true,
     pdf_source_url: 'https://affidavit.eci.gov.in/CandidateCustomFilter?electionType=24-PC-GENERAL-1-2024',
     proof_bbox: { page: 7, ymin: 545, xmin: 30, ymax: 755, xmax: 970 },
+    mplads: {
+      entitled_amount: 250000000.0,
+      released_amount: 150000000.0,
+      expenditure_amount: 78000000.0,
+      unspent_balance: 72000000.0,
+      utilization_rate: 52.0, // Low velocity flagged!
+      works_recommended: 30,
+      works_completed: 18,
+      term_years: '2019-2024',
+    },
+    historical_wealth: [
+      {
+        from_year: 2019,
+        to_year: 2024,
+        initial_assets: 35000000.0,
+        final_assets: 150000000.0,
+        absolute_increase: 115000000.0,
+        percentage_increase: 328.6, // Rapid accumulation flagged!
+        cagr_percent: 33.8,
+        is_rapid_accumulation: true,
+      },
+    ],
   },
   {
     id: '4',
@@ -107,6 +194,152 @@ const SAMPLE_CANDIDATES: Candidate[] = [
     has_anomalous_wealth_ratio: false,
     pdf_source_url: 'https://affidavit.eci.gov.in/CandidateCustomFilter?electionType=24-PC-GENERAL-1-2024',
     proof_bbox: { page: 1, ymin: 245, xmin: 30, ymax: 355, xmax: 970 },
+    mplads: {
+      entitled_amount: 250000000.0,
+      released_amount: 235000000.0,
+      expenditure_amount: 219000000.0,
+      unspent_balance: 16000000.0,
+      utilization_rate: 93.2,
+      works_recommended: 61,
+      works_completed: 58,
+      term_years: '2019-2024',
+    },
+    historical_wealth: [
+      {
+        from_year: 2014,
+        to_year: 2019,
+        initial_assets: 265000000.0,
+        final_assets: 303300000.0,
+        absolute_increase: 38300000.0,
+        percentage_increase: 14.5,
+        cagr_percent: 2.7,
+        is_rapid_accumulation: false,
+      },
+      {
+        from_year: 2019,
+        to_year: 2024,
+        initial_assets: 303300000.0,
+        final_assets: 572700000.0,
+        absolute_increase: 269400000.0,
+        percentage_increase: 88.8,
+        cagr_percent: 13.6,
+        is_rapid_accumulation: false,
+      },
+    ],
+  },
+  {
+    id: '5',
+    name: 'Akhilesh Yadav',
+    constituency: 'Kannauj',
+    state: 'Uttar Pradesh',
+    house: 'Lok Sabha',
+    party: 'Samajwadi Party',
+    filing_year: 2024,
+    total_movable_assets: 172200000.0,
+    total_immovable_assets: 250000000.0,
+    total_liabilities: 25000000.0,
+    total_net_worth: 397200000.0,
+    total_five_year_income: 68000000.0,
+    criminal_cases_count: 2,
+    serious_criminal_cases_count: 0,
+    protest_cases_count: 2,
+    attendance_rate: 88.0,
+    has_arithmetic_discrepancy: true,
+    delta_movable: 5000000.0, // 50 Lakh variance flagged!
+    delta_immovable: 0.0,
+    wealth_discrepancy_ratio: 5.84,
+    has_anomalous_wealth_ratio: false,
+    pdf_source_url: 'https://affidavit.eci.gov.in/CandidateCustomFilter?electionType=24-PC-GENERAL-1-2024',
+    proof_bbox: { page: 6, ymin: 440, xmin: 30, ymax: 680, xmax: 970 },
+    mplads: {
+      entitled_amount: 250000000.0,
+      released_amount: 210000000.0,
+      expenditure_amount: 182000000.0,
+      unspent_balance: 28000000.0,
+      utilization_rate: 86.7,
+      works_recommended: 47,
+      works_completed: 42,
+      term_years: '2019-2024',
+    },
+    historical_wealth: [
+      {
+        from_year: 2014,
+        to_year: 2019,
+        initial_assets: 88400000.0,
+        final_assets: 377800000.0,
+        absolute_increase: 289400000.0,
+        percentage_increase: 327.4, // Rapid accumulation flagged!
+        cagr_percent: 33.7,
+        is_rapid_accumulation: true,
+      },
+      {
+        from_year: 2019,
+        to_year: 2024,
+        initial_assets: 377800000.0,
+        final_assets: 422200000.0,
+        absolute_increase: 44400000.0,
+        percentage_increase: 11.8,
+        cagr_percent: 2.2,
+        is_rapid_accumulation: false,
+      },
+    ],
+  },
+  {
+    id: '6',
+    name: 'Supriya Sule',
+    constituency: 'Baramati',
+    state: 'Maharashtra',
+    house: 'Lok Sabha',
+    party: 'Nationalist Congress Party (SP)',
+    filing_year: 2024,
+    total_movable_assets: 544000000.0,
+    total_immovable_assets: 1120000000.0,
+    total_liabilities: 145000000.0,
+    total_net_worth: 1519000000.0,
+    total_five_year_income: 184000000.0,
+    criminal_cases_count: 0,
+    serious_criminal_cases_count: 0,
+    protest_cases_count: 0,
+    attendance_rate: 94.6,
+    has_arithmetic_discrepancy: false,
+    delta_movable: 0.0,
+    delta_immovable: 0.0,
+    wealth_discrepancy_ratio: 8.25,
+    has_anomalous_wealth_ratio: false,
+    pdf_source_url: 'https://affidavit.eci.gov.in/CandidateCustomFilter?electionType=24-PC-GENERAL-1-2024',
+    proof_bbox: { page: 1, ymin: 245, xmin: 30, ymax: 355, xmax: 970 },
+    mplads: {
+      entitled_amount: 250000000.0,
+      released_amount: 240000000.0,
+      expenditure_amount: 232000000.0,
+      unspent_balance: 8000000.0,
+      utilization_rate: 96.7,
+      works_recommended: 65,
+      works_completed: 63,
+      term_years: '2019-2024',
+    },
+    historical_wealth: [
+      {
+        from_year: 2014,
+        to_year: 2019,
+        initial_assets: 1139000000.0,
+        final_assets: 1408800000.0,
+        absolute_increase: 269800000.0,
+        percentage_increase: 23.7,
+        cagr_percent: 4.3,
+        is_rapid_accumulation: false,
+      },
+      {
+        from_year: 2019,
+        to_year: 2024,
+        initial_assets: 1408800000.0,
+        final_assets: 1664000000.0,
+        absolute_increase: 255200000.0,
+        percentage_increase: 18.1,
+        cagr_percent: 3.4,
+        is_rapid_accumulation: false,
+      },
+    ],
   },
 ];
 
@@ -118,6 +351,15 @@ export const App: React.FC = () => {
   const [isLiveConnected, setIsLiveConnected] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedHouse, setSelectedHouse] = useState('ALL');
+
+  // Interactive filters state
+  const [filterState, setFilterState] = useState<FilterState>({
+    state: 'ALL',
+    constituency: 'ALL',
+    party: 'ALL',
+    forensicFlag: 'ALL',
+    wealthTier: 'ALL',
+  });
 
   useEffect(() => {
     const metaEnv = (import.meta as any).env || {};
@@ -134,7 +376,7 @@ export const App: React.FC = () => {
       setIsLoading(true);
       try {
         const res = await fetch(
-          `${cleanUrl}/rest/v1/candidates?select=*,sansad_records(attendance_rate,debates_count,questions_count),affidavits(id,filing_year,source_url,r2_storage_key,audit_discrepancies(*),criminal_cases(is_serious_category))&order=name.asc&limit=10000`,
+          `${cleanUrl}/rest/v1/candidates?select=*,sansad_records(attendance_rate,debates_count,questions_count),affidavits(id,filing_year,source_url,r2_storage_key,audit_discrepancies(*),criminal_cases(is_serious_category)),mplads_records(*),historical_wealth_cagr(*)&order=name.asc&limit=10000`,
           {
             headers: {
               apikey: rawKey,
@@ -196,6 +438,37 @@ export const App: React.FC = () => {
               const pdfSourceUrl = aff?.source_url || row.pdf_source_url || 'https://affidavit.eci.gov.in';
               const r2Key = aff?.r2_storage_key || row.r2_storage_key || undefined;
 
+              // Parse MoSPI MPLADS Record if available
+              const mpladsRaw = Array.isArray(row.mplads_records) && row.mplads_records.length > 0 ? row.mplads_records[0] : null;
+              const mpladsRecord = mpladsRaw
+                ? {
+                    entitled_amount: Number(mpladsRaw.entitled_amount ?? 250000000.0),
+                    released_amount: Number(mpladsRaw.released_amount ?? 0.0),
+                    expenditure_amount: Number(mpladsRaw.expenditure_amount ?? 0.0),
+                    unspent_balance: Number(mpladsRaw.unspent_balance ?? 0.0),
+                    utilization_rate: Number(mpladsRaw.utilization_rate ?? 0.0),
+                    works_recommended: Number(mpladsRaw.works_recommended ?? 0),
+                    works_completed: Number(mpladsRaw.works_completed ?? 0),
+                    term_years: mpladsRaw.term_years || '2019-2024',
+                  }
+                : undefined;
+
+              // Parse Historical Wealth CAGR if available
+              const cagrRawList = Array.isArray(row.historical_wealth_cagr) ? row.historical_wealth_cagr : [];
+              const cagrRecords =
+                cagrRawList.length > 0
+                  ? cagrRawList.map((c: any) => ({
+                      from_year: Number(c.from_year),
+                      to_year: Number(c.to_year),
+                      initial_assets: Number(c.initial_assets),
+                      final_assets: Number(c.final_assets),
+                      absolute_increase: Number(c.absolute_increase),
+                      percentage_increase: Number(c.percentage_increase),
+                      cagr_percent: c.cagr_percent != null ? Number(c.cagr_percent) : undefined,
+                      is_rapid_accumulation: Boolean(c.is_rapid_accumulation),
+                    }))
+                  : undefined;
+
               return {
                 id: String(row.id),
                 name: row.name,
@@ -216,6 +489,8 @@ export const App: React.FC = () => {
                 attendance_rate: attendance,
                 debates_count: debates,
                 questions_count: questions,
+                mplads: mpladsRecord,
+                historical_wealth: cagrRecords,
                 has_arithmetic_discrepancy: hasArithDiscrepancy,
                 delta_movable: deltaMovable,
                 delta_immovable: deltaImmovable,
@@ -274,17 +549,97 @@ export const App: React.FC = () => {
     });
   };
 
-  const filteredCandidates = candidates.filter((c) => {
-    const matchesSearch =
-      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.constituency.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.state.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (c.party && c.party.toLowerCase().includes(searchQuery.toLowerCase()));
+  // Derive unique options for filters
+  const availableStates = useMemo(() => {
+    const states = new Set<string>();
+    candidates.forEach((c) => {
+      if (c.state && c.state !== 'India' && c.state !== 'National') states.add(c.state);
+    });
+    return Array.from(states).sort();
+  }, [candidates]);
 
-    const matchesHouse = selectedHouse === 'ALL' || c.house === selectedHouse;
+  const availableConstituencies = useMemo(() => {
+    const constits = new Set<string>();
+    candidates.forEach((c) => {
+      if (filterState.state === 'ALL' || c.state === filterState.state) {
+        if (c.constituency && c.constituency !== 'National') constits.add(c.constituency);
+      }
+    });
+    return Array.from(constits).sort();
+  }, [candidates, filterState.state]);
 
-    return matchesSearch && matchesHouse;
-  });
+  const availableParties = useMemo(() => {
+    const parties = new Set<string>();
+    candidates.forEach((c) => {
+      if (c.party) parties.add(c.party);
+    });
+    return Array.from(parties).sort();
+  }, [candidates]);
+
+  // Comprehensive multi-factor candidate filter
+  const filteredCandidates = useMemo(() => {
+    return candidates.filter((c) => {
+      // 1. Text Search Query
+      const q = searchQuery.toLowerCase().trim();
+      if (q) {
+        const matchesQuery =
+          c.name.toLowerCase().includes(q) ||
+          c.constituency.toLowerCase().includes(q) ||
+          c.state.toLowerCase().includes(q) ||
+          (c.party && c.party.toLowerCase().includes(q));
+        if (!matchesQuery) return false;
+      }
+
+      // 2. House Filter
+      if (selectedHouse !== 'ALL' && c.house !== selectedHouse) {
+        return false;
+      }
+
+      // 3. State Filter
+      if (filterState.state !== 'ALL' && c.state !== filterState.state) {
+        return false;
+      }
+
+      // 4. Constituency Filter
+      if (filterState.constituency !== 'ALL' && c.constituency !== filterState.constituency) {
+        return false;
+      }
+
+      // 5. Political Party Filter
+      if (filterState.party !== 'ALL' && c.party !== filterState.party) {
+        return false;
+      }
+
+      // 6. Forensic Audit Flag Filter
+      if (filterState.forensicFlag === 'DISCREPANCY') {
+        if (!c.has_arithmetic_discrepancy) return false;
+      } else if (filterState.forensicFlag === 'HIGH_WDR') {
+        if (!c.has_anomalous_wealth_ratio && (!c.wealth_discrepancy_ratio || c.wealth_discrepancy_ratio < 10)) {
+          return false;
+        }
+      } else if (filterState.forensicFlag === 'CRIMINAL') {
+        if (c.criminal_cases_count <= 0) return false;
+      } else if (filterState.forensicFlag === 'LOW_MPLADS') {
+        if (!c.mplads || c.mplads.utilization_rate >= 60) return false;
+      } else if (filterState.forensicFlag === 'RAPID_WEALTH') {
+        const hasSurge = c.historical_wealth?.some((h) => h.is_rapid_accumulation);
+        if (!hasSurge) return false;
+      }
+
+      // 7. Wealth Tier Filter
+      if (filterState.wealthTier === '100CR_PLUS') {
+        if (c.total_net_worth < 1000000000) return false;
+      } else if (filterState.wealthTier === '100CR_TO_100CR' || filterState.wealthTier === '10CR_TO_100CR') {
+        if (c.total_net_worth < 100000000 || c.total_net_worth >= 1000000000) return false;
+      } else if (filterState.wealthTier === '1CR_TO_10CR') {
+        if (c.total_net_worth < 10000000 || c.total_net_worth >= 100000000) return false;
+      } else if (filterState.wealthTier === 'UNDER_1CR') {
+        if (c.total_net_worth >= 10000000) return false;
+      }
+
+      return true;
+    });
+  }, [candidates, searchQuery, selectedHouse, filterState]);
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
@@ -337,9 +692,9 @@ export const App: React.FC = () => {
               <span className="text-[10px] text-slate-500">Automated arithmetic checks</span>
             </div>
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80">
-              <span className="text-xs text-slate-500 font-medium">Visual Proof Overlays</span>
-              <p className="text-xl font-bold font-mono text-slate-900 mt-1">0-1000 BBox</p>
-              <span className="text-[10px] text-blue-600 font-medium">Signed Affidavit Crops</span>
+              <span className="text-xs text-slate-500 font-medium">MoSPI MPLADS & CAGR</span>
+              <p className="text-xl font-bold font-mono text-slate-900 mt-1">10-Yr Flow</p>
+              <span className="text-[10px] text-blue-600 font-medium">Velocity & Wealth Surge</span>
             </div>
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80">
               <span className="text-xs text-slate-500 font-medium">Monthly Operating Cost</span>
@@ -352,6 +707,16 @@ export const App: React.FC = () => {
 
       {/* Main Candidate Feed */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Interactive Constituency & Forensic Explorer */}
+        <ConstituencyFilter
+          filters={filterState}
+          onFilterChange={setFilterState}
+          availableStates={availableStates}
+          availableConstituencies={availableConstituencies}
+          availableParties={availableParties}
+          totalMatches={filteredCandidates.length}
+        />
+
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-bold text-slate-900">
@@ -363,12 +728,12 @@ export const App: React.FC = () => {
               </span>
             )}
           </div>
-          <span className="text-xs text-slate-500">Click any card to inspect photo proof</span>
+          <span className="text-xs text-slate-500">Click any card to inspect photo proof or export dossier</span>
         </div>
 
         {filteredCandidates.length === 0 ? (
           <div className="p-12 text-center bg-white rounded-2xl border border-slate-200">
-            <p className="text-slate-500 text-sm">No politicians found matching your search criteria.</p>
+            <p className="text-slate-500 text-sm">No politicians found matching your selected filters.</p>
           </div>
         ) : (
           <>

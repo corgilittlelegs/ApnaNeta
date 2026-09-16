@@ -1,0 +1,31 @@
+name: Analyze Multi-Term Historical Wealth Growth (CAGR)
+
+on:
+  schedule:
+    - cron: '0 15 1 * *' # Monthly trigger on the 1st of each month at 15:00 UTC
+  workflow_dispatch:
+
+jobs:
+  analyze_wealth:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: |
+          pip install httpx pydantic pydantic-settings
+
+      - name: Execute Longitudinal Wealth Analysis
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          PYTHONPATH: .
+        run: |
+          python -m src.verification.historical_wealth

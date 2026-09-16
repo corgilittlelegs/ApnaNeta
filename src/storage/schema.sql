@@ -121,7 +121,46 @@ CREATE TABLE IF NOT EXISTS sansad_records (
 
 CREATE INDEX IF NOT EXISTS idx_sansad_candidate ON sansad_records (candidate_id);
 
--- 7. Security: Enable Row Level Security (RLS) & Public Read-Only Policies
+-- 7. MPLADS Development Funds Tracking (MoSPI Data)
+CREATE TABLE IF NOT EXISTS mplads_records (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    candidate_id UUID REFERENCES candidates(id) ON DELETE CASCADE,
+    constituency TEXT NOT NULL,
+    state TEXT NOT NULL,
+    term_years TEXT DEFAULT '2019-2024',
+    entitled_amount NUMERIC(15, 2) DEFAULT 250000000.00,
+    released_amount NUMERIC(15, 2) DEFAULT 0.00,
+    expenditure_amount NUMERIC(15, 2) DEFAULT 0.00,
+    unspent_balance NUMERIC(15, 2) DEFAULT 0.00,
+    utilization_rate NUMERIC(5, 2) DEFAULT 0.00, -- (expenditure / released) * 100
+    works_recommended INT DEFAULT 0,
+    works_completed INT DEFAULT 0,
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT uq_mplads_candidate_term UNIQUE (candidate_id, term_years)
+);
+
+CREATE INDEX IF NOT EXISTS idx_mplads_candidate ON mplads_records (candidate_id);
+CREATE INDEX IF NOT EXISTS idx_mplads_constituency ON mplads_records (state, constituency);
+
+-- 8. Multi-Term Historical Wealth Growth (CAGR & Longitudinal Tracking)
+CREATE TABLE IF NOT EXISTS historical_wealth_cagr (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    candidate_id UUID REFERENCES candidates(id) ON DELETE CASCADE,
+    from_year INT NOT NULL,
+    to_year INT NOT NULL,
+    initial_assets NUMERIC(15, 2) NOT NULL,
+    final_assets NUMERIC(15, 2) NOT NULL,
+    absolute_increase NUMERIC(15, 2) NOT NULL,
+    percentage_increase NUMERIC(10, 2) NOT NULL,
+    cagr_percent NUMERIC(6, 2),
+    is_rapid_accumulation BOOLEAN DEFAULT FALSE,
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT uq_cagr_candidate_years UNIQUE (candidate_id, from_year, to_year)
+);
+
+CREATE INDEX IF NOT EXISTS idx_cagr_candidate ON historical_wealth_cagr (candidate_id);
+
+-- 9. Security: Enable Row Level Security (RLS) & Public Read-Only Policies
 -- Anyone on the web can view/query the data, but only the backend service_role key can insert/modify.
 ALTER TABLE candidates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE affidavits ENABLE ROW LEVEL SECURITY;
@@ -129,6 +168,8 @@ ALTER TABLE assets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE criminal_cases ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_discrepancies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sansad_records ENABLE ROW LEVEL SECURITY;
+ALTER TABLE mplads_records ENABLE ROW LEVEL SECURITY;
+ALTER TABLE historical_wealth_cagr ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Public Read Access" ON candidates FOR SELECT USING (true);
 CREATE POLICY "Public Read Access" ON affidavits FOR SELECT USING (true);
@@ -136,8 +177,10 @@ CREATE POLICY "Public Read Access" ON assets FOR SELECT USING (true);
 CREATE POLICY "Public Read Access" ON criminal_cases FOR SELECT USING (true);
 CREATE POLICY "Public Read Access" ON audit_discrepancies FOR SELECT USING (true);
 CREATE POLICY "Public Read Access" ON sansad_records FOR SELECT USING (true);
+CREATE POLICY "Public Read Access" ON mplads_records FOR SELECT USING (true);
+CREATE POLICY "Public Read Access" ON historical_wealth_cagr FOR SELECT USING (true);
 
--- 8. Grants & Schema Cache Reload
+-- 10. Grants & Schema Cache Reload
 -- Grants access to Supabase client roles and notifies PostgREST to reload its schema cache
 GRANT USAGE ON SCHEMA public TO postgres, anon, authenticated, service_role;
 GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, anon, authenticated, service_role;

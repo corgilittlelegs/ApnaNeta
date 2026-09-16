@@ -6,6 +6,28 @@ export interface BoundingBox {
   xmax: number;
 }
 
+export interface MPLADSRecord {
+  entitled_amount: number;
+  released_amount: number;
+  expenditure_amount: number;
+  unspent_balance: number;
+  utilization_rate: number;
+  works_recommended: number;
+  works_completed: number;
+  term_years?: string;
+}
+
+export interface HistoricalWealthRecord {
+  from_year: number;
+  to_year: number;
+  initial_assets: number;
+  final_assets: number;
+  absolute_increase: number;
+  percentage_increase: number;
+  cagr_percent?: number;
+  is_rapid_accumulation: boolean;
+}
+
 export interface Candidate {
   id: string;
   name: string;
@@ -33,6 +55,12 @@ export interface Candidate {
   questions_count?: number;
   debates_count?: number;
   
+  // MoSPI MPLADS Fund Tracking
+  mplads?: MPLADSRecord;
+
+  // Longitudinal Historical Wealth CAGR
+  historical_wealth?: HistoricalWealthRecord[];
+
   // Forensic Audit Flags
   has_arithmetic_discrepancy: boolean;
   delta_movable: number;
