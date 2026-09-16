@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertOctagon, Scale, CalendarCheck, FileDown, Landmark, TrendingUp } from 'lucide-react';
+import { AlertOctagon, Scale, CalendarCheck, FileDown, Landmark, TrendingUp, Share2, Plus, Check } from 'lucide-react';
 import { Candidate } from '../types/candidate';
 import { DiscrepancyBadge } from './DiscrepancyBadge';
 import { exportCandidateDossierPdf } from '../utils/DossierPdfExport';
@@ -7,9 +7,18 @@ import { exportCandidateDossierPdf } from '../utils/DossierPdfExport';
 interface CandidateCardProps {
   candidate: Candidate;
   onVerifyProof: (candidateName: string, fieldLabel: string, value: string, pdfUrl: string, candidate?: Candidate) => void;
+  isSelectedForComparison?: boolean;
+  onToggleComparison?: (candidate: Candidate) => void;
+  onOpenShareCard?: (candidate: Candidate) => void;
 }
 
-export const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, onVerifyProof }) => {
+export const CandidateCard: React.FC<CandidateCardProps> = ({
+  candidate,
+  onVerifyProof,
+  isSelectedForComparison,
+  onToggleComparison,
+  onOpenShareCard,
+}) => {
   const formatINR = (val: number) => {
     if (val >= 10000000) return `₹${(val / 10000000).toFixed(2)} Cr`;
     if (val >= 100000) return `₹${(val / 100000).toFixed(2)} Lakh`;
@@ -54,9 +63,34 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, onVerif
               )}
             </p>
           </div>
-          <span className="text-xs font-semibold px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200/60 rounded-lg">
-            {candidate.party || 'Independent'}
-          </span>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {onToggleComparison && (
+              <button
+                onClick={() => onToggleComparison(candidate)}
+                className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg border transition-all ${
+                  isSelectedForComparison
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                    : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200 shadow-sm'
+                }`}
+                title={isSelectedForComparison ? 'Selected for comparison' : 'Add to head-to-head comparison'}
+              >
+                {isSelectedForComparison ? (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Added</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Compare</span>
+                  </>
+                )}
+              </button>
+            )}
+            <span className="text-xs font-semibold px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200/60 rounded-lg">
+              {candidate.party || 'Independent'}
+            </span>
+          </div>
         </div>
 
         {/* Core Financial & Crime Metrics Grid */}
@@ -159,7 +193,17 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, onVerif
       {/* Card Footer with 1-Click Forensic Dossier Export */}
       <div className="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
         <span>Filing Year: {candidate.filing_year}</span>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          {onOpenShareCard && (
+            <button
+              onClick={() => onOpenShareCard(candidate)}
+              title="Generate 1-Click WhatsApp & Social Report Card Graphic"
+              className="inline-flex items-center gap-1 text-slate-700 hover:text-slate-900 font-semibold bg-white hover:bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg shadow-sm transition-all"
+            >
+              <Share2 className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Share</span>
+            </button>
+          )}
           <button
             onClick={() => exportCandidateDossierPdf(candidate)}
             title="Download Court-Ready 1-Page Forensic Audit Dossier PDF"

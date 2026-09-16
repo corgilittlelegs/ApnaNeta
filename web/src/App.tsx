@@ -3,8 +3,11 @@ import { Navbar } from './components/Navbar';
 import { CandidateCard } from './components/CandidateCard';
 import { AffidavitProofViewer } from './components/AffidavitProofViewer';
 import { ConstituencyFilter, FilterState } from './components/ConstituencyFilter';
+import { ComparisonModal } from './components/ComparisonModal';
+import { ReportCardModal } from './components/ReportCardModal';
+import { LeaderboardsView } from './components/LeaderboardsView';
 import { Candidate, BoundingBox } from './types/candidate';
-import { Cpu, Database, Loader2 } from 'lucide-react';
+import { Cpu, Database, Loader2, Layers, X, ArrowRight } from 'lucide-react';
 
 // Seed sample data for interactive citizen demonstration
 const SAMPLE_CANDIDATES: Candidate[] = [
@@ -510,6 +513,35 @@ export const App: React.FC = () => {
   const [isLiveConnected, setIsLiveConnected] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedHouse, setSelectedHouse] = useState('ALL');
+  const [activeView, setActiveView] = useState<'directory' | 'leaderboards'>('directory');
+  const [selectedForComparison, setSelectedForComparison] = useState<Candidate[]>([]);
+  const [isComparisonOpen, setIsComparisonOpen] = useState<boolean>(false);
+  const [sharingCandidate, setSharingCandidate] = useState<Candidate | null>(null);
+
+  const handleToggleComparison = (cand: Candidate) => {
+    setSelectedForComparison((prev) => {
+      const exists = prev.some((c) => c.id === cand.id);
+      if (exists) {
+        return prev.filter((c) => c.id !== cand.id);
+      }
+      if (prev.length >= 3) {
+        return [...prev.slice(1), cand];
+      }
+      return [...prev, cand];
+    });
+  };
+
+  const handleRemoveFromComparison = (id: string) => {
+    setSelectedForComparison((prev) => prev.filter((c) => c.id !== id));
+  };
+
+  const handleClearComparison = () => {
+    setSelectedForComparison([]);
+  };
+
+  const handleOpenShareCard = (cand: Candidate) => {
+    setSharingCandidate(cand);
+  };
 
   // Interactive filters state
   const [filterState, setFilterState] = useState<FilterState>({
@@ -836,6 +868,8 @@ export const App: React.FC = () => {
         onSearchChange={setSearchQuery}
         selectedHouse={selectedHouse}
         onHouseChange={setSelectedHouse}
+        activeView={activeView}
+        onViewChange={setActiveView}
       />
 
       {/* Hero / System Overview */}
@@ -893,61 +927,136 @@ export const App: React.FC = () => {
         </div>
       </section>
 
-      {/* Main Candidate Feed */}
+      {/* Main Candidate Feed / Leaderboards */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Interactive Constituency & Forensic Explorer */}
-        <ConstituencyFilter
-          filters={filterState}
-          onFilterChange={setFilterState}
-          availableStates={availableStates}
-          availableConstituencies={availableConstituencies}
-          availableParties={availableParties}
-          totalMatches={filteredCandidates.length}
-        />
-
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <h2 className="text-lg font-bold text-slate-900">
-              Candidate Profiles & Audited Declarations ({filteredCandidates.length})
-            </h2>
-            {isLoading && (
-              <span className="flex items-center gap-1.5 text-xs text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
-                <Loader2 className="w-3 h-3 animate-spin text-blue-600" /> Connecting to Supabase...
-              </span>
-            )}
-          </div>
-          <span className="text-xs text-slate-500">Click any card to inspect photo proof or export dossier</span>
-        </div>
-
-        {filteredCandidates.length === 0 ? (
-          <div className="p-12 text-center bg-white rounded-2xl border border-slate-200">
-            <p className="text-slate-500 text-sm">No politicians found matching your selected filters.</p>
-          </div>
+        {activeView === 'leaderboards' ? (
+          <LeaderboardsView
+            candidates={candidates}
+            onVerifyProof={handleOpenProof}
+            onOpenShareCard={handleOpenShareCard}
+            selectedForComparison={selectedForComparison}
+            onToggleComparison={handleToggleComparison}
+          />
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-              {filteredCandidates.slice(0, displayLimit).map((candidate) => (
-                <CandidateCard
-                  key={candidate.id}
-                  candidate={candidate}
-                  onVerifyProof={handleOpenProof}
-                />
-              ))}
+            {/* Interactive Constituency & Forensic Explorer */}
+            <ConstituencyFilter
+              filters={filterState}
+              onFilterChange={setFilterState}
+              availableStates={availableStates}
+              availableConstituencies={availableConstituencies}
+              availableParties={availableParties}
+              totalMatches={filteredCandidates.length}
+            />
+
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <h2 className="text-lg font-bold text-slate-900">
+                  Candidate Profiles & Audited Declarations ({filteredCandidates.length})
+                </h2>
+                {isLoading && (
+                  <span className="flex items-center gap-1.5 text-xs text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
+                    <Loader2 className="w-3 h-3 animate-spin text-blue-600" /> Connecting to Supabase...
+                  </span>
+                )}
+              </div>
+              <span className="text-xs text-slate-500">Click any card to inspect photo proof or export dossier</span>
             </div>
 
-            {filteredCandidates.length > displayLimit && (
-              <div className="mt-10 text-center">
-                <button
-                  onClick={() => setDisplayLimit((prev) => prev + 50)}
-                  className="px-8 py-3.5 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 text-slate-800 text-sm font-semibold rounded-2xl shadow-sm hover:shadow transition-all duration-200 cursor-pointer"
-                >
-                  Load More Parliamentarians ({filteredCandidates.length - displayLimit} remaining)
-                </button>
+            {filteredCandidates.length === 0 ? (
+              <div className="p-12 text-center bg-white rounded-2xl border border-slate-200">
+                <p className="text-slate-500 text-sm">No politicians found matching your selected filters.</p>
               </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                  {filteredCandidates.slice(0, displayLimit).map((candidate) => (
+                    <CandidateCard
+                      key={candidate.id}
+                      candidate={candidate}
+                      onVerifyProof={handleOpenProof}
+                      isSelectedForComparison={selectedForComparison.some((c) => c.id === candidate.id)}
+                      onToggleComparison={handleToggleComparison}
+                      onOpenShareCard={handleOpenShareCard}
+                    />
+                  ))}
+                </div>
+
+                {filteredCandidates.length > displayLimit && (
+                  <div className="mt-10 text-center">
+                    <button
+                      onClick={() => setDisplayLimit((prev) => prev + 50)}
+                      className="px-8 py-3.5 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 text-slate-800 text-sm font-semibold rounded-2xl shadow-sm hover:shadow transition-all duration-200 cursor-pointer"
+                    >
+                      Load More Parliamentarians ({filteredCandidates.length - displayLimit} remaining)
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </>
         )}
       </main>
+
+      {/* Sticky Bottom Comparison Drawer */}
+      {selectedForComparison.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-slate-900 text-white rounded-2xl shadow-2xl px-4 sm:px-6 py-3 border border-slate-700 flex items-center gap-3 sm:gap-5 animate-in slide-in-from-bottom-6 max-w-[95vw]">
+          <div className="flex items-center gap-2">
+            <Layers className="w-4 h-4 text-blue-400 flex-shrink-0" />
+            <span className="text-xs font-semibold hidden md:inline">Compare:</span>
+            <div className="flex items-center gap-1.5 overflow-x-auto max-w-[200px] sm:max-w-xs md:max-w-md">
+              {selectedForComparison.map((c) => (
+                <div
+                  key={c.id}
+                  className="flex items-center gap-1.5 bg-slate-800 text-xs px-2.5 py-1 rounded-lg border border-slate-700 whitespace-nowrap"
+                >
+                  <span className="truncate max-w-[90px] font-medium">{c.name.split(' ')[0]}</span>
+                  <button
+                    onClick={() => handleRemoveFromComparison(c.id)}
+                    className="text-slate-400 hover:text-rose-400 p-0.5 rounded transition-colors"
+                    title="Remove"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={() => setIsComparisonOpen(true)}
+              className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <span>Side-by-Side ({selectedForComparison.length})</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={handleClearComparison}
+              className="text-slate-400 hover:text-slate-200 text-xs font-medium px-2 py-1 transition-colors cursor-pointer"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Comparison Modal */}
+      <ComparisonModal
+        isOpen={isComparisonOpen}
+        onClose={() => setIsComparisonOpen(false)}
+        candidates={selectedForComparison}
+        onRemoveCandidate={handleRemoveFromComparison}
+        onVerifyProof={handleOpenProof}
+        onOpenShareCard={handleOpenShareCard}
+      />
+
+      {/* Social Report Card Graphic Modal */}
+      <ReportCardModal
+        isOpen={!!sharingCandidate}
+        onClose={() => setSharingCandidate(null)}
+        candidate={sharingCandidate}
+      />
 
       {/* Affidavit Proof Viewer Modal */}
       <AffidavitProofViewer

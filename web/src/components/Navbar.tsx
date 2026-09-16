@@ -1,11 +1,13 @@
 import React from 'react';
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, LayoutGrid, Trophy } from 'lucide-react';
 
 interface NavbarProps {
   searchQuery: string;
   onSearchChange: (q: string) => void;
   selectedHouse: string;
   onHouseChange: (h: string) => void;
+  activeView?: 'directory' | 'leaderboards';
+  onViewChange?: (view: 'directory' | 'leaderboards') => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -13,19 +15,24 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSearchChange,
   selectedHouse,
   onHouseChange,
+  activeView = 'directory',
+  onViewChange,
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-4">
+        <div className="flex items-center justify-between h-16 gap-3 sm:gap-4">
           {/* Logo */}
-          <div className="flex items-center gap-3 flex-shrink-0 cursor-pointer">
+          <div
+            onClick={() => onViewChange && onViewChange('directory')}
+            className="flex items-center gap-2.5 sm:gap-3 flex-shrink-0 cursor-pointer"
+          >
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-white to-emerald-600 p-0.5 shadow-sm border border-slate-200 flex items-center justify-center">
               <div className="w-full h-full bg-white rounded-[10px] flex items-center justify-center">
                 <span className="text-xl">🇮🇳</span>
               </div>
             </div>
-            <div>
+            <div className="hidden sm:block">
               <div className="flex items-center gap-1.5">
                 <span className="font-extrabold text-slate-900 tracking-tight text-lg">Apna Neta</span>
                 <span className="text-[10px] bg-blue-100 text-blue-800 font-bold px-1.5 py-0.2 rounded font-mono">
@@ -35,6 +42,34 @@ export const Navbar: React.FC<NavbarProps> = ({
               <p className="text-[10px] text-slate-500">Autonomous Political Accountability</p>
             </div>
           </div>
+
+          {/* View Mode Switcher */}
+          {onViewChange && (
+            <div className="flex items-center bg-slate-100/90 p-1 rounded-xl border border-slate-200 flex-shrink-0">
+              <button
+                onClick={() => onViewChange('directory')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  activeView === 'directory'
+                    ? 'bg-white text-blue-700 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span className="hidden md:inline">Directory</span>
+              </button>
+              <button
+                onClick={() => onViewChange('leaderboards')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  activeView === 'leaderboards'
+                    ? 'bg-white text-blue-700 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Trophy className="w-3.5 h-3.5 text-amber-600" />
+                <span className="hidden md:inline">Leaderboards</span>
+              </button>
+            </div>
+          )}
 
           {/* Center Search Input */}
           <div className="flex-1 max-w-xl">
