@@ -21,7 +21,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          pip install httpx pydantic pydantic-settings pytest
+          pip install httpx pydantic pydantic-settings pytest pytest-asyncio
 
       - name: Run Verification Unit Tests
         env:
