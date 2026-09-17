@@ -86,7 +86,116 @@ ECI_STATE_CODES = {
     "Uttarakhand": "S28",
     "West Bengal": "S25",
     "Delhi": "U05",
+    "Jharkhand": "S27",
+    "Chhattisgarh": "S26",
+    "Telangana": "S29",
+    "Jammu and Kashmir": "U08",
+    "Puducherry": "U07",
 }
+
+# Number of Assembly Constituencies (Vidhan Sabha seats) by State
+STATE_ASSEMBLY_SEATS: Dict[str, int] = {
+    "Andhra Pradesh": 175,
+    "Arunachal Pradesh": 60,
+    "Assam": 126,
+    "Bihar": 243,
+    "Chhattisgarh": 90,
+    "Delhi": 70,
+    "Goa": 40,
+    "Gujarat": 182,
+    "Haryana": 90,
+    "Himachal Pradesh": 68,
+    "Jammu and Kashmir": 90,
+    "Jharkhand": 81,
+    "Karnataka": 224,
+    "Kerala": 140,
+    "Madhya Pradesh": 230,
+    "Maharashtra": 288,
+    "Manipur": 60,
+    "Meghalaya": 60,
+    "Mizoram": 40,
+    "Nagaland": 60,
+    "Odisha": 147,
+    "Puducherry": 30,
+    "Punjab": 117,
+    "Rajasthan": 200,
+    "Sikkim": 32,
+    "Tamil Nadu": 234,
+    "Telangana": 119,
+    "Tripura": 60,
+    "Uttar Pradesh": 403,
+    "Uttarakhand": 70,
+    "West Bengal": 294,
+}
+
+# Number of Parliamentary Constituencies (Lok Sabha seats) by State
+STATE_LOK_SABHA_SEATS: Dict[str, int] = {
+    "Uttar Pradesh": 80,
+    "Maharashtra": 48,
+    "West Bengal": 42,
+    "Bihar": 40,
+    "Tamil Nadu": 39,
+    "Madhya Pradesh": 29,
+    "Karnataka": 28,
+    "Gujarat": 26,
+    "Andhra Pradesh": 25,
+    "Rajasthan": 25,
+    "Odisha": 21,
+    "Kerala": 20,
+    "Telangana": 17,
+    "Assam": 14,
+    "Jharkhand": 14,
+    "Punjab": 13,
+    "Chhattisgarh": 11,
+    "Haryana": 10,
+    "Delhi": 7,
+    "Jammu and Kashmir": 5,
+    "Uttarakhand": 5,
+    "Himachal Pradesh": 4,
+    "Tripura": 2,
+    "Arunachal Pradesh": 2,
+    "Goa": 2,
+    "Manipur": 2,
+    "Meghalaya": 2,
+    "Mizoram": 1,
+    "Nagaland": 1,
+    "Sikkim": 1,
+    "Puducherry": 1,
+}
+
+
+def parse_constituency_list(
+    raw_input: str,
+    target_state: str,
+    house: str,
+    max_limit: int = 0,
+) -> List[int]:
+    """
+    Parses 'all', '1-50', '201, 202', or single numbers into a list of constituency IDs.
+    """
+    cleaned = (raw_input or "").strip().lower()
+    if not cleaned or cleaned in ("all", "*", "0"):
+        if house == "Vidhan Sabha":
+            total = STATE_ASSEMBLY_SEATS.get(target_state, 100)
+        else:
+            total = STATE_LOK_SABHA_SEATS.get(target_state, 80 if target_state != "National" else 543)
+        c_list = list(range(1, total + 1))
+    elif "-" in cleaned:
+        parts = cleaned.split("-")
+        start = int(parts[0].strip())
+        end = int(parts[1].strip())
+        c_list = list(range(start, end + 1))
+    elif "," in cleaned:
+        c_list = [int(x.strip()) for x in cleaned.split(",") if x.strip().isdigit()]
+    else:
+        try:
+            c_list = [int(cleaned)]
+        except ValueError:
+            c_list = [1]
+
+    if max_limit > 0:
+        c_list = c_list[:max_limit]
+    return c_list
 
 
 class ECIAffidavitScraper:
@@ -336,40 +445,69 @@ eci_scraper = ECIAffidavitScraper()
 if __name__ == "__main__":
     import asyncio
 
-    target_state = (os.getenv("TARGET_STATE") or "Uttar Pradesh").strip()
-    constituency_no = int(os.getenv("CONSTITUENCY_NO", "77")) # e.g. 77 for Varanasi (PC) or 201 for Baramati (AC)
+    target_state = (os.getenv("TARGET_STATE") or "Maharashtra").strip()
+    raw_constituency = (os.getenv("CONSTITUENCY_NO") or "all").strip()
     constituency_name = (os.getenv("CONSTITUENCY_NAME") or "").strip() or None
-    election_type = (os.getenv("ELECTION_TYPE") or "24-PC-GENERAL-1-2024").strip()
+    election_type = (os.getenv("ELECTION_TYPE") or "24-AC-GENERAL-1-2024").strip()
+    max_limit = int(os.getenv("MAX_CONSTITUENCIES", "0"))
 
-    raw_house = (os.getenv("HOUSE") or "").strip()
-    if raw_house:
+    raw_house = (os.getenv("HOUSE") or "Vidhan Sabha").strip()
+    if raw_house.lower() in ("all", "all houses", "*"):
+        house = "Vidhan Sabha" if ("AC" in election_type.upper() or "VIDHAN" in election_type.upper()) else "Lok Sabha"
+    elif raw_house:
         house = raw_house
     elif "AC" in election_type.upper() or "VIDHAN" in election_type.upper():
         house = "Vidhan Sabha"
     else:
         house = "Lok Sabha"
 
+    constituency_list = parse_constituency_list(
+        raw_input=raw_constituency,
+        target_state=target_state,
+        house=house,
+        max_limit=max_limit,
+    )
+
     logger.info("==========================================================")
     logger.info(f"Starting Dynamic ECI Candidate Affidavit Ingestion")
-    logger.info(f"House:            {house}")
-    logger.info(f"Election Type:    {election_type}")
-    logger.info(f"Target State:     {target_state}")
-    logger.info(f"Constituency No:  {constituency_no} ({constituency_name or 'Auto'})")
+    logger.info(f"House:                  {house}")
+    logger.info(f"Election Type:          {election_type}")
+    logger.info(f"Target State:           {target_state}")
+    logger.info(f"Constituencies Scope:   {raw_constituency} ({len(constituency_list)} total)")
+    if constituency_name and len(constituency_list) == 1:
+        logger.info(f"Constituency Name:      {constituency_name}")
     logger.info("==========================================================")
 
     async def main():
-        discovered = await eci_scraper.discover_constituency_candidates(
-            election_type=election_type,
-            state_name=target_state,
-            constituency_no=constituency_no,
-            house=house,
-            constituency_name=constituency_name,
-        )
-        if discovered:
-            results = await eci_scraper.ingest_batch(discovered)
-            logger.info(f"✅ Ingestion Complete! Successfully indexed {len(results)} verified affidavits.")
-        else:
-            logger.info("No candidates discovered from live portal feed for current parameters.")
+        total_indexed = 0
+        total_candidates_discovered = 0
+
+        for idx, c_no in enumerate(constituency_list, 1):
+            c_name = constituency_name if len(constituency_list) == 1 else None
+            logger.info(f"[{idx}/{len(constituency_list)}] Querying constituency #{c_no} in {target_state}...")
+            
+            discovered = await eci_scraper.discover_constituency_candidates(
+                election_type=election_type,
+                state_name=target_state,
+                constituency_no=c_no,
+                house=house,
+                constituency_name=c_name,
+            )
+            
+            if discovered:
+                total_candidates_discovered += len(discovered)
+                results = await eci_scraper.ingest_batch(discovered)
+                total_indexed += len(results)
+                logger.info(f"  ✓ Indexed {len(results)} candidate affidavit(s) for constituency #{c_no}.")
+            else:
+                logger.info(f"  - No candidates returned from feed for constituency #{c_no}.")
+
+        logger.info("==========================================================")
+        logger.info(f"✅ Ingestion Run Finished!")
+        logger.info(f"Constituencies Scanned: {len(constituency_list)}")
+        logger.info(f"Candidates Discovered:  {total_candidates_discovered}")
+        logger.info(f"Affidavits Processed:   {total_indexed}")
+        logger.info("==========================================================")
 
     try:
         asyncio.run(main())

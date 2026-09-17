@@ -6,29 +6,34 @@ on:
   workflow_dispatch: # Allows manual trigger from GitHub UI
     inputs:
       house:
-        description: "Legislative House ('Vidhan Sabha' or 'Lok Sabha')"
+        description: "Legislative House ('All', 'Vidhan Sabha', or 'Lok Sabha')"
         required: true
         type: choice
         options:
           - "Vidhan Sabha"
           - "Lok Sabha"
+          - "All"
         default: "Vidhan Sabha"
       state:
         description: "Target State (e.g. 'Maharashtra', 'Uttar Pradesh', 'Delhi')"
         required: true
         default: "Maharashtra"
       constituency_no:
-        description: "Constituency Number (e.g. '201' for Baramati AC, '77' for Varanasi PC)"
+        description: "Constituency Number ('all' for entire state, range like '1-20', or specific e.g. '201')"
         required: true
-        default: "201"
+        default: "all"
       constituency_name:
-        description: "Constituency Name (e.g. 'Baramati')"
+        description: "Constituency Name (optional override if running single constituency, e.g. 'Baramati')"
         required: false
-        default: "Baramati"
+        default: ""
       election_type:
         description: "ECI Election Code (e.g. '24-AC-GENERAL-1-2024' or '24-PC-GENERAL-1-2024')"
         required: false
         default: "24-AC-GENERAL-1-2024"
+      max_constituencies:
+        description: "Max Constituencies to Process (0 for unlimited, or e.g. 5 to test batch)"
+        required: false
+        default: "0"
 
 jobs:
   scrape_eci:
@@ -57,9 +62,10 @@ jobs:
           R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
           HOUSE: ${{ inputs.house || 'Vidhan Sabha' }}
           TARGET_STATE: ${{ inputs.state || 'Maharashtra' }}
-          CONSTITUENCY_NO: ${{ inputs.constituency_no || '201' }}
-          CONSTITUENCY_NAME: ${{ inputs.constituency_name || 'Baramati' }}
+          CONSTITUENCY_NO: ${{ inputs.constituency_no || 'all' }}
+          CONSTITUENCY_NAME: ${{ inputs.constituency_name }}
           ELECTION_TYPE: ${{ inputs.election_type || '24-AC-GENERAL-1-2024' }}
+          MAX_CONSTITUENCIES: ${{ inputs.max_constituencies || '0' }}
           PYTHONPATH: .
         run: |
           python -m src.ingestion.eci_affidavits
