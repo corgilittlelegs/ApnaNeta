@@ -18,6 +18,7 @@ import {
   Buildings,
   Gavel,
   ShareNetwork,
+  MapPin,
 } from '@phosphor-icons/react';
 import { BoundingBox, Candidate } from '../types/candidate';
 import { exportCandidateDossierPdf } from '../utils/DossierPdfExport';
@@ -53,6 +54,20 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
     if (val >= 10000000) return `₹${(val / 10000000).toFixed(2)} Cr`;
     if (val >= 100000) return `₹${(val / 100000).toFixed(2)} Lakh`;
     return `₹${val.toLocaleString('en-IN')}`;
+  };
+
+  // Protocol Injection / Safe URL validation (SEC-03)
+  const getSafeHref = (url: string): string => {
+    if (!url) return '#';
+    try {
+      const parsed = new URL(url, window.location.origin);
+      if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+        return url;
+      }
+    } catch {
+      // Reject malformed protocols
+    }
+    return '#';
   };
 
   // Determine dynamic highlight style based on whether it's identity, assets, or discrepancy
@@ -208,7 +223,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
           </div>
 
           <a
-            href={pdfUrl}
+            href={getSafeHref(pdfUrl)}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 text-blue-600 hover:text-blue-800 font-semibold text-xs ml-4 whitespace-nowrap"
@@ -245,7 +260,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
               </div>
 
               <a
-                href={pdfUrl}
+                href={getSafeHref(pdfUrl)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-xl shadow transition-colors"
@@ -414,6 +429,60 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                         </div>
                       </div>
                     )}
+
+                    {/* Geotagged Works & GIS Satellite Verification */}
+                    <div className="pt-4 mt-4 border-t border-slate-100">
+                      <div className="flex items-center justify-between mb-3">
+                        <h5 className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                          <MapPin size={16} weight="duotone" className="text-emerald-600" />
+                          Granular Work Sanctions & GIS Geolocation Audit
+                        </h5>
+                        <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">
+                          {candidate.mplads_works ? `${candidate.mplads_works.length} Works Tracked` : 'Zero Works Registered'}
+                        </span>
+                      </div>
+
+                      {candidate.mplads_works && candidate.mplads_works.length > 0 ? (
+                        <div className="space-y-2">
+                          {candidate.mplads_works.map((w, idx) => (
+                            <div key={idx} className="p-3 bg-white border border-slate-200 rounded-xl text-xs space-y-1.5 shadow-2xs">
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <span className="font-bold text-slate-900 block">{w.work_title}</span>
+                                  <span className="text-[11px] text-slate-500 font-mono">ID: {w.work_id} • Sector: {w.sector || 'General'}</span>
+                                </div>
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded border whitespace-nowrap ${
+                                  w.ghost_project_risk === 'CRITICAL' ? 'bg-rose-100 text-rose-800 border-rose-300' :
+                                  w.ghost_project_risk === 'HIGH' ? 'bg-amber-100 text-amber-800 border-amber-300' :
+                                  'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                }`}>
+                                  {w.ghost_project_risk === 'CRITICAL' ? '⚠️ Critical Ghost Risk' :
+                                   w.ghost_project_risk === 'HIGH' ? '⚠️ Boundary Anomaly' : '✓ GIS Verified'}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between text-[11px] text-slate-600 font-mono pt-1 border-t border-slate-100">
+                                <span>Sanctioned: {formatINR(w.sanctioned_amount)}</span>
+                                <span>Spent: {formatINR(w.expenditure_amount)}</span>
+                                {w.latitude && w.longitude && (
+                                  <span className="text-emerald-700 font-semibold">
+                                    📍 {w.latitude.toFixed(4)}, {w.longitude.toFixed(4)}
+                                  </span>
+                                )}
+                              </div>
+                              {w.gis_audit_notes && (
+                                <p className="text-[10px] text-slate-500 italic bg-slate-50 p-1.5 rounded">
+                                  {w.gis_audit_notes}
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-500 text-center">
+                          Granular work inspection dockets will populate upon e-SAKSHI district crawl.
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <div className="p-8 text-center text-slate-500 text-xs">
@@ -679,8 +748,70 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                 </div>
               </div>
 
+              {/* Parliamentary Division Voting Records */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-indigo-50 text-indigo-700 rounded-xl">
+                      <Scales size={24} weight="duotone" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-lg">
+                        Parliamentary Division Voting Records
+                      </h4>
+                      <p className="text-xs text-slate-500">
+                        Roll-call electronic voting on landmark legislative acts (Lok Sabha & Rajya Sabha)
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-mono font-bold px-2.5 py-1 bg-indigo-100 text-indigo-800 rounded-lg border border-indigo-200">
+                    {candidate?.division_votes?.length ?? 0} Recorded Votes
+                  </span>
+                </div>
+
+                <div className="pt-4 space-y-3">
+                  {candidate?.division_votes && candidate.division_votes.length > 0 ? (
+                    candidate.division_votes.map((vote, idx) => (
+                      <div key={idx} className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 text-xs">
+                        <div className="flex items-start justify-between gap-2 mb-1.5">
+                          <div>
+                            <span className="font-bold text-slate-900 text-sm block">{vote.bill_title}</span>
+                            <span className="text-[11px] text-slate-500 font-mono">Date: {vote.division_date} • House: {vote.house || 'Lok Sabha'}</span>
+                          </div>
+                          <span className={`font-mono font-bold px-2.5 py-1 rounded text-xs border ${
+                            vote.vote_cast === 'AYE' ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
+                            vote.vote_cast === 'NOE' ? 'bg-rose-100 text-rose-800 border-rose-300' :
+                            'bg-slate-200 text-slate-700 border-slate-300'
+                          }`}>
+                            Vote: {vote.vote_cast}
+                          </span>
+                        </div>
+                        {vote.result && (
+                          <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-200/60">
+                            <span>Outcome: <strong>{vote.result}</strong></span>
+                            {vote.party_whip_aligned !== undefined && (
+                              <span className="text-indigo-700 font-medium">
+                                {vote.party_whip_aligned ? '✓ Aligned with Party Whip' : '⚠️ Defied Party Whip'}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-600">
+                      <p className="font-semibold text-slate-800">No Division Voting Records on File</p>
+                      <p className="text-[11px] text-slate-500">
+                        Electronic division voting logs synchronize with official Lok Sabha & Rajya Sabha digital records.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
             </div>
           </div>
+
         ) : activeTab === 'wealth_history' ? (
           /* 10-Year Wealth Trajectory Tab */
           <div className="flex-1 overflow-auto p-6 bg-slate-50 min-h-[420px]">

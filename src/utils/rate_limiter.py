@@ -15,11 +15,17 @@ class PoliteRateLimiter:
     def __init__(self, min_delay: float = 1.0, max_delay: float = 3.0):
         self.min_delay = min_delay
         self.max_delay = max_delay
-        self._lock = asyncio.Lock()
+        self._lock = None
+
+    @property
+    def lock(self) -> asyncio.Lock:
+        if self._lock is None:
+            self._lock = asyncio.Lock()
+        return self._lock
 
     async def wait(self, custom_delay: Optional[float] = None) -> None:
         """Pauses execution with a randomized delay to simulate human browsing."""
-        async with self._lock:
+        async with self.lock:
             delay = custom_delay if custom_delay is not None else random.uniform(self.min_delay, self.max_delay)
             logger.debug(f"Pacing request: sleeping for {delay:.2f} seconds...")
             await asyncio.sleep(delay)

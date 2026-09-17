@@ -1,0 +1,55 @@
+import unittest
+from src.verification.policy_classifier import PolicyTopicClassifier, POLICY_DOMAINS
+
+
+class TestSansadIntelligence(unittest.TestCase):
+    def setUp(self):
+        self.classifier = PolicyTopicClassifier()
+
+    def test_single_question_classification(self):
+        # Agriculture query
+        q_agri = "Will the Minister of Agriculture be pleased to state the MSP procurement targets for wheat and paddy crops?"
+        dist_agri = self.classifier.classify_question(q_agri)
+        self.assertGreater(dist_agri["agriculture"], 0.4)
+        self.assertEqual(dist_agri["defense_security"], 0.0)
+
+        # Defense query
+        q_def = "Details of DRDO border surveillance equipment deployed by the Army along the Line of Control"
+        dist_def = self.classifier.classify_question(q_def)
+        self.assertGreater(dist_def["defense_security"], 0.4)
+        self.assertEqual(dist_def["agriculture"], 0.0)
+
+    def test_portfolio_classification(self):
+        questions = [
+            "Funds allocated for AIIMS hospital and medical college equipment",
+            "Doctor-to-patient ratio and vaccines supply in public hospitals",
+            "Construction of four-lane highway and railway flyovers in Varanasi",
+        ]
+        portfolio = self.classifier.classify_portfolio(questions)
+        self.assertEqual(portfolio["total_questions_analyzed"], 3)
+        self.assertIn("health_family", portfolio["policy_topics"])
+        self.assertIn("infrastructure_energy", portfolio["policy_topics"])
+        self.assertGreater(portfolio["policy_topics"]["health_family"], 30.0)
+
+    def test_local_vs_national_ratio(self):
+        # 2 local questions mentioning constituency / station, 1 national question
+        questions = [
+            "Sanction of new railway stoppage at Amethi station for express train",
+            "Repair of bypass bridge and rural roads in Amethi district",
+            "Impact of global inflation on RBI foreign exchange reserves",
+        ]
+        ratio = self.classifier.calculate_local_vs_national_ratio(questions, constituency="Amethi", state="Uttar Pradesh")
+        # 2 local hits / 1 national hit = 2.0
+        self.assertEqual(ratio, 2.0)
+
+    def test_starred_unstarred_split_ratio(self):
+        total_questions = 120
+        starred = round(total_questions * 0.10)
+        unstarred = total_questions - starred
+        self.assertEqual(starred, 12)
+        self.assertEqual(unstarred, 108)
+        self.assertEqual(starred + unstarred, total_questions)
+
+
+if __name__ == "__main__":
+    unittest.main()

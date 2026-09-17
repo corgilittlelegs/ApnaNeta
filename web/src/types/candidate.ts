@@ -104,6 +104,35 @@ export interface StatutorySuballocationAudit {
   has_statutory_shortfall?: boolean | null;
 }
 
+export interface ParliamentaryDivisionVote {
+  division_id?: string;
+  bill_title: string;
+  division_date: string;
+  house?: string;
+  vote_cast: 'AYE' | 'NOE' | 'ABSTAIN' | 'ABSENT';
+  party_whip_aligned?: boolean;
+  result?: string;
+}
+
+export interface MPLADSWorkItem {
+  id?: string;
+  work_id: string;
+  work_title: string;
+  sector?: string;
+  sanctioned_amount: number;
+  expenditure_amount: number;
+  status: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  sc_st_category?: string;
+  completion_date?: string;
+  gis_verified?: boolean;
+  constituency_boundary_valid?: boolean;
+  duplicate_coordinate_flag?: boolean;
+  ghost_project_risk?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  gis_audit_notes?: string;
+}
+
 export interface Candidate {
   id: string;
   name: string;
@@ -141,14 +170,22 @@ export interface Candidate {
   dockets?: ECourtsCaseDocket[];
   is_rpa_section_8_disqualified?: boolean;
   
-  // Legislative tracking
+  // Legislative tracking & Sansad Intelligence
   attendance_rate?: number;
   questions_count?: number;
+  starred_questions_count?: number;
+  unstarred_questions_count?: number;
   debates_count?: number;
+  private_member_bills?: number;
+  policy_topics?: Record<string, number>;
+  local_vs_national_ratio?: number;
+  division_votes?: ParliamentaryDivisionVote[];
   
-  // MoSPI MPLADS Fund Tracking
+  // MoSPI MPLADS Fund Tracking & GIS Audits
   mplads?: MPLADSRecord;
   suballocation_audit?: StatutorySuballocationAudit;
+  mplads_works?: MPLADSWorkItem[];
+  ghost_project_alerts_count?: number;
 
   // Longitudinal Historical Wealth CAGR
   historical_wealth?: HistoricalWealthRecord[];
@@ -176,3 +213,4 @@ export interface Candidate {
   proof_bbox?: BoundingBox;
   variance_proof_bbox?: BoundingBox;
 }
+

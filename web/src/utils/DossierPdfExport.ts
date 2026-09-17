@@ -1,6 +1,19 @@
 import { Candidate } from '../types/candidate';
 
 /**
+ * HTML Entity Sanitizer to prevent Stored / DOM Cross-Site Scripting (SEC-01).
+ */
+export function escapeHtml(str: unknown): string {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/**
  * Client-Side Court-Ready 1-Page Forensic Audit Dossier PDF Exporter.
  * Operates with $0.00 compute cost by rendering an authentic high-resolution
  * A4 legal audit document directly in a printable browser context.
@@ -32,7 +45,7 @@ export function exportCandidateDossierPdf(candidate: Candidate): void {
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Apna Neta Forensic Audit Dossier - ${candidate.name}</title>
+  <title>Apna Neta Forensic Audit Dossier - ${escapeHtml(candidate.name)}</title>
   <!-- Google Fonts: Newsreader, Plus Jakarta Sans, JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -386,8 +399,8 @@ export function exportCandidateDossierPdf(candidate: Candidate): void {
         </div>
       </div>
       <div class="audit-meta">
-        <div>Ref: <span class="ref">${auditRef}</span></div>
-        <div>Audited: ${generatedDate} ${generatedTime}</div>
+        <div>Ref: <span class="ref">${escapeHtml(auditRef)}</span></div>
+        <div>Audited: ${escapeHtml(generatedDate)} ${escapeHtml(generatedTime)}</div>
         <div>Standard: Rule 4A, Conduct of Elections Rules 1961</div>
       </div>
     </div>
@@ -395,13 +408,13 @@ export function exportCandidateDossierPdf(candidate: Candidate): void {
     <!-- Identity Banner -->
     <div class="identity-card">
       <div>
-        <h2 class="cand-name">${candidate.name} ${candidate.alias ? `("${candidate.alias}")` : ''}</h2>
+        <h2 class="cand-name">${escapeHtml(candidate.name)} ${candidate.alias ? `("${escapeHtml(candidate.alias)}")` : ''}</h2>
         <div class="cand-sub">
-          <strong>${candidate.house}</strong> • ${candidate.constituency} Constituency, ${candidate.state} • Election Year: <strong>${candidate.filing_year}</strong>
+          <strong>${escapeHtml(candidate.house)}</strong> • ${escapeHtml(candidate.constituency)} Constituency, ${escapeHtml(candidate.state)} • Election Year: <strong>${escapeHtml(candidate.filing_year)}</strong>
         </div>
       </div>
       <div style="display: flex; align-items: center; gap: 12px;">
-        <div class="party-tag">${candidate.party || 'Independent'}</div>
+        <div class="party-tag">${escapeHtml(candidate.party || 'Independent')}</div>
         <div class="seal-circle ${candidate.serious_criminal_cases_count > 0 ? 'flagged' : ''}">
           <div class="seal-inner ${candidate.serious_criminal_cases_count > 0 ? 'flagged' : ''}">
             <span class="seal-num ${candidate.serious_criminal_cases_count > 0 ? 'flagged' : ''}">${candidate.serious_criminal_cases_count}</span>
@@ -579,7 +592,7 @@ export function exportCandidateDossierPdf(candidate: Candidate): void {
         </div>
         <div class="metric-sub">
           ${candidate.conflicts_of_interest && candidate.conflicts_of_interest.length > 0
-            ? `${candidate.conflicts_of_interest[0].tender_title || 'Tender'} (${candidate.conflicts_of_interest[0].awarding_authority || 'Govt'})`
+            ? `${escapeHtml(candidate.conflicts_of_interest[0].tender_title || 'Tender')} (${escapeHtml(candidate.conflicts_of_interest[0].awarding_authority || 'Govt')})`
             : 'Audited against Central CPPP GePNIC registry & MCA21 directorships'}
         </div>
       </div>

@@ -114,12 +114,48 @@ CREATE TABLE IF NOT EXISTS sansad_records (
     tenure_end DATE,
     attendance_rate NUMERIC(5, 2), -- e.g. 85.50%
     questions_count INT DEFAULT 0,
+    starred_questions_count INT DEFAULT 0,
+    unstarred_questions_count INT DEFAULT 0,
     debates_count INT DEFAULT 0,
     private_member_bills INT DEFAULT 0,
+    policy_topics JSONB DEFAULT '{}'::jsonb,
+    local_vs_national_ratio NUMERIC(5, 2),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+ALTER TABLE sansad_records ADD COLUMN IF NOT EXISTS starred_questions_count INT DEFAULT 0;
+ALTER TABLE sansad_records ADD COLUMN IF NOT EXISTS unstarred_questions_count INT DEFAULT 0;
+ALTER TABLE sansad_records ADD COLUMN IF NOT EXISTS policy_topics JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE sansad_records ADD COLUMN IF NOT EXISTS local_vs_national_ratio NUMERIC(5, 2);
+
 CREATE INDEX IF NOT EXISTS idx_sansad_candidate ON sansad_records (candidate_id);
+
+-- 6b. Parliamentary Division Voting Records
+CREATE TABLE IF NOT EXISTS parliamentary_divisions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    division_date DATE NOT NULL,
+    house TEXT NOT NULL, -- Lok Sabha or Rajya Sabha
+    bill_title TEXT NOT NULL,
+    division_no INT,
+    ayes_count INT DEFAULT 0,
+    noes_count INT DEFAULT 0,
+    result TEXT, -- 'Passed', 'Negatived'
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_divisions_bill ON parliamentary_divisions (bill_title);
+
+CREATE TABLE IF NOT EXISTS candidate_division_votes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    division_id UUID REFERENCES parliamentary_divisions(id) ON DELETE CASCADE,
+    candidate_id UUID REFERENCES candidates(id) ON DELETE CASCADE,
+    vote_cast TEXT NOT NULL, -- 'AYE', 'NOE', 'ABSTAIN', 'ABSENT'
+    party_whip_aligned BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT uq_candidate_division UNIQUE (division_id, candidate_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_candidate_votes_candidate ON candidate_division_votes (candidate_id);
 
 -- 7. MPLADS Development Funds Tracking (MoSPI Data)
 CREATE TABLE IF NOT EXISTS mplads_records (
@@ -141,6 +177,31 @@ CREATE TABLE IF NOT EXISTS mplads_records (
 
 CREATE INDEX IF NOT EXISTS idx_mplads_candidate ON mplads_records (candidate_id);
 CREATE INDEX IF NOT EXISTS idx_mplads_constituency ON mplads_records (state, constituency);
+
+-- 7b. MPLADS Granular Work Sanctions & GIS Geolocation Tracking
+CREATE TABLE IF NOT EXISTS mplads_works (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    candidate_id UUID REFERENCES candidates(id) ON DELETE CASCADE,
+    work_id TEXT UNIQUE NOT NULL,
+    work_title TEXT NOT NULL,
+    sector TEXT, -- Drinking Water, Sanitation, Roads, Education, Health, Electricity
+    sanctioned_amount NUMERIC(15, 2) DEFAULT 0.00,
+    expenditure_amount NUMERIC(15, 2) DEFAULT 0.00,
+    status TEXT DEFAULT 'Sanctioned', -- Recommended, Sanctioned, In Progress, Completed, Closed
+    latitude NUMERIC(10, 6),
+    longitude NUMERIC(10, 6),
+    sc_st_category TEXT, -- General, SC (15%), ST (7.5%)
+    completion_date DATE,
+    gis_verified BOOLEAN DEFAULT FALSE,
+    constituency_boundary_valid BOOLEAN DEFAULT TRUE,
+    duplicate_coordinate_flag BOOLEAN DEFAULT FALSE,
+    ghost_project_risk TEXT DEFAULT 'LOW', -- 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'
+    gis_audit_notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_mplads_works_candidate ON mplads_works (candidate_id);
+CREATE INDEX IF NOT EXISTS idx_mplads_works_coords ON mplads_works (latitude, longitude);
 
 -- 8. Multi-Term Historical Wealth Growth (CAGR & Longitudinal Tracking)
 CREATE TABLE IF NOT EXISTS historical_wealth_cagr (
@@ -273,6 +334,9 @@ ALTER TABLE procurement_tenders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE conflict_of_interest_audits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE political_mobility_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE campaign_donations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE parliamentary_divisions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE candidate_division_votes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE mplads_works ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Public Read Access" ON candidates;
 CREATE POLICY "Public Read Access" ON candidates FOR SELECT USING (true);
@@ -313,11 +377,31 @@ CREATE POLICY "Public Read Access" ON political_mobility_records FOR SELECT USIN
 DROP POLICY IF EXISTS "Public Read Access" ON campaign_donations;
 CREATE POLICY "Public Read Access" ON campaign_donations FOR SELECT USING (true);
 
--- 16. Grants & Schema Cache Reload
+DROP POLICY IF EXISTS "Public Read Access" ON parliamentary_divisions;
+CREATE POLICY "Public Read Access" ON parliamentary_divisions FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public Read Access" ON candidate_division_votes;
+CREATE POLICY "Public Read Access" ON candidate_division_votes FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public Read Access" ON mplads_works;
+CREATE POLICY "Public Read Access" ON mplads_works FOR SELECT USING (true);
+
+-- 16. Principle of Least Privilege Grants & Schema Cache Reload (SEC-02 Hardening)
 GRANT USAGE ON SCHEMA public TO postgres, anon, authenticated, service_role;
-GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, anon, authenticated, service_role;
-GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, anon, authenticated, service_role;
-GRANT ALL ON ALL ROUTINES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+
+-- Revoke write/modify permissions from public anonymous role
+REVOKE ALL ON ALL TABLES IN SCHEMA public FROM anon;
+REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM anon;
+REVOKE ALL ON ALL ROUTINES IN SCHEMA public FROM anon;
+
+-- Anonymous public clients are strictly limited to read-only queries
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon, authenticated;
+GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
+
+-- Service role and admin maintain write and administrative authority
+GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO postgres, service_role;
 
 NOTIFY pgrst, 'reload schema';
 

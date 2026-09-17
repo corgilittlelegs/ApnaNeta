@@ -4,6 +4,8 @@ import io
 import hashlib
 import logging
 import re
+import ipaddress
+from urllib.parse import urlparse
 from typing import List, Dict, Any, Optional
 from src.utils.rate_limiter import PoliteRateLimiter
 from src.storage.r2_client import r2_storage
@@ -15,6 +17,46 @@ logger = logging.getLogger("ECIAffidavitIngest")
 # Base URLs for ECI Affidavit Portal
 ECI_AFFIDAVIT_BASE = "https://affidavit.eci.gov.in"
 ECI_FILTER_ENDPOINT = f"{ECI_AFFIDAVIT_BASE}/CandidateCustomFilter"
+
+# Allowed domains for PDF ingestion to prevent SSRF (SEC-05)
+ALLOWED_DOMAINS = {
+    "affidavit.eci.gov.in",
+    "eci.gov.in",
+    "affidavitresults.eci.gov.in",
+    "suvidha.eci.gov.in",
+}
+
+
+def is_allowed_pdf_url(url: str) -> bool:
+    """
+    Defensive SSRF validation (SEC-05).
+    Ensures URL targets official ECI government portals and rejects loopback/private/metadata IP addresses.
+    """
+    if not url or not isinstance(url, str):
+        return False
+    try:
+        parsed = urlparse(url.strip())
+        if parsed.scheme not in ("http", "https"):
+            return False
+
+        hostname = (parsed.hostname or "").lower()
+        if not hostname:
+            return False
+
+        # Reject direct IP addresses (prevent accessing internal VPC, 169.254.169.254, 127.0.0.1, etc.)
+        try:
+            ip = ipaddress.ip_address(hostname)
+            return False  # Reject direct IPs, require verified domain
+        except ValueError:
+            pass
+
+        # Check against allowed domains
+        for allowed in ALLOWED_DOMAINS:
+            if hostname == allowed or hostname.endswith(f".{allowed}"):
+                return True
+        return False
+    except Exception:
+        return False
 
 # Official ECI State & Union Territory Codes for 2024 Lok Sabha
 ECI_STATE_CODES = {
@@ -71,6 +113,10 @@ class ECIAffidavitScraper:
 
     async def fetch_pdf(self, pdf_url: str) -> Optional[bytes]:
         """Downloads a Form 26 affidavit PDF with polite pacing and error handling."""
+        if not is_allowed_pdf_url(pdf_url):
+            logger.warning(f"Rejected disallowed or potentially malicious PDF download URL (SSRF Protection): {pdf_url}")
+            return None
+
         await self.rate_limiter.wait()
         logger.info(f"Attempting live fetch of affidavit: {pdf_url}")
 

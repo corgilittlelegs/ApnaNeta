@@ -5,6 +5,10 @@ from src.parsing.schemas import BoundingBox
 logger = logging.getLogger(__name__)
 
 
+# 50MB safety ceiling to mitigate Denial of Service (DoS) and decompression bombs (SEC-07)
+MAX_PDF_BYTES = 50 * 1024 * 1024
+
+
 class DigitalPDFParser:
     """
     High-speed, zero-cost parser for digital/selectable PDF documents using PyMuPDF.
@@ -16,6 +20,19 @@ class DigitalPDFParser:
         Extracts plain text and positioned bounding blocks from a specific page.
         page_number is 1-indexed.
         """
+        if not pdf_bytes or not isinstance(pdf_bytes, bytes):
+            return {"text": "", "blocks": [], "total_pages": 0}
+
+        # Guard against oversized document streams and memory exhaustion (SEC-07)
+        if len(pdf_bytes) > MAX_PDF_BYTES:
+            logger.error(f"Oversized PDF rejected: {len(pdf_bytes):,} bytes exceeds {MAX_PDF_BYTES:,} limit")
+            return {"text": "", "blocks": [], "total_pages": 0, "error": "PDF exceeds 50MB limit"}
+
+        # Verify PDF magic header signature
+        if not pdf_bytes.startswith(b"%PDF"):
+            logger.error("Invalid document stream: missing %PDF header magic bytes")
+            return {"text": "", "blocks": [], "total_pages": 0, "error": "Invalid PDF signature"}
+
         try:
             import fitz  # PyMuPDF
             doc = fitz.open(stream=pdf_bytes, filetype="pdf")

@@ -50,5 +50,36 @@ class DocumentComplexityRouter:
         # Default fallback for scans without high complexity
         return ProcessingTier.TIER_2_SCAN
 
+    def process_tier_page(
+        self,
+        tier: ProcessingTier,
+        page_image_bytes: bytes,
+        page_number: int = 1,
+        page_width: float = 595.0,
+        page_height: float = 842.0,
+    ) -> Dict[str, Any]:
+        """
+        Dispatches page processing to the corresponding extraction engine.
+        For TIER_2_SCAN, executes offline local OCR saving cloud API calls.
+        """
+        if tier == ProcessingTier.TIER_2_SCAN:
+            from src.parsing.local_ocr import local_ocr_engine
+            tokens = local_ocr_engine.extract_page_tokens(page_image_bytes, page_width, page_height)
+            fields = local_ocr_engine.extract_form26_fields(tokens)
+            return {
+                "tier": ProcessingTier.TIER_2_SCAN.value,
+                "tokens": tokens,
+                "fields": fields,
+            }
+        elif tier == ProcessingTier.TIER_3_VLM:
+            from src.parsing.vlm_client import GeminiVLMClient
+            vlm = GeminiVLMClient()
+            return vlm.extract_from_page_image(page_image_bytes, page_number=page_number)
+        else:
+            return {
+                "tier": ProcessingTier.TIER_1_DIGITAL.value,
+                "page_number": page_number,
+            }
+
 
 page_router = DocumentComplexityRouter()
