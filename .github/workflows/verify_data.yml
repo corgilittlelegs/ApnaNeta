@@ -23,16 +23,32 @@ jobs:
         run: |
           pip install httpx pydantic pydantic-settings pytest pytest-asyncio
 
-      - name: Run Verification Unit Tests
+      - name: Run Full Test Suite
         env:
           PYTHONPATH: .
         run: |
-          python -m pytest tests/test_verification.py -v
+          python -m unittest discover tests -v
 
-      - name: Execute Forensic Reconciliation
+      - name: Execute Forensic Reconciliation & Double-Entry Math Reconciler
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           PYTHONPATH: .
         run: |
           python -m src.verification.math_reconciler
+
+      - name: Audit Section 9A Commercial Conflicts of Interest
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          PYTHONPATH: .
+        run: |
+          python -m src.verification.conflict_detector
+
+      - name: Audit Political Mobility Dynamics & Defections
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          PYTHONPATH: .
+        run: |
+          python -m src.verification.mobility_tracker

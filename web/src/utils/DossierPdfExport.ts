@@ -569,6 +569,31 @@ export function exportCandidateDossierPdf(candidate: Candidate): void {
       </div>
     </div>
 
+    <!-- Section 5: Commercial Conflicts (Sec 9A RPA) & Judicial Dockets (eCourts) -->
+    <div class="section-title">5. Commercial Conflicts (Sec 9A RPA) & Judicial Dockets (eCourts)</div>
+    <div class="grid-2">
+      <div class="metric-box" style="${candidate.has_section_9a_conflict ? 'border-color: #fecdd3; background: #fff1f2;' : ''}">
+        <div class="metric-label">Section 9A RPA Procurement Conflict</div>
+        <div class="metric-val" style="font-size: 11px; color: ${candidate.has_section_9a_conflict ? '#b91c1c' : '#047857'};">
+          ${candidate.has_section_9a_conflict ? '⚠️ Subsisting Govt Tender Flagged' : '✓ No Subsisting Govt Tenders'}
+        </div>
+        <div class="metric-sub">
+          ${candidate.conflicts_of_interest && candidate.conflicts_of_interest.length > 0
+            ? `${candidate.conflicts_of_interest[0].tender_title || 'Tender'} (${candidate.conflicts_of_interest[0].awarding_authority || 'Govt'})`
+            : 'Audited against Central CPPP GePNIC registry & MCA21 directorships'}
+        </div>
+      </div>
+      <div class="metric-box" style="${candidate.is_rpa_section_8_disqualified ? 'border-color: #fecdd3; background: #fff1f2;' : ''}">
+        <div class="metric-label">National Judicial Grid (NJDG) / RPA Sec 8</div>
+        <div class="metric-val" style="font-size: 11px; color: ${candidate.is_rpa_section_8_disqualified ? '#b91c1c' : '#0f172a'};">
+          ${candidate.is_rpa_section_8_disqualified ? '⚠️ Disqualified (RPA Section 8)' : (candidate.dockets?.some(d => d.ecourts_verified) ? '✓ eCourts CNR Verified' : 'Standard ECI Disclosures')}
+        </div>
+        <div class="metric-sub">
+          ${candidate.defection_count ? `${candidate.defection_count} Career Party Transitions (Mobility Tracked)` : 'Criminal and disqualification records verified'}
+        </div>
+      </div>
+    </div>
+
     <!-- Statutory Section 79 Safe Harbor Disclaimer -->
     <div class="dossier-footer">
       <div class="footer-flex">

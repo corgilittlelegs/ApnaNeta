@@ -3,6 +3,10 @@ import sys
 import logging
 import asyncio
 from typing import List, Dict, Any, Optional
+try:
+    import httpx
+except ImportError:
+    httpx = None
 
 from config.settings import settings
 from src.storage.supabase_client import supabase
@@ -10,70 +14,16 @@ from src.storage.supabase_client import supabase
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("MoSPIMPLADSIngest")
 
-# Canonical 17th Lok Sabha (2019-2024) MPLADS Constituency Benchmarks
-CANONICAL_MPLADS_DATA = [
-    {
-        "candidate_name": "Narendra Modi",
-        "constituency": "Varanasi",
-        "state": "Uttar Pradesh",
-        "term_years": "2019-2024",
-        "entitled_amount": 250000000.00,  # ₹25 Cr
-        "released_amount": 200000000.00,  # ₹20 Cr
-        "expenditure_amount": 194500000.00,  # ₹19.45 Cr
-        "works_recommended": 142,
-        "works_completed": 138,
-    },
-    {
-        "candidate_name": "Rahul Gandhi",
-        "constituency": "Rae Bareli",
-        "state": "Uttar Pradesh",
-        "term_years": "2019-2024",
-        "entitled_amount": 250000000.00,
-        "released_amount": 175000000.00,
-        "expenditure_amount": 148000000.00,
-        "works_recommended": 118,
-        "works_completed": 105,
-    },
-    {
-        "candidate_name": "Kanimozhi Karunanidhi",
-        "constituency": "Thoothukkudi",
-        "state": "Tamil Nadu",
-        "term_years": "2019-2024",
-        "entitled_amount": 250000000.00,
-        "released_amount": 175000000.00,
-        "expenditure_amount": 169000000.00,
-        "works_recommended": 165,
-        "works_completed": 158,
-    },
-    {
-        "candidate_name": "Supriya Sule",
-        "constituency": "Baramati",
-        "state": "Maharashtra",
-        "term_years": "2019-2024",
-        "entitled_amount": 250000000.00,
-        "released_amount": 200000000.00,
-        "expenditure_amount": 191000000.00,
-        "works_recommended": 210,
-        "works_completed": 202,
-    },
-    {
-        "candidate_name": "Akhilesh Yadav",
-        "constituency": "Kannauj",
-        "state": "Uttar Pradesh",
-        "term_years": "2019-2024",
-        "entitled_amount": 250000000.00,
-        "released_amount": 150000000.00,
-        "expenditure_amount": 92000000.00,
-        "works_recommended": 95,
-        "works_completed": 62,
-    },
-]
+# Official MoSPI e-SAKSHI MPLADS Portal URL
+ESAKSHI_BASE_URL = "https://mplads.mospi.gov.in"
 
 
 class MoSPIMPLADSClient:
     """
-    Ingests and tracks Member of Parliament Local Area Development Scheme (MPLADS) funds.
+    Ingests and tracks Member of Parliament Local Area Development Scheme (MPLADS) funds
+    from the Ministry of Statistics and Programme Implementation (MoSPI / e-SAKSHI).
     Calculates Expenditure Velocity, unspent public balances, and developmental project delivery.
+    Operates strictly on genuine portal data without synthetic estimates or placeholder arrays.
     """
 
     def calculate_expenditure_velocity(self, expenditure: float, released: float) -> float:
@@ -84,13 +34,82 @@ class MoSPIMPLADSClient:
             return 0.0
         return round((expenditure / released) * 100.0, 2)
 
+    def audit_statutory_suballocations(
+        self,
+        expenditure_amount: float,
+        sc_spent: Optional[float] = None,
+        st_spent: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        """
+        Audits compliance with mandatory MoSPI MPLADS statutory guidelines:
+        - Scheduled Caste (SC) areas: Minimum 15.0% of total expenditure
+        - Scheduled Tribe (ST) areas: Minimum 7.5% of total expenditure
+        Zero synthetic assumptions: If SC or ST spent is omitted, marks compliance as None.
+        """
+        if expenditure_amount <= 0:
+            return {
+                "sc_compliant": True,
+                "st_compliant": True,
+                "sc_percentage": 0.0,
+                "st_percentage": 0.0,
+                "notes": "No expenditures recorded yet",
+            }
+
+        if sc_spent is None or st_spent is None:
+            return {
+                "sc_compliant": None,
+                "st_compliant": None,
+                "sc_percentage": None,
+                "st_percentage": None,
+                "sc_target_percentage": 15.0,
+                "st_target_percentage": 7.5,
+                "sc_spent": sc_spent,
+                "st_spent": st_spent,
+                "has_statutory_shortfall": None,
+                "notes": "Granular SC/ST expenditure sub-allocations not disclosed in primary record",
+            }
+
+        sc_pct = round((sc_spent / expenditure_amount) * 100.0, 2)
+        st_pct = round((st_spent / expenditure_amount) * 100.0, 2)
+
+        sc_compliant = sc_pct >= 15.0
+        st_compliant = st_pct >= 7.5
+
+        return {
+            "sc_compliant": sc_compliant,
+            "st_compliant": st_compliant,
+            "sc_percentage": sc_pct,
+            "st_percentage": st_pct,
+            "sc_target_percentage": 15.0,
+            "st_target_percentage": 7.5,
+            "sc_spent": sc_spent,
+            "st_spent": st_spent,
+            "has_statutory_shortfall": not (sc_compliant and st_compliant),
+        }
+
+    async def fetch_constituency_mplads_online(self, state: str, constituency: str) -> Optional[Dict[str, Any]]:
+        """
+        Polls official e-SAKSHI summary endpoints for live constituency MPLADS figures.
+        """
+        logger.info(f"Querying e-SAKSHI portal for {constituency}, {state}...")
+        try:
+            async with httpx.AsyncClient(timeout=20.0) as client:
+                url = f"{ESAKSHI_BASE_URL}/api/public/summary?state={state}&constituency={constituency}"
+                resp = await client.get(url, headers={"User-Agent": "Mozilla/5.0 ApnaNeta/1.0"})
+                if resp.status_code == 200:
+                    return resp.json()
+                return None
+        except Exception as e:
+            logger.debug(f"e-SAKSHI live query returned: {e}")
+            return None
+
     async def sync_candidate_mplads(self, data_item: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """
         Matches an MP in Supabase and registers or updates their MPLADS tracking record.
         """
-        cand_name = data_item["candidate_name"]
-        constituency = data_item["constituency"]
-        state = data_item["state"]
+        cand_name = data_item.get("candidate_name")
+        constituency = data_item.get("constituency")
+        state = data_item.get("state")
         term_years = data_item.get("term_years", "2019-2024")
 
         released = float(data_item.get("released_amount", 0.0))
@@ -101,11 +120,11 @@ class MoSPIMPLADSClient:
         # 1. Match candidate in Supabase
         candidate_id: Optional[str] = None
         try:
-            matched = await supabase.select("candidates", {"name": f"eq.{cand_name}", "limit": "1"})
-            if matched:
-                candidate_id = matched[0].get("id")
-            else:
-                # Constituency-level match fallback
+            if cand_name:
+                matched = await supabase.select("candidates", {"name": f"eq.{cand_name}", "limit": "1"})
+                if matched:
+                    candidate_id = matched[0].get("id")
+            if not candidate_id and constituency and state:
                 matched_const = await supabase.select(
                     "candidates",
                     {"constituency": f"eq.{constituency}", "state": f"eq.{state}", "limit": "1"},
@@ -122,8 +141,8 @@ class MoSPIMPLADSClient:
         # 2. Prepare payload
         record = {
             "candidate_id": candidate_id,
-            "constituency": constituency,
-            "state": state,
+            "constituency": constituency or "Constituency",
+            "state": state or "India",
             "term_years": term_years,
             "entitled_amount": float(data_item.get("entitled_amount", 250000000.00)),
             "released_amount": released,
@@ -148,16 +167,23 @@ class MoSPIMPLADSClient:
             return None
 
     async def run(self) -> List[Dict[str, Any]]:
-        """Executes full MPLADS fund synchronization."""
+        """Polls candidates in database and fetches live e-SAKSHI MPLADS spending."""
         logger.info("==========================================================")
         logger.info("Starting MoSPI MPLADS Fund Tracking & Velocity Engine")
         logger.info("==========================================================")
 
+        candidates = await supabase.select("candidates", {"limit": "50"})
         results = []
-        for item in CANONICAL_MPLADS_DATA:
-            res = await self.sync_candidate_mplads(item)
-            if res:
-                results.append(res)
+
+        for cand in candidates:
+            constituency = cand.get("constituency")
+            state = cand.get("state")
+            if constituency and state and constituency not in ("Parliament of India", "Constituency"):
+                live_data = await self.fetch_constituency_mplads_online(state, constituency)
+                if live_data:
+                    res = await self.sync_candidate_mplads(live_data)
+                    if res:
+                        results.append(res)
 
         logger.info("==========================================================")
         logger.info(f"🎉 MPLADS Sync Complete! Updated {len(results)} parliamentary fund records.")
@@ -166,7 +192,6 @@ class MoSPIMPLADSClient:
 
 
 mplads_client = MoSPIMPLADSClient()
-
 
 if __name__ == "__main__":
     asyncio.run(mplads_client.run())

@@ -33,8 +33,7 @@ class GeminiVLMClient:
         Returns a sanitized JSON dictionary compliant with DPDPA 2023.
         """
         if not self.is_configured:
-            logger.warning(f"Gemini API key not configured. Returning structured mock payload.")
-            return self._mock_extraction(page_number, source_url, sha256_hash)
+            raise RuntimeError("GEMINI_API_KEY is not configured. An official Google AI Studio key is required for verified document extraction.")
 
         try:
             from google import genai
@@ -101,7 +100,7 @@ class GeminiVLMClient:
 
         except Exception as e:
             logger.error(f"Error extracting with Gemini 3.8 Flash: {e}")
-            return self._mock_extraction(page_number, source_url, sha256_hash)
+            raise RuntimeError(f"VLM extraction failed on image page: {e}")
 
     def extract_from_pdf(
         self,
@@ -116,8 +115,7 @@ class GeminiVLMClient:
         Returns a sanitized JSON dictionary compliant with DPDPA 2023.
         """
         if not self.is_configured:
-            logger.warning("Gemini API key not configured. Returning structured mock payload.")
-            return self._mock_extraction(page_number=1, source_url=source_url, sha256_hash=sha256_hash)
+            raise RuntimeError("GEMINI_API_KEY is not configured. An official Google AI Studio key is required for verified document extraction.")
 
         try:
             from google import genai
@@ -218,42 +216,7 @@ class GeminiVLMClient:
 
         except Exception as e:
             logger.error(f"Error extracting PDF with Gemini Flash: {e}")
-            return self._mock_extraction(page_number=1, source_url=source_url, sha256_hash=sha256_hash)
-
-    def _mock_extraction(self, page_number: int, source_url: str, sha256_hash: str) -> Dict[str, Any]:
-        """Deterministic mock payload used for testing and offline development."""
-        mock_payload = {
-            "source_url": source_url or "https://affidavit.eci.gov.in/mock_affidavit.pdf",
-            "sha256_hash": sha256_hash or "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-            "candidate": {
-                "name": "Sample Candidate",
-                "state": "National",
-                "constituency": "Constituency 01",
-                "house": "Lok Sabha",
-                "filing_year": 2024,
-                "proof_bbox": {"page": page_number, "ymin": 100, "xmin": 50, "ymax": 180, "xmax": 400},
-            },
-            "part_a_movable_items": [
-                {"category": "Cash", "self_amount": 250000.0, "spouse_amount": 50000.0},
-                {"category": "Bank Deposits", "self_amount": 1000000.0, "spouse_amount": 300000.0},
-            ],
-            "part_a_immovable_items": [
-                {"category": "Agricultural Land", "self_amount": 3500000.0, "spouse_amount": 0.0},
-            ],
-            "five_year_itr": [
-                {"financial_year": "2023-24", "declared_income": 850000.0, "has_filed_itr": True},
-                {"financial_year": "2022-23", "declared_income": 720000.0, "has_filed_itr": True},
-            ],
-            "criminal_cases": [],
-            "part_b_summary": {
-                "movable_assets_total": 1600000.0,
-                "immovable_assets_total": 3500000.0,
-                "liabilities_total": 0.0,
-                "movable_proof_bbox": {"page": page_number, "ymin": 500, "xmin": 300, "ymax": 550, "xmax": 600},
-                "immovable_proof_bbox": {"page": page_number, "ymin": 560, "xmin": 300, "ymax": 610, "xmax": 600},
-            },
-        }
-        return sanitize_payload(mock_payload)
+            raise RuntimeError(f"VLM extraction failed on PDF: {e}")
 
 
 vlm_client = GeminiVLMClient()

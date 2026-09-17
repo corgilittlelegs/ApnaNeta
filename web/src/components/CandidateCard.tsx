@@ -125,7 +125,12 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
             <span className="text-slate-500 block mb-0.5 text-[11px] uppercase tracking-wider font-medium">
               Criminal Record
             </span>
-            {candidate.serious_criminal_cases_count > 0 ? (
+            {candidate.is_rpa_section_8_disqualified ? (
+              <span className="inline-flex items-center gap-1 font-bold text-rose-900 bg-rose-100 border border-rose-300 px-2 py-0.5 rounded-md">
+                <WarningOctagon size={15} weight="fill" className="text-rose-700" />
+                Disqualified (RPA Sec 8)
+              </span>
+            ) : candidate.serious_criminal_cases_count > 0 ? (
               <span className="inline-flex items-center gap-1 font-bold text-rose-800 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-md">
                 <WarningOctagon size={15} weight="duotone" className="text-rose-600" />
                 {candidate.serious_criminal_cases_count} Serious Case(s)
@@ -141,11 +146,40 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                 0 Charges Filed
               </span>
             )}
-            <span className="text-[10px] text-slate-400 block mt-0.5">
-              {candidate.filing_year} Sworn Form 26 Filing
+            <span className="text-[10px] text-slate-400 block mt-0.5 flex items-center gap-1">
+              {candidate.filing_year} Sworn Form 26
+              {candidate.dockets?.some((d) => d.ecourts_verified) && (
+                <span className="text-emerald-700 font-semibold">• eCourts Verified</span>
+              )}
             </span>
           </div>
         </div>
+
+        {/* Section 9A Commercial Conflict of Interest Alert */}
+        {candidate.has_section_9a_conflict && (
+          <div className="flex items-center justify-between py-1.5 px-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-900 mb-3 shadow-2xs">
+            <span className="font-bold flex items-center gap-1 text-[11px]">
+              <WarningOctagon size={14} weight="fill" className="text-rose-600" />
+              Section 9A Conflict of Interest Flag
+            </span>
+            <span className="text-[10px] bg-rose-600 text-white font-bold px-1.5 py-0.5 rounded">
+              Subsisting Govt Tender
+            </span>
+          </div>
+        )}
+
+        {/* Political Mobility Defection Badge */}
+        {candidate.defection_count !== undefined && candidate.defection_count > 0 && (
+          <div className="flex items-center justify-between py-1.5 px-3 bg-purple-50 border border-purple-200 rounded-xl text-xs text-purple-900 mb-3 shadow-2xs">
+            <span className="font-medium flex items-center gap-1 text-[11px]">
+              <ShareNetwork size={14} weight="duotone" className="text-purple-700" />
+              Political Mobility Dynamics
+            </span>
+            <span className="text-[10px] bg-purple-100 text-purple-800 font-semibold px-2 py-0.5 rounded border border-purple-200">
+              {candidate.defection_count} Career Party Switch(es)
+            </span>
+          </div>
+        )}
 
         {/* MoSPI MPLADS Fund Velocity & Historical Wealth Badges */}
         <div className="space-y-2 mb-3">

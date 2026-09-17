@@ -336,7 +336,21 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
   const bannerH = 68;
   roundRect(ctx, pad, bannerY, candCardW, bannerH, 16);
 
-  if (candidate.has_arithmetic_discrepancy) {
+  if (candidate.is_rpa_section_8_disqualified) {
+    ctx.fillStyle = '#E11D48'; // Crimson
+    ctx.fill();
+    ctx.font = 'bold 22px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = '#FFFFFF';
+    ctx.textAlign = 'center';
+    ctx.fillText('⚠️ DISQUALIFIED CANDIDATE UNDER SECTION 8 RPA 1951', size / 2, bannerY + 42);
+  } else if (candidate.has_section_9a_conflict) {
+    ctx.fillStyle = '#BE123C'; // Rose-700
+    ctx.fill();
+    ctx.font = 'bold 22px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = '#FFFFFF';
+    ctx.textAlign = 'center';
+    ctx.fillText('⚠️ SECTION 9A RPA COMMERCIAL CONFLICT OF INTEREST DETECTED', size / 2, bannerY + 42);
+  } else if (candidate.has_arithmetic_discrepancy) {
     ctx.fillStyle = '#E11D48'; // Crimson
     ctx.fill();
     ctx.font = 'bold 22px "Plus Jakarta Sans", sans-serif';
@@ -493,13 +507,18 @@ export function getReportCardFactSheet(candidate: Candidate): string {
       : `🏗️ *MPLADS Velocity:* N/A (No central quota)`,
     ``,
     `🔍 *Audit Verdict:* ${
-      candidate.has_arithmetic_discrepancy
+      candidate.is_rpa_section_8_disqualified
+        ? `⚠️ DISQUALIFIED UNDER SECTION 8 RPA 1951`
+        : candidate.has_section_9a_conflict
+        ? `⚠️ SECTION 9A RPA COMMERCIAL CONFLICT OF INTEREST FLAGGED`
+        : candidate.has_arithmetic_discrepancy
         ? `⚠️ ARITHMETIC DISCREPANCY FLAGGED (Delta: ${formatVal((candidate.delta_movable || 0) + (candidate.delta_immovable || 0))})`
         : `✅ CLEAN AUDIT (Part A & Part B disclosures match)`
     }`,
+    candidate.defection_count ? `🔄 *Political Mobility:* ${candidate.defection_count} Career Party Transitions` : '',
     `━━━━━━━━━━━━━━━━━━━━━`,
     `Verified against sworn ECI Form 26 affidavit at https://apnaneta.corgi-littlelegs.workers.dev`,
-  ];
+  ].filter(Boolean);
 
   return lines.join('\n');
 }
@@ -512,7 +531,13 @@ export function getWhatsAppShareUrl(candidate: Candidate): string {
 export function getTwitterShareUrl(candidate: Candidate): string {
   const safeParty = candidate.party ? ` (${candidate.party})` : '';
   const netWorth = formatINR(candidate.total_net_worth);
-  const auditVerdict = candidate.has_arithmetic_discrepancy ? '⚠️ Discrepancy Flagged' : '✅ 100% Clean Audit';
+  const auditVerdict = candidate.is_rpa_section_8_disqualified
+    ? '⚠️ Disqualified (RPA Sec 8)'
+    : candidate.has_section_9a_conflict
+    ? '⚠️ Conflict Flagged (RPA Sec 9A)'
+    : candidate.has_arithmetic_discrepancy
+    ? '⚠️ Discrepancy Flagged'
+    : '✅ 100% Clean Audit';
   
   const text = `Official ECI sworn affidavit audit report for ${candidate.name}${safeParty} from ${candidate.constituency}, ${candidate.state}.\n\n💰 Declared Net Worth: ${netWorth}\n⚖️ Audit Verdict: ${auditVerdict}\n\nInspect verified court proofs on Apna Neta:`;
   const url = 'https://apnaneta.corgi-littlelegs.workers.dev';

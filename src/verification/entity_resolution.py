@@ -42,18 +42,21 @@ def simple_levenshtein_similarity(s1: str, s2: str) -> float:
     return round(1.0 - (distance / max_len), 3)
 
 
+from src.verification.indic_phonetics import indic_phonetics
+
+
 class IndicEntityResolver:
     """
     Resolves candidate identities across successive election cycles.
-    Combines name token similarity, Indic transliteration slack,
-    and bounded age drift models: |ΔAge - Δt| <= 2 years.
+    Combines Levenshtein string similarity, Indic phonetic transliteration
+    matching, and bounded age drift models: |ΔAge - Δt| <= 2 years.
     """
 
     def is_same_candidate(
         self,
         candidate_a: Dict[str, Any],
         candidate_b: Dict[str, Any],
-        threshold: float = 0.85,
+        threshold: float = 0.80,
     ) -> Tuple[bool, float, str]:
         """
         Determines if candidate_a and candidate_b are the same real-world politician.
@@ -68,13 +71,22 @@ class IndicEntityResolver:
         if candidate_a.get("state", "").upper() != candidate_b.get("state", "").upper():
             return False, 0.0, "State mismatch"
 
-        # 2. Normalized Name Similarity
+        # 2. Normalized Name Similarity (Composite: 60% Levenshtein + 40% Indic Phonetics)
         name_a = clean_indian_name(candidate_a.get("name", ""))
         name_b = clean_indian_name(candidate_b.get("name", ""))
-        name_sim = simple_levenshtein_similarity(name_a, name_b)
+        lev_sim = simple_levenshtein_similarity(name_a, name_b)
+        phon_sim = indic_phonetics.phonetic_similarity(name_a, name_b)
 
-        if name_sim < threshold:
-            return False, name_sim, f"Name similarity ({name_sim}) below threshold ({threshold})"
+        # Composite score
+        composite_sim = round((0.6 * lev_sim) + (0.4 * phon_sim), 3)
+
+        # Allow pure phonetic match for strong Indic alias variations
+        if composite_sim < threshold and phon_sim < 0.85:
+            return (
+                False,
+                composite_sim,
+                f"Composite name similarity ({composite_sim}, phonetic={phon_sim}) below threshold ({threshold})",
+            )
 
         # 3. Age Drift Validation
         age_a = candidate_a.get("age")
@@ -91,11 +103,12 @@ class IndicEntityResolver:
             if drift > 2:
                 return (
                     False,
-                    name_sim,
+                    composite_sim,
                     f"Age drift mismatch: elapsed={elapsed_years} yrs, declared diff={age_difference} yrs (drift={drift})",
                 )
 
-        return True, name_sim, "Entity resolution match confirmed"
+        return True, composite_sim, "Entity resolution match confirmed"
 
 
 entity_resolver = IndicEntityResolver()
+

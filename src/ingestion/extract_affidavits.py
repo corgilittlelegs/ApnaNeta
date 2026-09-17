@@ -25,7 +25,6 @@ from src.parsing.schemas import (
 from src.verification.math_reconciler import math_reconciler
 from src.verification.legal_classifier import legal_classifier
 from src.utils.rate_limiter import PoliteRateLimiter
-from src.ingestion.eci_affidavits import generate_archival_affidavit_pdf
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("AffidavitExtractionWorker")
@@ -143,8 +142,10 @@ class AffidavitExtractionWorker:
             except Exception as e:
                 logger.warning(f"Live download failed: {e}")
 
-        logger.info(f"Generating verified archival Form 26 PDF document for {candidate_name}...")
-        return generate_archival_affidavit_pdf(candidate_name, constituency, state, filing_year)
+        raise FileNotFoundError(
+            f"Primary Form 26 PDF document could not be retrieved from Cloudflare R2 ({r2_key}) "
+            f"or source URL ({source_url}) for {candidate_name}. Zero synthetic fallbacks allowed."
+        )
 
     def parse_extracted_data(
         self,

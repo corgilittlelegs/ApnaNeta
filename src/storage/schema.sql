@@ -160,8 +160,106 @@ CREATE TABLE IF NOT EXISTS historical_wealth_cagr (
 
 CREATE INDEX IF NOT EXISTS idx_cagr_candidate ON historical_wealth_cagr (candidate_id);
 
--- 9. Security: Enable Row Level Security (RLS) & Public Read-Only Policies
--- Anyone on the web can view/query the data, but only the backend service_role key can insert/modify.
+-- 9. Corporate Associations Table (MCA21 Registry / DIN / CIN)
+CREATE TABLE IF NOT EXISTS corporate_associations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    candidate_id UUID REFERENCES candidates(id) ON DELETE CASCADE,
+    din TEXT, -- Director Identification Number (8 digits)
+    cin TEXT, -- Corporate Identification Number (21 alphanumeric)
+    company_name TEXT NOT NULL,
+    designation TEXT DEFAULT 'Director',
+    appointment_date DATE,
+    cessation_date DATE,
+    status TEXT DEFAULT 'Active', -- 'Active', 'Disqualified', 'Resigned'
+    paid_up_capital NUMERIC(15, 2) DEFAULT 0.00,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT uq_cand_company UNIQUE (candidate_id, company_name)
+);
+
+CREATE INDEX IF NOT EXISTS idx_corp_candidate ON corporate_associations (candidate_id);
+CREATE INDEX IF NOT EXISTS idx_corp_din ON corporate_associations (din);
+CREATE INDEX IF NOT EXISTS idx_corp_cin ON corporate_associations (cin);
+
+-- 10. Central Public Procurement Portal (CPPP / eprocure.gov.in) Tenders & Contract Awards
+CREATE TABLE IF NOT EXISTS procurement_tenders (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tender_id TEXT NOT NULL UNIQUE,
+    tender_title TEXT NOT NULL,
+    awarding_authority TEXT NOT NULL,
+    contractor_name TEXT NOT NULL,
+    contractor_cin_or_pan TEXT,
+    contract_amount NUMERIC(15, 2) NOT NULL,
+    award_date DATE NOT NULL,
+    execution_schedule_months INT,
+    source_portal TEXT DEFAULT 'eprocure.gov.in',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_tenders_contractor ON procurement_tenders (contractor_name);
+CREATE INDEX IF NOT EXISTS idx_tenders_award_date ON procurement_tenders (award_date);
+
+-- 11. Section 9A RPA Commercial Conflict of Interest Audits
+CREATE TABLE IF NOT EXISTS conflict_of_interest_audits (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    candidate_id UUID REFERENCES candidates(id) ON DELETE CASCADE,
+    tender_id UUID REFERENCES procurement_tenders(id) ON DELETE CASCADE,
+    corporate_id UUID REFERENCES corporate_associations(id) ON DELETE SET NULL,
+    conflict_type TEXT NOT NULL, -- 'Directorship Active Contract', 'Family Member Award', 'Subsisting Works'
+    section_9a_flag BOOLEAN DEFAULT TRUE, -- Flagged for statutory disqualification under Section 9A RPA 1951
+    disqualification_risk TEXT DEFAULT 'HIGH', -- 'HIGH', 'MEDIUM', 'WATCHLIST'
+    evidence_details JSONB, -- Details of matching corporate entity, awarding agency, and amounts
+    verified_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT uq_candidate_tender_conflict UNIQUE (candidate_id, tender_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_conflict_candidate ON conflict_of_interest_audits (candidate_id);
+CREATE INDEX IF NOT EXISTS idx_conflict_section_9a ON conflict_of_interest_audits (section_9a_flag);
+
+-- 12. Political Mobility and Career Defection Dynamics
+CREATE TABLE IF NOT EXISTS political_mobility_records (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    candidate_id UUID REFERENCES candidates(id) ON DELETE CASCADE,
+    from_party TEXT NOT NULL,
+    to_party TEXT NOT NULL,
+    transition_year INT NOT NULL,
+    transition_date DATE,
+    defection_index_score NUMERIC(5, 2) DEFAULT 1.00,
+    ruling_coalition_switch BOOLEAN DEFAULT FALSE,
+    cases_dropped_post_switch INT DEFAULT 0,
+    post_switch_wealth_surge_cagr NUMERIC(6, 2),
+    is_opportunistic_switch BOOLEAN DEFAULT FALSE,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_mobility_candidate ON political_mobility_records (candidate_id);
+
+-- 13. Campaign Finance & Corporate Political Contributions (Section 29C RPA & Trusts)
+CREATE TABLE IF NOT EXISTS campaign_donations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    political_party TEXT NOT NULL,
+    donor_name TEXT NOT NULL,
+    donor_pan_masked TEXT,
+    contribution_amount NUMERIC(15, 2) NOT NULL,
+    financial_year TEXT NOT NULL,
+    donation_mode TEXT, -- 'Cheque', 'Draft', 'Bank Transfer', 'Electoral Trust'
+    electoral_trust_name TEXT,
+    procurement_contract_awarded BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_donations_party ON campaign_donations (political_party);
+CREATE INDEX IF NOT EXISTS idx_donations_donor ON campaign_donations (donor_name);
+
+-- 14. eCourts Case Verification Enhancements on criminal_cases
+ALTER TABLE criminal_cases ADD COLUMN IF NOT EXISTS cnr_number TEXT;
+ALTER TABLE criminal_cases ADD COLUMN IF NOT EXISTS ecourts_verified BOOLEAN DEFAULT FALSE;
+ALTER TABLE criminal_cases ADD COLUMN IF NOT EXISTS ecourts_stage TEXT; -- 'FIR', 'Cognizance', 'Framed Charges', 'Trial', 'Disposed'
+ALTER TABLE criminal_cases ADD COLUMN IF NOT EXISTS ecourts_last_hearing DATE;
+ALTER TABLE criminal_cases ADD COLUMN IF NOT EXISTS is_rpa_section_8_disqualified BOOLEAN DEFAULT FALSE;
+
+-- 15. Security: Enable Row Level Security (RLS) & Public Read-Only Policies
 ALTER TABLE candidates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE affidavits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE assets ENABLE ROW LEVEL SECURITY;
@@ -170,6 +268,11 @@ ALTER TABLE audit_discrepancies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sansad_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE mplads_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE historical_wealth_cagr ENABLE ROW LEVEL SECURITY;
+ALTER TABLE corporate_associations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE procurement_tenders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE conflict_of_interest_audits ENABLE ROW LEVEL SECURITY;
+ALTER TABLE political_mobility_records ENABLE ROW LEVEL SECURITY;
+ALTER TABLE campaign_donations ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Public Read Access" ON candidates FOR SELECT USING (true);
 CREATE POLICY "Public Read Access" ON affidavits FOR SELECT USING (true);
@@ -179,9 +282,13 @@ CREATE POLICY "Public Read Access" ON audit_discrepancies FOR SELECT USING (true
 CREATE POLICY "Public Read Access" ON sansad_records FOR SELECT USING (true);
 CREATE POLICY "Public Read Access" ON mplads_records FOR SELECT USING (true);
 CREATE POLICY "Public Read Access" ON historical_wealth_cagr FOR SELECT USING (true);
+CREATE POLICY "Public Read Access" ON corporate_associations FOR SELECT USING (true);
+CREATE POLICY "Public Read Access" ON procurement_tenders FOR SELECT USING (true);
+CREATE POLICY "Public Read Access" ON conflict_of_interest_audits FOR SELECT USING (true);
+CREATE POLICY "Public Read Access" ON political_mobility_records FOR SELECT USING (true);
+CREATE POLICY "Public Read Access" ON campaign_donations FOR SELECT USING (true);
 
--- 10. Grants & Schema Cache Reload
--- Grants access to Supabase client roles and notifies PostgREST to reload its schema cache
+-- 16. Grants & Schema Cache Reload
 GRANT USAGE ON SCHEMA public TO postgres, anon, authenticated, service_role;
 GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, anon, authenticated, service_role;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, anon, authenticated, service_role;

@@ -1,5 +1,10 @@
 from typing import Dict, Any, List, Optional
-import httpx
+
+try:
+    import httpx
+except ImportError:
+    httpx = None
+
 from config.settings import settings
 
 

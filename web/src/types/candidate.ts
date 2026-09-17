@@ -28,6 +28,82 @@ export interface HistoricalWealthRecord {
   is_rapid_accumulation: boolean;
 }
 
+export interface CorporateAssociation {
+  id?: string;
+  din?: string;
+  cin?: string;
+  company_name: string;
+  designation?: string;
+  appointment_date?: string;
+  status?: string;
+  paid_up_capital?: number;
+}
+
+export interface ConflictOfInterestAudit {
+  id?: string;
+  tender_id?: string;
+  tender_title?: string;
+  awarding_authority?: string;
+  contractor_name?: string;
+  contract_amount?: number;
+  award_date?: string;
+  conflict_type: string;
+  section_9a_flag: boolean;
+  disqualification_risk: 'HIGH' | 'MEDIUM' | 'WATCHLIST';
+  evidence_details?: {
+    candidate_name?: string;
+    company_name?: string;
+    din?: string;
+    cin?: string;
+    tender_title?: string;
+    awarding_authority?: string;
+    contract_amount?: number;
+    award_date?: string;
+    statutory_reference?: string;
+  };
+}
+
+export interface PoliticalMobilityRecord {
+  id?: string;
+  from_party: string;
+  to_party: string;
+  transition_year: number;
+  transition_date?: string;
+  defection_index_score?: number;
+  ruling_coalition_switch?: boolean;
+  cases_dropped_post_switch?: number;
+  post_switch_wealth_surge_cagr?: number;
+  is_opportunistic_switch?: boolean;
+  notes?: string;
+}
+
+export interface ECourtsCaseDocket {
+  id?: string;
+  case_type?: string;
+  fir_or_case_number: string;
+  police_station?: string;
+  court_name?: string;
+  statutory_charges?: string[];
+  charges_framed?: boolean;
+  charges_framed_date?: string;
+  is_serious_category?: boolean;
+  category_justification?: string;
+  cnr_number?: string;
+  ecourts_verified?: boolean;
+  ecourts_stage?: string;
+  is_rpa_section_8_disqualified?: boolean;
+}
+
+export interface StatutorySuballocationAudit {
+  sc_compliant?: boolean | null;
+  st_compliant?: boolean | null;
+  sc_percentage?: number | null;
+  st_percentage?: number | null;
+  sc_spent?: number | null;
+  st_spent?: number | null;
+  has_statutory_shortfall?: boolean | null;
+}
+
 export interface Candidate {
   id: string;
   name: string;
@@ -62,6 +138,8 @@ export interface Candidate {
   criminal_cases_count: number;
   serious_criminal_cases_count: number;
   protest_cases_count: number;
+  dockets?: ECourtsCaseDocket[];
+  is_rpa_section_8_disqualified?: boolean;
   
   // Legislative tracking
   attendance_rate?: number;
@@ -70,9 +148,19 @@ export interface Candidate {
   
   // MoSPI MPLADS Fund Tracking
   mplads?: MPLADSRecord;
+  suballocation_audit?: StatutorySuballocationAudit;
 
   // Longitudinal Historical Wealth CAGR
   historical_wealth?: HistoricalWealthRecord[];
+
+  // Commercial Conflict of Interest & MCA21 ties
+  has_section_9a_conflict?: boolean;
+  conflicts_of_interest?: ConflictOfInterestAudit[];
+  corporate_associations?: CorporateAssociation[];
+
+  // Political Mobility & Defections
+  political_mobility?: PoliticalMobilityRecord[];
+  defection_count?: number;
 
   // Forensic Audit Flags
   has_arithmetic_discrepancy: boolean;

@@ -13,6 +13,11 @@ import {
   FilePdf,
   WarningCircle,
   LockSimple,
+  Scales,
+  WarningOctagon,
+  Buildings,
+  Gavel,
+  ShareNetwork,
 } from '@phosphor-icons/react';
 import { BoundingBox, Candidate } from '../types/candidate';
 import { exportCandidateDossierPdf } from '../utils/DossierPdfExport';
@@ -39,7 +44,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
   candidate,
 }) => {
   const [zoom, setZoom] = useState<number>(100);
-  const [activeTab, setActiveTab] = useState<'transcript' | 'mplads' | 'wealth_history' | 'raw_pdf'>('transcript');
+  const [activeTab, setActiveTab] = useState<'transcript' | 'integrity_audit' | 'mplads' | 'wealth_history' | 'raw_pdf'>('transcript');
 
   if (!isOpen) return null;
 
@@ -101,6 +106,18 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                 }`}
               >
                 Form 26 Transcript
+              </button>
+              <button
+                onClick={() => setActiveTab('integrity_audit')}
+                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${
+                  activeTab === 'integrity_audit' ? 'bg-white text-slate-900 shadow-sm font-semibold' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Scales size={14} weight="duotone" className="text-purple-600" />
+                <span>Integrity & Conflicts</span>
+                {(candidate?.has_section_9a_conflict || candidate?.is_rpa_section_8_disqualified || (candidate?.defection_count ?? 0) > 0) && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                )}
               </button>
               <button
                 onClick={() => setActiveTab('mplads')}
@@ -337,6 +354,66 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                         <span className="text-[10px] text-blue-700 block">Completed / Recommended</span>
                       </div>
                     </div>
+
+                    {/* Statutory Social Sub-Allocation Compliance (MoSPI Guidelines) */}
+                    {candidate?.suballocation_audit && (
+                      <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                        <div className="flex items-center justify-between mb-2.5">
+                          <span className="font-bold text-slate-900 text-xs">
+                            Statutory Social Sub-Allocation Audit (MoSPI Guidelines)
+                          </span>
+                          <span className="text-[10px] font-mono font-medium text-slate-500">
+                            Mandatory: 15% SC, 7.5% ST
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 text-xs">
+                          <div className="p-3 bg-white rounded-lg border border-slate-200">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-semibold text-slate-700">SC Sub-Allocation (Min 15%)</span>
+                              <span
+                                className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                  candidate.suballocation_audit.sc_compliant
+                                    ? 'bg-emerald-100 text-emerald-800'
+                                    : 'bg-rose-100 text-rose-800'
+                                }`}
+                              >
+                                {candidate.suballocation_audit.sc_compliant ? '✓ Compliant' : '⚠️ Shortfall'}
+                              </span>
+                            </div>
+                            <p className="font-mono text-sm font-bold text-slate-900">
+                              {candidate.suballocation_audit.sc_percentage != null
+                                ? `${candidate.suballocation_audit.sc_percentage.toFixed(1)}%`
+                                : 'N/A'}
+                            </p>
+                            <span className="text-[10px] text-slate-400 block mt-0.5">
+                              Spent: {formatINR(candidate.suballocation_audit.sc_spent || 0)}
+                            </span>
+                          </div>
+                          <div className="p-3 bg-white rounded-lg border border-slate-200">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-semibold text-slate-700">ST Sub-Allocation (Min 7.5%)</span>
+                              <span
+                                className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                  candidate.suballocation_audit.st_compliant
+                                    ? 'bg-emerald-100 text-emerald-800'
+                                    : 'bg-rose-100 text-rose-800'
+                                }`}
+                              >
+                                {candidate.suballocation_audit.st_compliant ? '✓ Compliant' : '⚠️ Shortfall'}
+                              </span>
+                            </div>
+                            <p className="font-mono text-sm font-bold text-slate-900">
+                              {candidate.suballocation_audit.st_percentage != null
+                                ? `${candidate.suballocation_audit.st_percentage.toFixed(1)}%`
+                                : 'N/A'}
+                            </p>
+                            <span className="text-[10px] text-slate-400 block mt-0.5">
+                              Spent: {formatINR(candidate.suballocation_audit.st_spent || 0)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="p-8 text-center text-slate-500 text-xs">
@@ -344,6 +421,264 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        ) : activeTab === 'integrity_audit' ? (
+          /* Integrity, Section 9A Conflicts, eCourts Dockets, Political Mobility */
+          <div className="flex-1 overflow-auto p-6 bg-slate-50 min-h-[420px]">
+            <div className="max-w-3xl mx-auto space-y-6">
+              
+              {/* Section 9A RPA Commercial Conflicts */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-rose-50 text-rose-700 rounded-xl">
+                      <WarningOctagon size={24} weight="duotone" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-lg">
+                        Section 9A RPA Commercial Conflict Audit
+                      </h4>
+                      <p className="text-xs text-slate-500">
+                        Representation of the People Act, 1951 • Subsisting Central/State Government Contracts
+                      </p>
+                    </div>
+                  </div>
+                  {candidate?.has_section_9a_conflict ? (
+                    <span className="text-xs font-bold px-2.5 py-1 bg-rose-100 text-rose-800 rounded-lg border border-rose-300">
+                      ⚠️ Conflict Flagged
+                    </span>
+                  ) : (
+                    <span className="text-xs font-bold px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg border border-emerald-300">
+                      ✓ No Active Conflict
+                    </span>
+                  )}
+                </div>
+
+                <div className="pt-4 space-y-4">
+                  {candidate?.conflicts_of_interest && candidate.conflicts_of_interest.length > 0 ? (
+                    candidate.conflicts_of_interest.map((conflict, idx) => (
+                      <div key={idx} className="p-4 rounded-xl border bg-rose-50/70 border-rose-200 text-xs">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div>
+                            <span className="font-bold text-rose-950 text-sm block">
+                              {conflict.tender_title || 'Government Procurement Contract'}
+                            </span>
+                            <span className="text-rose-800 font-mono text-[11px]">
+                              Authority: {conflict.awarding_authority || 'Appropriate Government Department'}
+                            </span>
+                          </div>
+                          <span className="font-mono font-bold px-2 py-0.5 bg-rose-600 text-white rounded text-[10px] whitespace-nowrap">
+                            Risk: {conflict.disqualification_risk}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 font-mono text-[11px] mt-2">
+                          <div className="bg-white p-2 rounded-lg border border-rose-200">
+                            <span className="text-[9px] text-slate-500 font-sans block">Contract Value</span>
+                            <span className="font-bold text-slate-900">{formatINR(conflict.contract_amount || 0)}</span>
+                          </div>
+                          <div className="bg-white p-2 rounded-lg border border-rose-200">
+                            <span className="text-[9px] text-slate-500 font-sans block">Contractor / Entity</span>
+                            <span className="font-bold text-slate-900 truncate block">{conflict.contractor_name || 'Associated Firm'}</span>
+                          </div>
+                          <div className="bg-white p-2 rounded-lg border border-rose-200">
+                            <span className="text-[9px] text-slate-500 font-sans block">Award Date</span>
+                            <span className="font-bold text-slate-900">{conflict.award_date || 'Subsisting'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-600">
+                      <p className="font-medium text-slate-800 mb-0.5">Zero Subsisting Government Contracts Detected</p>
+                      <p className="text-[11px] text-slate-500">
+                        Cross-referenced against Central Public Procurement Portal (CPPP GePNIC) and MCA21 corporate filings under Section 9A of the RPA 1951.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Corporate Directorships from MCA21 */}
+                  {candidate?.corporate_associations && candidate.corporate_associations.length > 0 && (
+                    <div className="mt-4">
+                      <h5 className="font-bold text-slate-800 text-xs mb-2 flex items-center gap-1.5">
+                        <Buildings size={16} weight="duotone" className="text-blue-600" />
+                        Disclosed Corporate Directorships (MCA21 Registry)
+                      </h5>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-[11px] border border-slate-200 rounded-lg overflow-hidden font-sans">
+                          <thead className="bg-slate-100 text-slate-700">
+                            <tr>
+                              <th className="p-2 text-left">Company Name</th>
+                              <th className="p-2 text-left font-mono">DIN / CIN</th>
+                              <th className="p-2 text-left">Designation</th>
+                              <th className="p-2 text-left">Status</th>
+                              <th className="p-2 text-right">Paid-up Capital</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-200">
+                            {candidate.corporate_associations.map((corp, idx) => (
+                              <tr key={idx} className="bg-white">
+                                <td className="p-2 font-medium text-slate-900">{corp.company_name}</td>
+                                <td className="p-2 font-mono text-slate-500">{corp.din || corp.cin || '—'}</td>
+                                <td className="p-2 text-slate-700">{corp.designation || 'Director'}</td>
+                                <td className="p-2">
+                                  <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px]">
+                                    {corp.status || 'Active'}
+                                  </span>
+                                </td>
+                                <td className="p-2 text-right font-mono text-slate-900">{corp.paid_up_capital ? formatINR(corp.paid_up_capital) : '—'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* eCourts National Judicial Grid & Legal Dockets */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-purple-50 text-purple-700 rounded-xl">
+                      <Gavel size={24} weight="duotone" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-lg">
+                        eCourts Legal Dockets & RPA Section 8 Audit
+                      </h4>
+                      <p className="text-xs text-slate-500">
+                        National Judicial Data Grid (NJDG) • 16-Digit CNR Docket Tracking & Disqualification Analysis
+                      </p>
+                    </div>
+                  </div>
+                  {candidate?.is_rpa_section_8_disqualified ? (
+                    <span className="text-xs font-bold px-2.5 py-1 bg-rose-100 text-rose-900 rounded-lg border border-rose-300">
+                      Disqualified (RPA Sec 8)
+                    </span>
+                  ) : (
+                    <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg">
+                      {candidate?.criminal_cases_count ?? 0} Case(s) Disclosed
+                    </span>
+                  )}
+                </div>
+
+                <div className="pt-4 space-y-3">
+                  {candidate?.dockets && candidate.dockets.length > 0 ? (
+                    candidate.dockets.map((docket, idx) => (
+                      <div
+                        key={idx}
+                        className={`p-4 rounded-xl border ${
+                          docket.is_serious_category ? 'bg-rose-50/60 border-rose-200' : 'bg-slate-50 border-slate-200'
+                        } text-xs`}
+                      >
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div>
+                            <span className="font-bold text-slate-900 text-sm block">
+                              {docket.fir_or_case_number}
+                              {docket.police_station ? ` • ${docket.police_station}` : ''}
+                            </span>
+                            <span className="text-slate-500 font-mono text-[11px]">
+                              Court: {docket.court_name || 'Competent Court'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            {docket.ecourts_verified && (
+                              <span className="inline-flex items-center gap-1 font-mono text-[10px] font-bold px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded border border-emerald-300">
+                                <CheckCircle size={12} weight="fill" /> eCourts Verified
+                              </span>
+                            )}
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                                docket.is_serious_category
+                                  ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                                  : 'bg-amber-100 text-amber-800 border border-amber-300'
+                              }`}
+                            >
+                              {docket.is_serious_category ? 'Serious Charge' : 'Public Protest / Agitation'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {docket.cnr_number && (
+                          <div className="mb-2 p-2 bg-white rounded-lg border border-slate-200 font-mono text-[11px] flex items-center justify-between">
+                            <span className="text-slate-500 font-sans text-[10px]">National Case Record (CNR):</span>
+                            <span className="font-bold text-slate-900">{docket.cnr_number}</span>
+                          </div>
+                        )}
+
+                        <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
+                          <div className="bg-white p-2 rounded-lg border border-slate-200">
+                            <span className="text-[9px] text-slate-400 font-sans block">Trial Stage</span>
+                            <span className="font-semibold text-slate-800">{docket.ecourts_stage || (docket.charges_framed ? 'Charges Framed' : 'Investigation / Pre-Trial')}</span>
+                          </div>
+                          <div className="bg-white p-2 rounded-lg border border-slate-200">
+                            <span className="text-[9px] text-slate-400 font-sans block">Statutory Charges</span>
+                            <span className="font-semibold text-slate-800">{docket.statutory_charges?.join(', ') || 'Under Sections Disclosed'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-600">
+                      <p className="font-semibold text-slate-800">Clean Judicial Record Disclosed</p>
+                      <p className="text-[11px] text-slate-500">No criminal convictions or framed charges on sworn ECI Form 26 filing.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Political Mobility Dynamics */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-blue-50 text-blue-700 rounded-xl">
+                      <ShareNetwork size={24} weight="duotone" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-lg">
+                        Political Mobility & Career Defection Dynamics
+                      </h4>
+                      <p className="text-xs text-slate-500">
+                        Longitudinal party transitions, ruling coalition alignments, and Defection Index
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-mono font-bold px-2.5 py-1 bg-purple-100 text-purple-800 rounded-lg border border-purple-200">
+                    {candidate?.defection_count ?? 0} Career Transition(s)
+                  </span>
+                </div>
+
+                <div className="pt-4 space-y-3">
+                  {candidate?.political_mobility && candidate.political_mobility.length > 0 ? (
+                    candidate.political_mobility.map((rec, idx) => (
+                      <div key={idx} className="p-4 rounded-xl border border-slate-200 bg-slate-50 text-xs">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-900 text-sm">
+                              {rec.from_party} &rarr; {rec.to_party}
+                            </span>
+                            <span className="font-mono text-xs text-slate-500">({rec.transition_year})</span>
+                          </div>
+                          {rec.ruling_coalition_switch && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 bg-purple-100 text-purple-800 rounded border border-purple-300">
+                              Ruling Coalition Switch
+                            </span>
+                          )}
+                        </div>
+                        {rec.notes && <p className="text-[11px] text-slate-600 mt-1">{rec.notes}</p>}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-600">
+                      <p className="font-semibold text-slate-800">Consistent Party Affiliation</p>
+                      <p className="text-[11px] text-slate-500">No party defection records detected across recorded election filings.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
             </div>
           </div>
         ) : activeTab === 'wealth_history' ? (

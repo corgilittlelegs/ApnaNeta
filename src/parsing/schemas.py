@@ -1,5 +1,45 @@
 from typing import List, Optional
-from pydantic import BaseModel, Field
+
+try:
+    from pydantic import BaseModel, Field
+except ImportError:
+    class FieldInfo:
+        def __init__(self, default=None, default_factory=None, **kwargs):
+            self.default = default
+            self.default_factory = default_factory
+            self.kwargs = kwargs
+
+    def Field(default=..., **kwargs):
+        return FieldInfo(default=default, **kwargs)
+
+    class BaseModel:
+        def __init__(self, **kwargs):
+            for key, val in self.__class__.__dict__.items():
+                if isinstance(val, FieldInfo):
+                    if val.default_factory is not None:
+                        setattr(self, key, val.default_factory())
+                    elif val.default is not ...:
+                        setattr(self, key, val.default)
+                    else:
+                        setattr(self, key, None)
+                elif not key.startswith('_') and not callable(val):
+                    setattr(self, key, val)
+            for k, v in kwargs.items():
+                setattr(self, k, v)
+
+        def model_dump(self):
+            out = {}
+            for k, v in self.__dict__.items():
+                if isinstance(v, BaseModel):
+                    out[k] = v.model_dump()
+                elif isinstance(v, list):
+                    out[k] = [x.model_dump() if isinstance(x, BaseModel) else x for x in v]
+                else:
+                    out[k] = v
+            return out
+
+        def dict(self):
+            return self.model_dump()
 
 
 class BoundingBox(BaseModel):

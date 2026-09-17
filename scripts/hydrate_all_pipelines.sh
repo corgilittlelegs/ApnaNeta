@@ -94,7 +94,12 @@ echo "ℹ️ Triggering CAGR verification after multi-term filings are indexed..
 trigger_workflow "analyze_historical_wealth.yml" "{}" || true
 
 echo ""
+echo "--- STAGE 5: FORENSIC AUDITS, SEC 9A CONFLICTS & MOBILITY DYNAMICS ---"
+echo "ℹ️ Dispatching mathematical reconciliation, Section 9A audits, and mobility tracking..."
+trigger_workflow "verify_data.yml" "{}" || true
+
+echo ""
 echo "====================================================================="
-echo "✅ All 4 data pipelines have been dispatched in sequence!"
+echo "✅ All 5 data pipelines have been dispatched in sequence!"
 echo "Live Run Logs: https://github.com/${REPO_NAME}/actions"
 echo "====================================================================="

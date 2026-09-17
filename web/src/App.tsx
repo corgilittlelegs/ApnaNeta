@@ -645,7 +645,7 @@ export const App: React.FC = () => {
       setIsLoading(true);
       try {
         const res = await fetch(
-          `${cleanUrl}/rest/v1/candidates?select=*,sansad_records(attendance_rate,debates_count,questions_count),affidavits(id,filing_year,source_url,r2_storage_key,audit_discrepancies(*),criminal_cases(is_serious_category)),mplads_records(*),historical_wealth_cagr(*)&order=name.asc&limit=10000`,
+          `${cleanUrl}/rest/v1/candidates?select=*,sansad_records(attendance_rate,debates_count,questions_count),affidavits(id,filing_year,source_url,r2_storage_key,audit_discrepancies(*),criminal_cases(*)),mplads_records(*),historical_wealth_cagr(*),conflict_of_interest_audits(*),political_mobility_records(*),corporate_associations(*)&order=name.asc&limit=10000`,
           {
             headers: {
               apikey: rawKey,
@@ -698,11 +698,37 @@ export const App: React.FC = () => {
                 : (row.wealth_discrepancy_ratio != null ? Number(row.wealth_discrepancy_ratio) : 1.0);
               const hasAnomalousWdr = Boolean(audit?.has_anomalous_wealth_ratio ?? row.has_anomalous_wealth_ratio ?? false);
 
-              const crimCount = cases.length > 0 ? cases.length : Number(row.criminal_cases_count ?? 0);
-              const seriousCount = cases.length > 0
-                ? cases.filter((c: any) => c.is_serious_category).length
+              const parsedDockets = cases.map((c: any) => ({
+                id: c.id,
+                case_type: c.case_type,
+                fir_or_case_number: c.fir_or_case_number || 'Case',
+                police_station: c.police_station,
+                court_name: c.court_name,
+                statutory_charges: c.statutory_charges,
+                charges_framed: c.charges_framed,
+                charges_framed_date: c.charges_framed_date,
+                is_serious_category: c.is_serious_category,
+                category_justification: c.category_justification,
+                cnr_number: c.cnr_number,
+                ecourts_verified: Boolean(c.ecourts_verified),
+                ecourts_stage: c.ecourts_stage,
+                is_rpa_section_8_disqualified: Boolean(c.is_rpa_section_8_disqualified),
+              }));
+
+              const crimCount = parsedDockets.length > 0 ? parsedDockets.length : Number(row.criminal_cases_count ?? 0);
+              const seriousCount = parsedDockets.length > 0
+                ? parsedDockets.filter((c: any) => c.is_serious_category).length
                 : Number(row.serious_criminal_cases_count ?? 0);
               const protestCount = Number(row.protest_cases_count ?? 0);
+              const isDisqualified = parsedDockets.some((d: any) => d.is_rpa_section_8_disqualified);
+
+              const conflictList = Array.isArray(row.conflict_of_interest_audits) ? row.conflict_of_interest_audits : [];
+              const hasConflict = conflictList.length > 0;
+
+              const mobilityList = Array.isArray(row.political_mobility_records) ? row.political_mobility_records : [];
+              const defectionCount = mobilityList.length;
+
+              const corpList = Array.isArray(row.corporate_associations) ? row.corporate_associations : [];
 
               const pdfSourceUrl = aff?.source_url || row.pdf_source_url || 'https://affidavit.eci.gov.in';
               const r2Key = aff?.r2_storage_key || row.r2_storage_key || undefined;
@@ -784,11 +810,18 @@ export const App: React.FC = () => {
                 criminal_cases_count: crimCount,
                 serious_criminal_cases_count: seriousCount,
                 protest_cases_count: protestCount,
+                dockets: parsedDockets,
+                is_rpa_section_8_disqualified: isDisqualified,
                 attendance_rate: attendance,
                 debates_count: debates,
                 questions_count: questions,
                 mplads: mpladsRecord,
                 historical_wealth: cagrRecords,
+                has_section_9a_conflict: hasConflict,
+                conflicts_of_interest: conflictList,
+                corporate_associations: corpList,
+                political_mobility: mobilityList,
+                defection_count: defectionCount,
                 has_arithmetic_discrepancy: hasArithDiscrepancy,
                 delta_movable: deltaMovable,
                 delta_immovable: deltaImmovable,
