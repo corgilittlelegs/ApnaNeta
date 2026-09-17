@@ -2,36 +2,15 @@ name: Ingest ECI Candidate Affidavits
 
 on:
   schedule:
-    - cron: '0 12 * * 0' # Weekly trigger on Sundays at 12:00 UTC
-  workflow_dispatch: # Allows manual trigger from GitHub UI
+    - cron: '0 12 * * 0' # Weekly automatic run on Sundays at 12:00 UTC
+  workflow_dispatch: # Zero-configuration 1-click trigger from GitHub UI
     inputs:
-      house:
-        description: "Legislative House ('All', 'Vidhan Sabha', or 'Lok Sabha')"
-        required: true
-        type: choice
-        options:
-          - "Vidhan Sabha"
-          - "Lok Sabha"
-          - "All"
-        default: "Vidhan Sabha"
       state:
-        description: "Target State (e.g. 'Maharashtra', 'Uttar Pradesh', 'Delhi')"
-        required: true
-        default: "Maharashtra"
-      constituency_no:
-        description: "Constituency Number ('all' for entire state, range like '1-20', or specific e.g. '201')"
-        required: true
-        default: "all"
-      constituency_name:
-        description: "Constituency Name (optional override if running single constituency, e.g. 'Baramati')"
+        description: "Target State ('ALL' for all 28 states & UTs, or e.g. 'Maharashtra')"
         required: false
-        default: ""
-      election_type:
-        description: "ECI Election Code (e.g. '24-AC-GENERAL-1-2024' or '24-PC-GENERAL-1-2024')"
-        required: false
-        default: "24-AC-GENERAL-1-2024"
-      max_constituencies:
-        description: "Max Constituencies to Process (0 for unlimited, or e.g. 5 to test batch)"
+        default: "ALL"
+      batch_limit:
+        description: "Batch limit per state (0 for all constituencies, or e.g. 5 for a quick test)"
         required: false
         default: "0"
 
@@ -52,7 +31,7 @@ jobs:
         run: |
           pip install httpx curl_cffi pydantic pydantic-settings boto3 beautifulsoup4
 
-      - name: Run ECI Scraper
+      - name: Run ECI Scraper (Automated Multi-State Vidhan Sabha)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -60,12 +39,10 @@ jobs:
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
-          HOUSE: ${{ inputs.house || 'Vidhan Sabha' }}
-          TARGET_STATE: ${{ inputs.state || 'Maharashtra' }}
-          CONSTITUENCY_NO: ${{ inputs.constituency_no || 'all' }}
-          CONSTITUENCY_NAME: ${{ inputs.constituency_name }}
-          ELECTION_TYPE: ${{ inputs.election_type || '24-AC-GENERAL-1-2024' }}
-          MAX_CONSTITUENCIES: ${{ inputs.max_constituencies || '0' }}
+          TARGET_STATE: ${{ inputs.state || 'ALL' }}
+          BATCH_LIMIT: ${{ inputs.batch_limit || '0' }}
+          CONSTITUENCY_NO: "all"
+          HOUSE: "Vidhan Sabha"
           PYTHONPATH: .
         run: |
           python -m src.ingestion.eci_affidavits

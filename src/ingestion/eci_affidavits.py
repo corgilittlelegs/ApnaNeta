@@ -164,6 +164,37 @@ STATE_LOK_SABHA_SEATS: Dict[str, int] = {
 }
 
 
+# Master registry of ECI State Assembly Election Cycles (AC-GENERAL)
+STATE_ASSEMBLY_ELECTIONS: Dict[str, str] = {
+    "Maharashtra": "24-AC-GENERAL-1-2024",
+    "Jharkhand": "24-AC-GENERAL-2-2024",
+    "Haryana": "24-AC-GENERAL-3-2024",
+    "Jammu and Kashmir": "24-AC-GENERAL-4-2024",
+    "Andhra Pradesh": "24-AC-GENERAL-5-2024",
+    "Odisha": "24-AC-GENERAL-6-2024",
+    "Arunachal Pradesh": "24-AC-GENERAL-7-2024",
+    "Sikkim": "24-AC-GENERAL-8-2024",
+    "Karnataka": "23-AC-GENERAL-1-2023",
+    "Madhya Pradesh": "23-AC-GENERAL-2-2023",
+    "Rajasthan": "23-AC-GENERAL-3-2023",
+    "Chhattisgarh": "23-AC-GENERAL-4-2023",
+    "Telangana": "23-AC-GENERAL-5-2023",
+    "Gujarat": "22-AC-GENERAL-1-2022",
+    "Himachal Pradesh": "22-AC-GENERAL-2-2022",
+    "Uttar Pradesh": "22-AC-GENERAL-1-2022",
+    "Punjab": "22-AC-GENERAL-2-2022",
+    "Uttarakhand": "22-AC-GENERAL-3-2022",
+    "Goa": "22-AC-GENERAL-4-2022",
+    "Manipur": "22-AC-GENERAL-5-2022",
+    "West Bengal": "21-AC-GENERAL-1-2021",
+    "Tamil Nadu": "21-AC-GENERAL-2-2021",
+    "Kerala": "21-AC-GENERAL-3-2021",
+    "Assam": "21-AC-GENERAL-4-2021",
+    "Delhi": "20-AC-GENERAL-1-2020",
+    "Bihar": "20-AC-GENERAL-1-2020",
+}
+
+
 def parse_constituency_list(
     raw_input: str,
     target_state: str,
@@ -321,40 +352,58 @@ class ECIAffidavitScraper:
         pdf_url: str,
     ) -> Optional[Dict[str, Any]]:
         """
-        End-to-end ingestion of a single candidate filing:
-        1. Downloads live affidavit PDF from ECI portal.
-        2. Computes SHA-256 fingerprint.
-        3. Uploads immutable copy to Cloudflare R2 bucket.
-        4. Registers candidate & affidavit metadata in Supabase.
-        Zero synthetic fallbacks: If the live PDF cannot be obtained, returns None cleanly.
+        Processes a discovered candidate nomination by downloading Form 26,
+        uploading to Cloudflare R2, registering in Supabase, and preparing for Gemini VLM audit.
         """
-        logger.info(f"Processing affidavit nomination: {candidate_name} ({constituency}, {state})")
-
-        # 1. Fetch live PDF
+        # Step 1: Download PDF
         pdf_bytes = await self.fetch_pdf(pdf_url)
         if not pdf_bytes:
-            logger.warning(
-                f"Could not download live affidavit from {pdf_url} for {candidate_name}. "
-                f"Skipping to preserve primary-source data integrity (no synthetic fallbacks allowed)."
-            )
+            logger.warning(f"Could not retrieve PDF for candidate: {candidate_name} ({pdf_url})")
             return None
 
+        # Step 2: Compute SHA256 Hash
         sha256_hash = hashlib.sha256(pdf_bytes).hexdigest()
-        logger.info(f"Cryptographic SHA-256 fingerprint: {sha256_hash}")
 
-        # 2. Upload immutable copy to Cloudflare R2 object storage
-        r2_key = r2_storage.upload_affidavit_pdf(pdf_bytes, sha256_hash=sha256_hash)
-        logger.info(f"Cloudflare R2 storage key: {r2_key}")
+        # Step 3: Check Deduplication in Supabase
+        existing = await supabase.select(
+            "affidavits",
+            columns="id, r2_storage_key",
+            eq={"sha256_hash": sha256_hash},
+        )
+        if existing:
+            logger.info(f"Affidavit already indexed in Supabase (Deduplicated): {sha256_hash}")
+            return {
+                "candidate_name": candidate_name,
+                "constituency": constituency,
+                "state": state,
+                "sha256_hash": sha256_hash,
+                "r2_storage_key": existing[0]["r2_storage_key"],
+                "deduplicated": True,
+            }
 
-        # 3. Match or Create Candidate Anchor in Supabase
-        candidate_id: Optional[str] = None
-        try:
-            matched = await supabase.select("candidates", {"name": f"eq.{candidate_name}", "limit": "1"})
-            if matched:
-                candidate_id = matched[0].get("id")
-                logger.info(f"Linked to existing candidate anchor: {candidate_id}")
-            else:
-                new_cands = await supabase.insert(
+        # Step 4: Upload to Cloudflare R2
+        r2_key = f"affidavits/{state.lower().replace(' ', '_')}/{constituency.lower().replace(' ', '_')}/{filing_year}_{sha256_hash[:12]}.pdf"
+        r2_uploaded = await r2_storage.upload_bytes(
+            data=pdf_bytes,
+            storage_key=r2_key,
+            content_type="application/pdf",
+        )
+        if not r2_uploaded:
+            logger.warning(f"Failed to upload affidavit to Cloudflare R2: {r2_key}")
+
+        # Step 5: Upsert Candidate in Supabase
+        candidate_id = None
+        cand_records = await supabase.select(
+            "candidates",
+            columns="id",
+            eq={"name": candidate_name, "constituency": constituency, "house": house},
+        )
+        if cand_records:
+            candidate_id = cand_records[0]["id"]
+            logger.info(f"Matched existing candidate in Supabase: {candidate_name} ({candidate_id})")
+        else:
+            try:
+                new_cand = await supabase.insert(
                     "candidates",
                     [
                         {
@@ -366,30 +415,31 @@ class ECIAffidavitScraper:
                         }
                     ],
                 )
-                if new_cands:
-                    candidate_id = new_cands[0].get("id")
-                    logger.info(f"Created new candidate anchor: {candidate_id}")
-        except Exception as e:
-            logger.warning(f"Candidate table operation error: {e}")
+                if new_cand:
+                    candidate_id = new_cand[0].get("id")
+                    logger.info(f"Registered new candidate in Supabase: {candidate_name} ({candidate_id})")
+            except Exception as e:
+                logger.warning(f"Candidate table upsert error: {e}")
 
-        # 4. Register or Update Affidavit record in Supabase
-        affidavit_id: Optional[str] = None
+        # Step 6: Register Affidavit Record
+        affidavit_id = None
         if candidate_id:
             try:
-                existing_affidavits = await supabase.select(
+                aff_existing = await supabase.select(
                     "affidavits",
-                    {"candidate_id": f"eq.{candidate_id}", "filing_year": f"eq.{filing_year}"},
+                    columns="id",
+                    eq={"candidate_id": candidate_id, "filing_year": filing_year},
                 )
-                if existing_affidavits:
-                    affidavit_id = existing_affidavits[0].get("id")
+                if aff_existing:
+                    affidavit_id = aff_existing[0]["id"]
                     await supabase.update(
                         "affidavits",
                         {
+                            "source_url": pdf_url,
                             "sha256_hash": sha256_hash,
                             "r2_storage_key": r2_key,
-                            "raw_payload": None,
                         },
-                        {"id": f"eq.{affidavit_id}"},
+                        eq={"id": affidavit_id},
                     )
                     logger.info(f"Updated existing candidate affidavit {affidavit_id} with new filing: {r2_key}")
                 else:
@@ -431,7 +481,7 @@ class ECIAffidavitScraper:
                 state=item["state"],
                 constituency=item["constituency"],
                 filing_year=item.get("filing_year", 2024),
-                house=item.get("house", "Lok Sabha"),
+                house=item.get("house", "Vidhan Sabha"),
                 party=item.get("party"),
                 pdf_url=item["pdf_url"],
             )
@@ -445,68 +495,70 @@ eci_scraper = ECIAffidavitScraper()
 if __name__ == "__main__":
     import asyncio
 
-    target_state = (os.getenv("TARGET_STATE") or "Maharashtra").strip()
+    raw_state = (os.getenv("TARGET_STATE") or "ALL").strip()
     raw_constituency = (os.getenv("CONSTITUENCY_NO") or "all").strip()
     constituency_name = (os.getenv("CONSTITUENCY_NAME") or "").strip() or None
-    election_type = (os.getenv("ELECTION_TYPE") or "24-AC-GENERAL-1-2024").strip()
-    max_limit = int(os.getenv("MAX_CONSTITUENCIES", "0"))
+    explicit_election = (os.getenv("ELECTION_TYPE") or "").strip()
+    batch_limit = int(os.getenv("BATCH_LIMIT", os.getenv("MAX_CONSTITUENCIES", "0")))
 
-    raw_house = (os.getenv("HOUSE") or "Vidhan Sabha").strip()
-    if raw_house.lower() in ("all", "all houses", "*"):
-        house = "Vidhan Sabha" if ("AC" in election_type.upper() or "VIDHAN" in election_type.upper()) else "Lok Sabha"
-    elif raw_house:
-        house = raw_house
-    elif "AC" in election_type.upper() or "VIDHAN" in election_type.upper():
-        house = "Vidhan Sabha"
+    # Resolve states to process
+    if raw_state.upper() in ("ALL", "NATIONAL", "*", ""):
+        states_to_run = list(STATE_ASSEMBLY_ELECTIONS.keys())
     else:
-        house = "Lok Sabha"
-
-    constituency_list = parse_constituency_list(
-        raw_input=raw_constituency,
-        target_state=target_state,
-        house=house,
-        max_limit=max_limit,
-    )
+        states_to_run = [raw_state]
 
     logger.info("==========================================================")
-    logger.info(f"Starting Dynamic ECI Candidate Affidavit Ingestion")
-    logger.info(f"House:                  {house}")
-    logger.info(f"Election Type:          {election_type}")
-    logger.info(f"Target State:           {target_state}")
-    logger.info(f"Constituencies Scope:   {raw_constituency} ({len(constituency_list)} total)")
-    if constituency_name and len(constituency_list) == 1:
-        logger.info(f"Constituency Name:      {constituency_name}")
+    logger.info(f"🇮🇳 APNA NETA: ZERO-INPUT AUTOMATED VIDHAN SABHA INGESTION")
+    logger.info(f"Total States Scope:     {len(states_to_run)} state(s)")
+    logger.info(f"Constituencies Scope:   {raw_constituency}")
+    logger.info(f"Batch Limit per State:  {batch_limit if batch_limit > 0 else 'All Constituencies'}")
     logger.info("==========================================================")
 
     async def main():
-        total_indexed = 0
-        total_candidates_discovered = 0
+        grand_total_indexed = 0
+        grand_total_discovered = 0
 
-        for idx, c_no in enumerate(constituency_list, 1):
-            c_name = constituency_name if len(constituency_list) == 1 else None
-            logger.info(f"[{idx}/{len(constituency_list)}] Querying constituency #{c_no} in {target_state}...")
-            
-            discovered = await eci_scraper.discover_constituency_candidates(
-                election_type=election_type,
-                state_name=target_state,
-                constituency_no=c_no,
-                house=house,
-                constituency_name=c_name,
+        for s_idx, state_name in enumerate(states_to_run, 1):
+            election_code = (
+                explicit_election
+                if (explicit_election and len(states_to_run) == 1)
+                else STATE_ASSEMBLY_ELECTIONS.get(state_name, "24-AC-GENERAL-1-2024")
             )
             
-            if discovered:
-                total_candidates_discovered += len(discovered)
-                results = await eci_scraper.ingest_batch(discovered)
-                total_indexed += len(results)
-                logger.info(f"  ✓ Indexed {len(results)} candidate affidavit(s) for constituency #{c_no}.")
-            else:
-                logger.info(f"  - No candidates returned from feed for constituency #{c_no}.")
+            c_list = parse_constituency_list(
+                raw_input=raw_constituency,
+                target_state=state_name,
+                house="Vidhan Sabha",
+                max_limit=batch_limit,
+            )
 
-        logger.info("==========================================================")
-        logger.info(f"✅ Ingestion Run Finished!")
-        logger.info(f"Constituencies Scanned: {len(constituency_list)}")
-        logger.info(f"Candidates Discovered:  {total_candidates_discovered}")
-        logger.info(f"Affidavits Processed:   {total_indexed}")
+            logger.info(f"\n>>> [{s_idx}/{len(states_to_run)}] PROCESSING STATE: {state_name.upper()} ({len(c_list)} constituencies, Election: {election_code})")
+
+            for c_idx, c_no in enumerate(c_list, 1):
+                c_label = constituency_name if (len(c_list) == 1 and len(states_to_run) == 1) else None
+                logger.info(f"  [{c_idx}/{len(c_list)}] Fetching {state_name} AC #{c_no}...")
+                
+                discovered = await eci_scraper.discover_constituency_candidates(
+                    election_type=election_code,
+                    state_name=state_name,
+                    constituency_no=c_no,
+                    house="Vidhan Sabha",
+                    constituency_name=c_label,
+                )
+                
+                if discovered:
+                    grand_total_discovered += len(discovered)
+                    results = await eci_scraper.ingest_batch(discovered)
+                    grand_total_indexed += len(results)
+                    logger.info(f"    ✓ Indexed {len(results)} candidate(s) for {state_name} AC #{c_no}.")
+                else:
+                    logger.info(f"    - No nominations in feed for {state_name} AC #{c_no}.")
+
+        logger.info("\n==========================================================")
+        logger.info(f"✅ ALL VIDHAN SABHA INGESTION COMPLETE!")
+        logger.info(f"Total States Processed:     {len(states_to_run)}")
+        logger.info(f"Total Candidates Discovered: {grand_total_discovered}")
+        logger.info(f"Total Affidavits Indexed:   {grand_total_indexed}")
         logger.info("==========================================================")
 
     try:

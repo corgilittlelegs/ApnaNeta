@@ -84,6 +84,10 @@ echo "--- STAGE 1b: POLITICIAN PROFILE PHOTO SYNC (WIKIDATA / COMMONS) ---"
 trigger_workflow "sync_politician_photos.yml" "{\"limit\": \"all\"}" || true
 
 echo ""
+echo "--- STAGE 1c: VIDHAN SABHA CANDIDATES & AFFIDAVITS SYNC ---"
+trigger_workflow "scrape_eci.yml" "{\"state\": \"ALL\", \"batch_limit\": \"0\"}" || true
+
+echo ""
 echo "--- STAGE 2: MOSPI MPLADS EXPENDITURE SYNC ---"
 trigger_workflow "sync_mplads.yml" "{}" || true
 

@@ -33,3 +33,4 @@ jobs:
           PYTHONPATH: .
         run: |
           python -m src.ingestion.seed_loaders
+          python -m src.ingestion.seed_vidhan_sabha
