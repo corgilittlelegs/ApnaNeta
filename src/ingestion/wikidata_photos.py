@@ -17,6 +17,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger("WikidataPhotoSync")
 
 WIKIDATA_SPARQL_ENDPOINT = "https://query.wikidata.org/sparql"
+WIKIDATA_FALLBACK_ENDPOINT = "https://query-main.wikidata.org/sparql"
 COMMONS_API_ENDPOINT = "https://commons.wikimedia.org/w/api.php"
 USER_AGENT = "ApnaNeta/1.0 (https://apnaneta.in; civic-tech electoral integrity; open-data audit)"
 
@@ -156,49 +157,114 @@ class WikidataPhotoSynchronizer:
 
         return None
 
-    async def fetch_wikidata_mp_photos(self, limit: Optional[int] = None) -> List[Dict[str, Any]]:
-        """
-        Executes SPARQL query against Wikidata for Lok Sabha & Rajya Sabha MPs with photos.
-        Queries all matching parliamentarian photos without an artificial SPARQL limit.
-        """
-        sparql_query = """
-        SELECT ?politician ?politicianLabel ?image WHERE {
-          { ?politician wdt:P39 wd:Q16556694. } # Member of Lok Sabha
-          UNION
-          { ?politician wdt:P39 wd:Q196879. }    # Member of Rajya Sabha
-          ?politician wdt:P18 ?image.
-          SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
-        }
-        """
-
+    async def _execute_sparql(self, client: httpx.AsyncClient, query: str) -> List[Dict[str, Any]]:
+        """Executes a SPARQL query via POST with exponential backoff and multi-endpoint failover."""
+        endpoints = [
+            WIKIDATA_SPARQL_ENDPOINT,
+            WIKIDATA_FALLBACK_ENDPOINT,
+        ]
         headers = {
             "User-Agent": USER_AGENT,
             "Accept": "application/sparql-results+json",
         }
 
-        logger.info(f"Querying Wikidata SPARQL endpoint ({WIKIDATA_SPARQL_ENDPOINT})...")
-        try:
-            async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
-                resp = await client.get(
-                    WIKIDATA_SPARQL_ENDPOINT,
-                    params={"query": sparql_query, "format": "json"},
-                    headers=headers,
-                )
-                resp.raise_for_status()
-                data = resp.json()
-                results = data.get("results", {}).get("bindings", [])
-                logger.info(f"Retrieved {len(results)} parliamentarian image records from Wikidata.")
+        for attempt in range(1, 4):
+            for endpoint in endpoints:
+                try:
+                    resp = await client.post(
+                        endpoint,
+                        data={"query": query, "format": "json"},
+                        headers=headers,
+                        timeout=40.0,
+                    )
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        return data.get("results", {}).get("bindings", [])
+                    elif resp.status_code in (500, 502, 503, 504, 429):
+                        logger.warning(
+                            f"SPARQL attempt {attempt} on {endpoint} returned HTTP {resp.status_code}. Retrying..."
+                        )
+                except Exception as e:
+                    logger.warning(f"SPARQL attempt {attempt} on {endpoint} failed: {e}")
 
-                parsed = []
-                for item in results:
-                    name = item.get("politicianLabel", {}).get("value", "").strip()
-                    image_url = item.get("image", {}).get("value", "").strip()
-                    if name and image_url and not name.startswith("Q"):  # filter out unresolved QIDs
-                        parsed.append({"name": name, "image_url": image_url})
-                return parsed
-        except Exception as e:
-            logger.error(f"Failed to query Wikidata SPARQL: {e}")
+            if attempt < 3:
+                await asyncio.sleep(2 ** attempt)
+
+        return []
+
+    async def fetch_wikidata_mp_photos(self, limit: Optional[int] = None) -> List[Dict[str, Any]]:
+        """
+        Executes targeted SPARQL queries for Lok Sabha & Rajya Sabha MPs with photos.
+        Splits queries to eliminate expensive UNIONs that trigger 502 Bad Gateway timeouts.
+        """
+        lok_sabha_query = """
+        SELECT ?politician ?politicianLabel ?image WHERE {
+          ?politician wdt:P39 wd:Q16556694;
+                      wdt:P18 ?image.
+          SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+        }
+        """
+
+        rajya_sabha_query = """
+        SELECT ?politician ?politicianLabel ?image WHERE {
+          ?politician wdt:P39 wd:Q196879;
+                      wdt:P18 ?image.
+          SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+        }
+        """
+
+        logger.info("Querying Wikidata SPARQL for parliamentarians with portrait photos...")
+        if httpx is None:
+            logger.warning("httpx is not installed.")
             return []
+
+        async with httpx.AsyncClient(timeout=45.0, follow_redirects=True) as client:
+            ls_bindings = await self._execute_sparql(client, lok_sabha_query)
+            if not ls_bindings:
+                # Fallback to direct rdfs:label if label service times out
+                logger.info("Retrying Lok Sabha query with direct rdfs:label...")
+                ls_alt = """
+                SELECT ?politician ?politicianLabel ?image WHERE {
+                  ?politician wdt:P39 wd:Q16556694;
+                              wdt:P18 ?image;
+                              rdfs:label ?politicianLabel.
+                  FILTER(LANG(?politicianLabel) = "en")
+                }
+                """
+                ls_bindings = await self._execute_sparql(client, ls_alt)
+
+            rs_bindings = await self._execute_sparql(client, rajya_sabha_query)
+            if not rs_bindings:
+                logger.info("Retrying Rajya Sabha query with direct rdfs:label...")
+                rs_alt = """
+                SELECT ?politician ?politicianLabel ?image WHERE {
+                  ?politician wdt:P39 wd:Q196879;
+                              wdt:P18 ?image;
+                              rdfs:label ?politicianLabel.
+                  FILTER(LANG(?politicianLabel) = "en")
+                }
+                """
+                rs_bindings = await self._execute_sparql(client, rs_alt)
+
+        all_bindings = ls_bindings + rs_bindings
+        logger.info(f"Retrieved {len(all_bindings)} total records ({len(ls_bindings)} Lok Sabha, {len(rs_bindings)} Rajya Sabha).")
+
+        parsed = []
+        seen_entities = set()
+        for item in all_bindings:
+            ent_uri = item.get("politician", {}).get("value", "")
+            if ent_uri and ent_uri in seen_entities:
+                continue
+            if ent_uri:
+                seen_entities.add(ent_uri)
+
+            name = item.get("politicianLabel", {}).get("value", "").strip()
+            image_url = item.get("image", {}).get("value", "").strip()
+            if name and image_url and not name.startswith("Q"):  # filter out unresolved QIDs
+                parsed.append({"name": name, "image_url": image_url})
+
+        logger.info(f"Parsed {len(parsed)} unique parliamentarians with portraits.")
+        return parsed
 
     async def fetch_wikimedia_file_metadata(self, client: httpx.AsyncClient, file_name: str) -> Dict[str, Any]:
         """

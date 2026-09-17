@@ -92,6 +92,48 @@ class TestWikidataPhotos(unittest.TestCase):
         self.assertIsNotNone(m4)
         self.assertEqual(m4["id"], "c-4")
 
+    @patch("src.ingestion.wikidata_photos.httpx")
+    @patch.object(WikidataPhotoSynchronizer, "_execute_sparql")
+    def test_fetch_wikidata_mp_photos(self, mock_sparql, mock_httpx):
+        import asyncio
+        mock_client = AsyncMock()
+        mock_httpx.AsyncClient.return_value.__aenter__.return_value = mock_client
+        mock_sparql.side_effect = [
+            # Lok Sabha response
+            [
+                {
+                    "politician": {"value": "http://www.wikidata.org/entity/Q1058"},
+                    "politicianLabel": {"value": "Narendra Modi"},
+                    "image": {"value": "http://commons.wikimedia.org/wiki/Special:FilePath/Modi.jpg"},
+                }
+            ],
+            # Rajya Sabha response
+            [
+                {
+                    "politician": {"value": "http://www.wikidata.org/entity/Q1058"},  # Duplicate entity
+                    "politicianLabel": {"value": "Narendra Modi"},
+                    "image": {"value": "http://commons.wikimedia.org/wiki/Special:FilePath/Modi.jpg"},
+                },
+                {
+                    "politician": {"value": "http://www.wikidata.org/entity/Q9999"},
+                    "politicianLabel": {"value": "Q9999"},  # Unresolved QID - should be filtered
+                    "image": {"value": "http://commons.wikimedia.org/wiki/Special:FilePath/Unresolved.jpg"},
+                },
+                {
+                    "politician": {"value": "http://www.wikidata.org/entity/Q2000"},
+                    "politicianLabel": {"value": "Mallikarjun Kharge"},
+                    "image": {"value": "http://commons.wikimedia.org/wiki/Special:FilePath/Kharge.jpg"},
+                },
+            ],
+        ]
+
+        syncer = WikidataPhotoSynchronizer()
+        items = asyncio.run(syncer.fetch_wikidata_mp_photos())
+
+        self.assertEqual(len(items), 2)
+        self.assertEqual(items[0]["name"], "Narendra Modi")
+        self.assertEqual(items[1]["name"], "Mallikarjun Kharge")
+
 
 if __name__ == "__main__":
     unittest.main()
