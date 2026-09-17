@@ -93,9 +93,17 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
         {/* Header Bar */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50 gap-4 flex-wrap flex-shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="p-2.5 bg-blue-100/80 text-blue-700 rounded-xl flex-shrink-0">
-              <ShieldCheck size={22} weight="duotone" />
-            </div>
+            {candidate?.photo_url ? (
+              <img
+                src={candidate.photo_url}
+                alt={candidateName}
+                className="w-11 h-11 rounded-full object-cover border-2 border-slate-200 shadow-2xs flex-shrink-0"
+              />
+            ) : (
+              <div className="p-2.5 bg-blue-100/80 text-blue-700 rounded-xl flex-shrink-0">
+                <ShieldCheck size={22} weight="duotone" />
+              </div>
+            )}
             <div className="min-w-0">
               <h3 className="font-bold text-slate-900 text-base leading-tight truncate">
                 Forensic Civic Intelligence Verification

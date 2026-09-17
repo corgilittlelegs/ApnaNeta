@@ -32,6 +32,10 @@ const SAMPLE_CANDIDATES: Candidate[] = [
     house: 'Lok Sabha',
     party: 'Bharatiya Janata Party',
     filing_year: 2024,
+    photo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Narendra_Modi_2024.jpg/300px-Narendra_Modi_2024.jpg',
+    photo_source: 'wikimedia',
+    photo_attribution: "Photo by Prime Minister's Office • GODL-India via Wikimedia Commons",
+    photo_license_url: 'https://data.gov.in/sites/default/files/Gazette_Notification_OGDL.pdf',
     age: 73,
     spouse_name: 'Smt. Jashodaben',
     spouse_status: 'Declared (PAN: Not Known / ITR: Nil)',
@@ -100,6 +104,10 @@ const SAMPLE_CANDIDATES: Candidate[] = [
     house: 'Lok Sabha',
     party: 'Indian National Congress',
     filing_year: 2024,
+    photo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Rahul_Gandhi_2023.jpg/300px-Rahul_Gandhi_2023.jpg',
+    photo_source: 'wikimedia',
+    photo_attribution: 'Photo by All India Congress Committee • CC BY-SA 4.0 via Wikimedia Commons',
+    photo_license_url: 'https://creativecommons.org/licenses/by-sa/4.0/',
     age: 54,
     spouse_status: 'Unmarried / Nil',
     spouse_pan_status: 'Not Applicable / Nil',
@@ -829,6 +837,10 @@ export const App: React.FC = () => {
                 has_anomalous_wealth_ratio: hasAnomalousWdr,
                 pdf_source_url: pdfSourceUrl,
                 r2_storage_key: r2Key,
+                photo_url: row.photo_url || undefined,
+                photo_source: row.photo_source || undefined,
+                photo_attribution: row.photo_attribution || undefined,
+                photo_license_url: row.photo_license_url || undefined,
               };
             });
 
