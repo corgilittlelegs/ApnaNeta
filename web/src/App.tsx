@@ -430,6 +430,69 @@ const SAMPLE_CANDIDATES: Candidate[] = [
       },
     ],
   },
+  {
+    id: '7',
+    name: 'Ajit Anantrao Pawar',
+    alias: 'Ajitdada Pawar',
+    constituency: 'Baramati',
+    state: 'Maharashtra',
+    house: 'Vidhan Sabha',
+    party: 'Nationalist Congress Party',
+    filing_year: 2024,
+    photo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Ajit_Pawar_2023.jpg/330px-Ajit_Pawar_2023.jpg',
+    photo_source: 'wikimedia',
+    photo_attribution: 'Wikimedia Commons • CC BY-SA 4.0',
+    photo_license_url: 'https://creativecommons.org/licenses/by-sa/4.0/',
+    age: 65,
+    spouse_name: 'Sunetra Pawar',
+    spouse_status: 'Declared',
+    spouse_pan_status: 'XXXXX5678R (Redacted)',
+    spouse_income_status: 'Declared in Form 26',
+    education: 'B.Com Part-1 (Secondary School Certificate / HSC)',
+    residence_address: 'Sahyog, Katewadi, Taluka Baramati, District Pune, Maharashtra',
+    enrolled_constituency: '201-Baramati Assembly Constituency, Maharashtra',
+    filing_date: '28th October, 2024',
+    voter_serial_no: 312,
+    voter_part_no: 145,
+    total_movable_assets: 266000000.0,
+    total_immovable_assets: 979400000.0,
+    total_liabilities: 212100000.0,
+    total_net_worth: 1033300000.0,
+    total_five_year_income: 43500000.0,
+    criminal_cases_count: 0,
+    serious_criminal_cases_count: 0,
+    protest_cases_count: 0,
+    attendance_rate: 91.2,
+    has_arithmetic_discrepancy: false,
+    delta_movable: 0.0,
+    delta_immovable: 0.0,
+    wealth_discrepancy_ratio: 2.37,
+    has_anomalous_wealth_ratio: false,
+    pdf_source_url: 'https://affidavit.eci.gov.in/CandidateCustomFilter?electionType=24-AC-GENERAL-1-2024',
+    proof_bbox: { page: 1, ymin: 240, xmin: 35, ymax: 360, xmax: 965 },
+    historical_wealth: [
+      {
+        from_year: 2014,
+        to_year: 2019,
+        initial_assets: 412000000.0,
+        final_assets: 754000000.0,
+        absolute_increase: 342000000.0,
+        percentage_increase: 83.0,
+        cagr_percent: 12.8,
+        is_rapid_accumulation: false,
+      },
+      {
+        from_year: 2019,
+        to_year: 2024,
+        initial_assets: 754000000.0,
+        final_assets: 1245400000.0,
+        absolute_increase: 491400000.0,
+        percentage_increase: 65.2,
+        cagr_percent: 10.5,
+        is_rapid_accumulation: false,
+      },
+    ],
+  },
 ];
 
 // Canonical lookup for prominent political figures to enrich unindexed rows
@@ -922,14 +985,12 @@ export const App: React.FC = () => {
   // Comprehensive multi-factor candidate filter
   const filteredCandidates = useMemo(() => {
     return candidates.filter((c) => {
-      // 1. Text Search Query
+      // 1. Text Search Query (supports tokenized multi-word search & aliases)
       const q = searchQuery.toLowerCase().trim();
       if (q) {
-        const matchesQuery =
-          c.name.toLowerCase().includes(q) ||
-          c.constituency.toLowerCase().includes(q) ||
-          c.state.toLowerCase().includes(q) ||
-          (c.party && c.party.toLowerCase().includes(q));
+        const tokens = q.split(/\s+/).filter(Boolean);
+        const searchable = `${c.name} ${c.alias || ''} ${c.constituency} ${c.state} ${c.party || ''}`.toLowerCase();
+        const matchesQuery = tokens.every((token) => searchable.includes(token));
         if (!matchesQuery) return false;
       }
 

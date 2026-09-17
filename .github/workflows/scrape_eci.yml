@@ -5,10 +5,30 @@ on:
     - cron: '0 12 * * 0' # Weekly trigger on Sundays at 12:00 UTC
   workflow_dispatch: # Allows manual trigger from GitHub UI
     inputs:
+      house:
+        description: "Legislative House ('Vidhan Sabha' or 'Lok Sabha')"
+        required: true
+        type: choice
+        options:
+          - "Vidhan Sabha"
+          - "Lok Sabha"
+        default: "Vidhan Sabha"
       state:
-        description: "Target State (e.g. 'National', 'Maharashtra', 'Delhi')"
+        description: "Target State (e.g. 'Maharashtra', 'Uttar Pradesh', 'Delhi')"
+        required: true
+        default: "Maharashtra"
+      constituency_no:
+        description: "Constituency Number (e.g. '201' for Baramati AC, '77' for Varanasi PC)"
+        required: true
+        default: "201"
+      constituency_name:
+        description: "Constituency Name (e.g. 'Baramati')"
         required: false
-        default: "National"
+        default: "Baramati"
+      election_type:
+        description: "ECI Election Code (e.g. '24-AC-GENERAL-1-2024' or '24-PC-GENERAL-1-2024')"
+        required: false
+        default: "24-AC-GENERAL-1-2024"
 
 jobs:
   scrape_eci:
@@ -25,7 +45,7 @@ jobs:
 
       - name: Install Ingestion Dependencies
         run: |
-          pip install httpx curl_cffi pydantic pydantic-settings boto3
+          pip install httpx curl_cffi pydantic pydantic-settings boto3 beautifulsoup4
 
       - name: Run ECI Scraper
         env:
@@ -35,7 +55,11 @@ jobs:
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
-          TARGET_STATE: ${{ inputs.state }}
+          HOUSE: ${{ inputs.house || 'Vidhan Sabha' }}
+          TARGET_STATE: ${{ inputs.state || 'Maharashtra' }}
+          CONSTITUENCY_NO: ${{ inputs.constituency_no || '201' }}
+          CONSTITUENCY_NAME: ${{ inputs.constituency_name || 'Baramati' }}
+          ELECTION_TYPE: ${{ inputs.election_type || '24-AC-GENERAL-1-2024' }}
           PYTHONPATH: .
         run: |
           python -m src.ingestion.eci_affidavits

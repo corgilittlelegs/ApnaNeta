@@ -45,16 +45,21 @@ class ECIPlaywrightCrawler:
         constituency_no: int,
         election_type: str = DEFAULT_ELECTION_TYPE,
         headless: bool = True,
+        house: Optional[str] = None,
+        constituency_name: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """
         Executes a headless Chromium session to navigate the dynamic ECI form cascade.
+        Supports both Lok Sabha and Vidhan Sabha (State Assembly) elections.
         """
-        logger.info(f"Launching Playwright Chromium for {state_name} - Constituency {constituency_no}...")
+        resolved_house = house or ("Vidhan Sabha" if ("AC" in election_type.upper() or "VIDHAN" in election_type.upper()) else "Lok Sabha")
+        resolved_constituency = constituency_name or f"Constituency {constituency_no}"
+        logger.info(f"Launching Playwright Chromium for {state_name} ({resolved_house}) - {resolved_constituency}...")
         try:
             from playwright.async_api import async_playwright
         except ImportError:
             logger.warning("playwright package not installed. Falling back to dynamic HTTP session.")
-            return await self.crawl_constituency_http_fallback(state_name, constituency_no, election_type)
+            return await self.crawl_constituency_http_fallback(state_name, constituency_no, election_type, resolved_house, resolved_constituency)
 
         nominations = []
         try:
@@ -98,8 +103,8 @@ class ECIPlaywrightCrawler:
                                 "name": name_text,
                                 "party": party_text,
                                 "state": state_name,
-                                "constituency": f"Constituency {constituency_no}",
-                                "house": "Lok Sabha",
+                                "constituency": resolved_constituency,
+                                "house": resolved_house,
                                 "filing_year": 2024,
                                 "pdf_url": pdf_url,
                             })
@@ -109,20 +114,25 @@ class ECIPlaywrightCrawler:
                 return nominations
         except Exception as e:
             logger.warning(f"Playwright execution encountered error ({e}). Using HTTP session fallback.")
-            return await self.crawl_constituency_http_fallback(state_name, constituency_no, election_type)
+            return await self.crawl_constituency_http_fallback(state_name, constituency_no, election_type, resolved_house, resolved_constituency)
 
     async def crawl_constituency_http_fallback(
         self,
         state_name: str,
         constituency_no: int,
         election_type: str = DEFAULT_ELECTION_TYPE,
+        house: Optional[str] = None,
+        constituency_name: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """
         Direct HTTP session fallback with browser TLS impersonation.
+        Supports both Lok Sabha and Vidhan Sabha.
         """
+        resolved_house = house or ("Vidhan Sabha" if ("AC" in election_type.upper() or "VIDHAN" in election_type.upper()) else "Lok Sabha")
+        resolved_constituency = constituency_name or f"Constituency {constituency_no}"
         state_code = ECI_STATE_CODES.get(state_name, "U07")
         url = f"{ECI_PORTAL_URL}/CandidateCustomFilter?electionType={election_type}&state={state_code}&constituency={constituency_no}"
-        logger.info(f"Executing TLS-impersonated HTTP request to: {url}")
+        logger.info(f"Executing TLS-impersonated HTTP request to ({resolved_house}): {url}")
 
         try:
             from curl_cffi import requests as curl_requests
@@ -161,8 +171,8 @@ class ECIPlaywrightCrawler:
                         "name": cand_name,
                         "party": party_name,
                         "state": state_name,
-                        "constituency": f"Constituency {constituency_no}",
-                        "house": "Lok Sabha",
+                        "constituency": resolved_constituency,
+                        "house": resolved_house,
                         "filing_year": 2024,
                         "pdf_url": pdf_link,
                     })

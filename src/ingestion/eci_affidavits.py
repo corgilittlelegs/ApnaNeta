@@ -137,11 +137,15 @@ class ECIAffidavitScraper:
         election_type: str = "24-PC-GENERAL-1-2024",
         state_name: str = "Uttar Pradesh",
         constituency_no: int = 77,
+        house: Optional[str] = None,
+        constituency_name: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """
         Dynamically queries the official ECI CandidateCustomFilter endpoint
         for a given state and constituency to extract real candidate nominations and PDF links.
+        Supports both Parliamentary (Lok Sabha) and Assembly (Vidhan Sabha) election cycles.
         """
+        resolved_house = house or ("Vidhan Sabha" if ("AC" in election_type.upper() or "VIDHAN" in election_type.upper()) else "Lok Sabha")
         state_code = ECI_STATE_CODES.get(state_name, "U07")
         params = {
             "electionType": election_type,
@@ -149,7 +153,7 @@ class ECIAffidavitScraper:
             "constituency": str(constituency_no),
         }
         url = f"{ECI_FILTER_ENDPOINT}?electionType={election_type}&state={state_code}&constituency={constituency_no}"
-        logger.info(f"Querying ECI dynamic nomination feed: {url}")
+        logger.info(f"Querying ECI dynamic nomination feed ({resolved_house}): {url}")
 
         try:
             session = self._get_client()
@@ -167,6 +171,7 @@ class ECIAffidavitScraper:
                 return []
 
             nominations = []
+            resolved_constituency = constituency_name or f"Constituency {constituency_no}"
             for row in table.find_all("tr")[1:]:
                 cols = row.find_all("td")
                 if len(cols) >= 4:
@@ -185,12 +190,12 @@ class ECIAffidavitScraper:
                             "name": cand_name,
                             "party": party_name,
                             "state": state_name,
-                            "constituency": f"Constituency {constituency_no}",
-                            "house": "Lok Sabha",
+                            "constituency": resolved_constituency,
+                            "house": resolved_house,
                             "filing_year": 2024,
                             "pdf_url": pdf_link,
                         })
-            logger.info(f"Discovered {len(nominations)} candidate nomination(s) from ECI feed.")
+            logger.info(f"Discovered {len(nominations)} candidate nomination(s) for {resolved_house} from ECI feed.")
             return nominations
         except Exception as e:
             logger.error(f"Error scraping ECI candidate filter: {e}")
@@ -332,16 +337,33 @@ if __name__ == "__main__":
     import asyncio
 
     target_state = (os.getenv("TARGET_STATE") or "Uttar Pradesh").strip()
-    constituency_no = int(os.getenv("CONSTITUENCY_NO", "77")) # e.g. 77 for Varanasi
+    constituency_no = int(os.getenv("CONSTITUENCY_NO", "77")) # e.g. 77 for Varanasi (PC) or 201 for Baramati (AC)
+    constituency_name = (os.getenv("CONSTITUENCY_NAME") or "").strip() or None
+    election_type = (os.getenv("ELECTION_TYPE") or "24-PC-GENERAL-1-2024").strip()
+
+    raw_house = (os.getenv("HOUSE") or "").strip()
+    if raw_house:
+        house = raw_house
+    elif "AC" in election_type.upper() or "VIDHAN" in election_type.upper():
+        house = "Vidhan Sabha"
+    else:
+        house = "Lok Sabha"
 
     logger.info("==========================================================")
-    logger.info(f"Starting Dynamic ECI Candidate Affidavit Ingestion ({target_state})")
+    logger.info(f"Starting Dynamic ECI Candidate Affidavit Ingestion")
+    logger.info(f"House:            {house}")
+    logger.info(f"Election Type:    {election_type}")
+    logger.info(f"Target State:     {target_state}")
+    logger.info(f"Constituency No:  {constituency_no} ({constituency_name or 'Auto'})")
     logger.info("==========================================================")
 
     async def main():
         discovered = await eci_scraper.discover_constituency_candidates(
+            election_type=election_type,
             state_name=target_state,
             constituency_no=constituency_no,
+            house=house,
+            constituency_name=constituency_name,
         )
         if discovered:
             results = await eci_scraper.ingest_batch(discovered)
