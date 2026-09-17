@@ -163,13 +163,29 @@ class AffidavitExtractionWorker:
                 return pdf_bytes
 
         if source_url and source_url.startswith("http"):
-            logger.info(f"Attempting fallback live download from: {source_url}")
+            logger.info(f"Attempting live ephemeral download from official source: {source_url}")
             try:
+                # Try curl_cffi with browser TLS impersonation first
+                try:
+                    from curl_cffi import requests as curl_requests
+                    session = curl_requests.Session(impersonate="chrome120")
+                    resp = session.get(
+                        source_url,
+                        timeout=30,
+                        headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"},
+                    )
+                    if resp.status_code == 200 and resp.content.startswith(b"%PDF"):
+                        logger.info(f"Downloaded {len(resp.content):,} bytes via browser TLS session.")
+                        return resp.content
+                except ImportError:
+                    pass
+
+                # Fallback to httpx
                 import httpx
                 async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
                     resp = await client.get(
                         source_url,
-                        headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) ApnaNeta/1.0"},
+                        headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ApnaNeta/1.0"},
                     )
                     if resp.status_code == 200 and resp.content.startswith(b"%PDF"):
                         logger.info(f"Downloaded {len(resp.content):,} bytes from live source URL.")

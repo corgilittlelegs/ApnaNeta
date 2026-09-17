@@ -82,7 +82,7 @@ ECI_STATE_CODES = {
     "Sikkim": "S21",
     "Tamil Nadu": "S22",
     "Tripura": "S23",
-    "Uttar Pradesh": "U07",
+    "Uttar Pradesh": "S24",
     "Uttarakhand": "S28",
     "West Bengal": "S25",
     "Delhi": "U05",
@@ -190,9 +190,113 @@ STATE_ASSEMBLY_ELECTIONS: Dict[str, str] = {
     "Tamil Nadu": "21-AC-GENERAL-2-2021",
     "Kerala": "21-AC-GENERAL-3-2021",
     "Assam": "21-AC-GENERAL-4-2021",
+    "Tripura": "23-AC-GENERAL-1-2023",
+    "Meghalaya": "23-AC-GENERAL-2-2023",
+    "Nagaland": "23-AC-GENERAL-3-2023",
+    "Mizoram": "23-AC-GENERAL-4-2023",
+    "Puducherry": "21-AC-GENERAL-1-2021",
     "Delhi": "20-AC-GENERAL-1-2020",
     "Bihar": "20-AC-GENERAL-1-2020",
 }
+
+# Regional clusters for daily rotation (prevents exceeding GitHub Actions timeouts)
+REGIONAL_STATE_CLUSTERS: Dict[str, List[str]] = {
+    "NORTH": [
+        "Delhi",
+        "Uttar Pradesh",
+        "Punjab",
+        "Haryana",
+        "Himachal Pradesh",
+        "Jammu and Kashmir",
+        "Uttarakhand",
+    ],
+    "WEST": [
+        "Maharashtra",
+        "Gujarat",
+        "Rajasthan",
+        "Goa",
+    ],
+    "SOUTH": [
+        "Karnataka",
+        "Tamil Nadu",
+        "Kerala",
+        "Andhra Pradesh",
+        "Telangana",
+        "Puducherry",
+    ],
+    "EAST_CENTRAL": [
+        "West Bengal",
+        "Bihar",
+        "Odisha",
+        "Jharkhand",
+        "Madhya Pradesh",
+        "Chhattisgarh",
+    ],
+    "NORTHEAST": [
+        "Assam",
+        "Arunachal Pradesh",
+        "Manipur",
+        "Meghalaya",
+        "Mizoram",
+        "Nagaland",
+        "Sikkim",
+        "Tripura",
+    ],
+}
+
+# Day-of-week regional assignment (UTC weekday: 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri)
+WEEKDAY_REGIONS: Dict[int, str] = {
+    0: "NORTH",        # Monday
+    1: "WEST",         # Tuesday
+    2: "SOUTH",        # Wednesday
+    3: "EAST_CENTRAL", # Thursday
+    4: "NORTHEAST",    # Friday
+    5: "WEST",         # Saturday fallback
+    6: "NORTH",        # Sunday fallback
+}
+
+# Major recognized parties for sitting MLA / winner prioritization
+MAJOR_PARTY_KEYWORDS = [
+    "bharatiya janata party", "bjp",
+    "nationalist congress party", "ncp",
+    "indian national congress", "inc",
+    "shiv sena",
+    "aam aadmi party", "aap",
+    "samajwadi party", "sp",
+    "all india trinamool congress", "tmc",
+    "dravida munnetra kazhagam", "dmk",
+    "all india anna dravida munnetra kazhagam", "aiadmk",
+    "telugu desam party", "tdp",
+    "ysr congress party", "ysrcp",
+    "janata dal", "jdu", "jds",
+    "communist party of india", "cpi",
+    "rashtriya janata dal", "rjd",
+    "rashtriya lok dal", "rld",
+    "lok janshakti party", "ljp",
+    "jharkhand mukti morcha", "jmm",
+    "bharat rashtra samithi", "brs",
+    "biju janata dal", "bjd",
+]
+
+
+def candidate_priority_score(name: str, party: str) -> int:
+    """
+    Ranks sitting MLAs, prominent leaders, and recognized major party nominees
+    above fringe independent candidates to keep ingestion high-signal and fast.
+    """
+    p_lower = (party or "").lower()
+    n_lower = (name or "").lower()
+
+    if any(prom in n_lower for prom in ("ajit", "fadnavis", "shinde", "yogi", "kejriwal", "stalin", "mamata", "soren")):
+        return 100
+
+    for idx, kw in enumerate(MAJOR_PARTY_KEYWORDS):
+        if kw in p_lower:
+            return 80 - idx
+
+    if "independent" in p_lower or "ind" in p_lower:
+        return 1
+    return 10
 
 
 def parse_constituency_list(
@@ -335,6 +439,20 @@ class ECIAffidavitScraper:
                             "filing_year": 2024,
                             "pdf_url": pdf_link,
                         })
+
+            if nominations:
+                # Rank sitting MLAs, prominent leaders, and recognized major parties first
+                nominations.sort(
+                    key=lambda c: candidate_priority_score(c["name"], c.get("party", "")),
+                    reverse=True,
+                )
+                max_nominees = int(os.getenv("MAX_CANDIDATES_PER_AC", "2"))
+                if max_nominees > 0 and len(nominations) > max_nominees:
+                    logger.info(
+                        f"Prioritizing top {max_nominees} major nominees for {state_name} AC #{constituency_no} (filtered {len(nominations) - max_nominees} fringe filings)"
+                    )
+                    nominations = nominations[:max_nominees]
+
             logger.info(f"Discovered {len(nominations)} candidate nomination(s) for {resolved_house} from ECI feed.")
             return nominations
         except Exception as e:
@@ -381,15 +499,11 @@ class ECIAffidavitScraper:
                 "deduplicated": True,
             }
 
-        # Step 4: Upload to Cloudflare R2
-        r2_key = f"affidavits/{state.lower().replace(' ', '_')}/{constituency.lower().replace(' ', '_')}/{filing_year}_{sha256_hash[:12]}.pdf"
-        r2_uploaded = await r2_storage.upload_bytes(
-            data=pdf_bytes,
-            storage_key=r2_key,
-            content_type="application/pdf",
-        )
-        if not r2_uploaded:
-            logger.warning(f"Failed to upload affidavit to Cloudflare R2: {r2_key}")
+        # Step 4: Ephemeral In-Memory Storage Strategy (Zero Permanent R2 Storage)
+        # We do NOT upload multi-megabyte PDFs to Cloudflare R2.
+        # This keeps the pipeline free, prevents hitting storage quotas, and stays within limits.
+        # Primary source verification is preserved via sha256_hash and official source_url.
+        r2_key = None
 
         # Step 5: Upsert Candidate in Supabase
         candidate_id = None
@@ -421,7 +535,7 @@ class ECIAffidavitScraper:
             except Exception as e:
                 logger.warning(f"Candidate table upsert error: {e}")
 
-        # Step 6: Register Affidavit Record
+        # Step 6: Register Affidavit Record (Direct link to official ECI portal + SHA-256 hash)
         affidavit_id = None
         if candidate_id:
             try:
@@ -437,11 +551,11 @@ class ECIAffidavitScraper:
                         {
                             "source_url": pdf_url,
                             "sha256_hash": sha256_hash,
-                            "r2_storage_key": r2_key,
+                            "r2_storage_key": None,
                         },
                         eq={"id": affidavit_id},
                     )
-                    logger.info(f"Updated existing candidate affidavit {affidavit_id} with new filing: {r2_key}")
+                    logger.info(f"Updated existing candidate affidavit {affidavit_id} with verified ECI filing: {pdf_url}")
                 else:
                     new_affidavit = await supabase.insert(
                         "affidavits",
@@ -451,7 +565,7 @@ class ECIAffidavitScraper:
                                 "filing_year": filing_year,
                                 "source_url": pdf_url,
                                 "sha256_hash": sha256_hash,
-                                "r2_storage_key": r2_key,
+                                "r2_storage_key": None,
                             }
                         ],
                     )
@@ -466,7 +580,7 @@ class ECIAffidavitScraper:
             "constituency": constituency,
             "state": state,
             "sha256_hash": sha256_hash,
-            "r2_storage_key": r2_key,
+            "r2_storage_key": None,
             "pdf_bytes_len": len(pdf_bytes),
             "candidate_id": candidate_id,
             "affidavit_id": affidavit_id,
@@ -494,24 +608,45 @@ eci_scraper = ECIAffidavitScraper()
 
 if __name__ == "__main__":
     import asyncio
+    import datetime
 
+    raw_region = (os.getenv("REGION") or "AUTO_BY_DAY").strip().upper()
     raw_state = (os.getenv("TARGET_STATE") or "ALL").strip()
     raw_constituency = (os.getenv("CONSTITUENCY_NO") or "all").strip()
     constituency_name = (os.getenv("CONSTITUENCY_NAME") or "").strip() or None
     explicit_election = (os.getenv("ELECTION_TYPE") or "").strip()
     batch_limit = int(os.getenv("BATCH_LIMIT", os.getenv("MAX_CONSTITUENCIES", "0")))
 
-    # Resolve states to process
-    if raw_state.upper() in ("ALL", "NATIONAL", "*", ""):
-        states_to_run = list(STATE_ASSEMBLY_ELECTIONS.keys())
-    else:
+    # Resolve active region and states
+    if raw_state.upper() not in ("ALL", "NATIONAL", "*", ""):
         states_to_run = [raw_state]
+        resolved_region = f"MANUAL_STATE ({raw_state})"
+    else:
+        if raw_region in ("AUTO_BY_DAY", "AUTO", "TODAY"):
+            # UTC day of week: 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri, 5=Sat, 6=Sun
+            current_weekday = datetime.datetime.now(datetime.timezone.utc).weekday()
+            resolved_region = WEEKDAY_REGIONS.get(current_weekday, "WEST")
+            logger.info(f"Resolved AUTO_BY_DAY for weekday {current_weekday} -> {resolved_region}")
+        else:
+            resolved_region = raw_region
+
+        if resolved_region == "ALL":
+            states_to_run = list(STATE_ASSEMBLY_ELECTIONS.keys())
+        elif resolved_region in REGIONAL_STATE_CLUSTERS:
+            candidate_states = REGIONAL_STATE_CLUSTERS[resolved_region]
+            states_to_run = [s for s in candidate_states if s in STATE_ASSEMBLY_ELECTIONS]
+        else:
+            logger.warning(f"Unrecognized region '{raw_region}'. Defaulting to WEST cluster.")
+            resolved_region = "WEST"
+            states_to_run = [s for s in REGIONAL_STATE_CLUSTERS["WEST"] if s in STATE_ASSEMBLY_ELECTIONS]
 
     logger.info("==========================================================")
-    logger.info(f"🇮🇳 APNA NETA: ZERO-INPUT AUTOMATED VIDHAN SABHA INGESTION")
-    logger.info(f"Total States Scope:     {len(states_to_run)} state(s)")
+    logger.info("🇮🇳 APNA NETA: ZERO-INPUT AUTOMATED VIDHAN SABHA INGESTION")
+    logger.info(f"Active Schedule Region: {resolved_region}")
+    logger.info(f"Total States Scope:     {len(states_to_run)} state(s): {', '.join(states_to_run)}")
     logger.info(f"Constituencies Scope:   {raw_constituency}")
     logger.info(f"Batch Limit per State:  {batch_limit if batch_limit > 0 else 'All Constituencies'}")
+    logger.info(f"Storage Architecture:   Ephemeral In-Memory (Zero R2 Uploads, Direct ECI URL + SHA-256)")
     logger.info("==========================================================")
 
     async def main():
