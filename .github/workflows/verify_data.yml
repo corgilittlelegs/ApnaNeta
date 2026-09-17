@@ -52,3 +52,11 @@ jobs:
           PYTHONPATH: .
         run: |
           python -m src.verification.mobility_tracker
+
+      - name: Audit MPLADS GIS Geolocation & Ghost Projects
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          PYTHONPATH: .
+        run: |
+          python -m src.verification.gis_verifier

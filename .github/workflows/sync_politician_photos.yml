@@ -1,0 +1,37 @@
+name: Sync Politician Photos (Wikidata & Wikimedia)
+
+on:
+  schedule:
+    - cron: '0 6 1 * *' # Runs monthly on the 1st at 06:00 UTC
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Max number of parliamentarian photos to query and sync"
+        required: false
+        default: "500"
+
+jobs:
+  sync_photos:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: |
+          pip install httpx pydantic pydantic-settings
+
+      - name: Run Wikidata & Wikimedia Photo Sync
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          LIMIT: ${{ inputs.limit || '500' }}
+          PYTHONPATH: .
+        run: |
+          python -m src.ingestion.wikidata_photos

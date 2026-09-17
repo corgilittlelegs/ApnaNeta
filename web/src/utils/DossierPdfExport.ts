@@ -407,10 +407,15 @@ export function exportCandidateDossierPdf(candidate: Candidate): void {
 
     <!-- Identity Banner -->
     <div class="identity-card">
-      <div>
-        <h2 class="cand-name">${escapeHtml(candidate.name)} ${candidate.alias ? `("${escapeHtml(candidate.alias)}")` : ''}</h2>
-        <div class="cand-sub">
-          <strong>${escapeHtml(candidate.house)}</strong> • ${escapeHtml(candidate.constituency)} Constituency, ${escapeHtml(candidate.state)} • Election Year: <strong>${escapeHtml(candidate.filing_year)}</strong>
+      <div style="display: flex; align-items: center; gap: 14px;">
+        ${candidate.photo_url ? `
+          <img src="${escapeHtml(candidate.photo_url)}" alt="${escapeHtml(candidate.name)}" style="width: 52px; height: 52px; border-radius: 50%; object-fit: cover; border: 2px solid #C89D3C;" />
+        ` : ''}
+        <div>
+          <h2 class="cand-name">${escapeHtml(candidate.name)} ${candidate.alias ? `("${escapeHtml(candidate.alias)}")` : ''}</h2>
+          <div class="cand-sub">
+            <strong>${escapeHtml(candidate.house)}</strong> • ${escapeHtml(candidate.constituency)} Constituency, ${escapeHtml(candidate.state)} • Election Year: <strong>${escapeHtml(candidate.filing_year)}</strong>
+          </div>
         </div>
       </div>
       <div style="display: flex; align-items: center; gap: 12px;">
@@ -578,7 +583,7 @@ export function exportCandidateDossierPdf(candidate: Candidate): void {
       <div class="metric-box">
         <div class="metric-label">Questions & Debates</div>
         <div class="metric-val mono">${candidate.questions_count ?? 0} Qs / ${candidate.debates_count ?? 0} Debates</div>
-        <div class="metric-sub">Sansad legislative participation</div>
+        <div class="metric-sub">${candidate.starred_questions_count !== undefined ? `${candidate.starred_questions_count} Starred, ${candidate.unstarred_questions_count ?? 0} Written` : 'Sansad legislative participation'}</div>
       </div>
     </div>
 
@@ -618,6 +623,7 @@ export function exportCandidateDossierPdf(candidate: Candidate): void {
         </div>
         <div style="text-align: right; font-family: ui-monospace, monospace; font-size: 7.5px;">
           <div>Source: affidavit.eci.gov.in</div>
+          ${candidate.photo_attribution ? `<div>Photo: ${escapeHtml(candidate.photo_attribution)}</div>` : ''}
           <div>Portal: apnaneta.in</div>
         </div>
       </div>

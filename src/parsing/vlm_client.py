@@ -146,7 +146,8 @@ class GeminiVLMClient:
                 '    "filing_year": 2024,\n'
                 '    "education_level": "Highest qualification",\n'
                 '    "education_institution": "Institution name",\n'
-                '    "proof_bbox": {"page": 1, "ymin": 100, "xmin": 50, "ymax": 180, "xmax": 400}\n'
+                '    "proof_bbox": {"page": 1, "ymin": 100, "xmin": 50, "ymax": 180, "xmax": 400},\n'
+                '    "photo_bbox": {"page": 1, "ymin": 50, "xmin": 700, "ymax": 250, "xmax": 950}\n'
                 "  },\n"
                 '  "part_a_movable_items": [\n'
                 '    {"category": "Cash / Bank / Vehicle / Jewelry", "description": "Details", "self_amount": 0.0, "spouse_amount": 0.0, "dependents_amount": 0.0, "proof_bbox": {"page": 4, "ymin": 200, "xmin": 50, "ymax": 250, "xmax": 900}}\n'
@@ -168,7 +169,7 @@ class GeminiVLMClient:
                 '    "immovable_proof_bbox": {"page": 8, "ymin": 460, "xmin": 300, "ymax": 510, "xmax": 700}\n'
                 "  }\n"
                 "}\n"
-                "IMPORTANT: All amounts must be numbers in INR (Indian Rupees). For each number or row, provide normalized bounding box coordinates [ymin, xmin, ymax, xmax] on a 0-1000 scale, with the 1-indexed page number. Return ONLY valid JSON."
+                "IMPORTANT: All amounts must be numbers in INR (Indian Rupees). If the candidate passport photograph is affixed on Page 1, extract its normalized coordinates in candidate.photo_bbox. For each number or row, provide normalized bounding box coordinates [ymin, xmin, ymax, xmax] on a 0-1000 scale, with the 1-indexed page number. Return ONLY valid JSON."
             )
 
             models_to_try = []

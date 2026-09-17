@@ -80,6 +80,10 @@ echo "--- STAGE 1: SANSAD PARLIAMENTARY SYNC ---"
 trigger_workflow "scrape_sansad.yml" "{\"target_term\": \"${TARGET_TERM}\"}" || true
 
 echo ""
+echo "--- STAGE 1b: POLITICIAN PROFILE PHOTO SYNC (WIKIDATA / COMMONS) ---"
+trigger_workflow "sync_politician_photos.yml" "{\"limit\": \"500\"}" || true
+
+echo ""
 echo "--- STAGE 2: MOSPI MPLADS EXPENDITURE SYNC ---"
 trigger_workflow "sync_mplads.yml" "{}" || true
 

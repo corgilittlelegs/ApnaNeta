@@ -142,6 +142,12 @@ export interface Candidate {
   house: 'Lok Sabha' | 'Rajya Sabha' | 'Vidhan Sabha';
   party?: string;
   filing_year: number;
+
+  // Profile Photo & Creative Commons / Statutory Legal Attribution
+  photo_url?: string;
+  photo_source?: 'wikimedia' | 'sansad' | 'affidavit_form26' | string;
+  photo_attribution?: string;
+  photo_license_url?: string;
   
   // Sworn Affidavit Demographics
   age?: number;

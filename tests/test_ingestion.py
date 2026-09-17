@@ -28,6 +28,12 @@ class TestIngestion(unittest.IsolatedAsyncioTestCase):
         crop_key = client.upload_crop_image(b"fake_jpg_bytes", "test_crop_1.jpg")
         self.assertEqual(crop_key, "crops/test_crop_1.jpg")
 
+    def test_r2_upload_candidate_photo(self):
+        client = R2StorageClient(bucket_name="test-bucket")
+        url = client.upload_candidate_photo(b"fake_webp", candidate_id="cand_123", extension="webp")
+        self.assertIn("avatars/cand_123.webp", url)
+
 
 if __name__ == "__main__":
     unittest.main()
+

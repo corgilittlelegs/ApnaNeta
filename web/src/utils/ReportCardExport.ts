@@ -45,6 +45,22 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
     }
   }
 
+  // Pre-load candidate profile photo if present
+  let photoImg: HTMLImageElement | null = null;
+  if (candidate.photo_url) {
+    try {
+      photoImg = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('Image failed to load'));
+        img.src = candidate.photo_url!;
+      });
+    } catch {
+      photoImg = null;
+    }
+  }
+
   const canvas = document.createElement('canvas');
   const size = 1080;
   canvas.width = size;
@@ -168,23 +184,38 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
   const avY = curY + candCardH / 2;
   const avR = 48;
 
-  ctx.beginPath();
-  ctx.arc(avX, avY, avR, 0, Math.PI * 2);
-  ctx.fillStyle = '#1E3A5F';
-  ctx.fill();
-  ctx.strokeStyle = '#D4AF37';
-  ctx.lineWidth = 2;
-  ctx.stroke();
+  if (photoImg) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(avX, avY, avR, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(photoImg, avX - avR, avY - avR, avR * 2, avR * 2);
+    ctx.restore();
 
-  // Silhouette inside Avatar
-  ctx.beginPath();
-  ctx.arc(avX, avY - 10, 18, 0, Math.PI * 2);
-  ctx.fillStyle = '#D4AF37';
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(avX, avY + 36, 32, Math.PI, Math.PI * 2);
-  ctx.fillStyle = '#D4AF37';
-  ctx.fill();
+    ctx.beginPath();
+    ctx.arc(avX, avY, avR, 0, Math.PI * 2);
+    ctx.strokeStyle = '#D4AF37';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  } else {
+    ctx.beginPath();
+    ctx.arc(avX, avY, avR, 0, Math.PI * 2);
+    ctx.fillStyle = '#1E3A5F';
+    ctx.fill();
+    ctx.strokeStyle = '#D4AF37';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Silhouette inside Avatar
+    ctx.beginPath();
+    ctx.arc(avX, avY - 10, 18, 0, Math.PI * 2);
+    ctx.fillStyle = '#D4AF37';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(avX, avY + 36, 32, Math.PI, Math.PI * 2);
+    ctx.fillStyle = '#D4AF37';
+    ctx.fill();
+  }
 
   // Candidate Details
   const candTextX = pad + 135;
@@ -367,12 +398,13 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
   }
   ctx.textAlign = 'left';
 
-  // 7. Safe Harbor Footer
+  // 7. Safe Harbor Footer & Legal Attribution
   const footY = size - 30;
-  ctx.font = '600 13px "Plus Jakarta Sans", sans-serif';
+  ctx.font = '600 12px "Plus Jakarta Sans", sans-serif';
   ctx.fillStyle = '#64748B';
+  const photoNote = candidate.photo_attribution ? ` • Photo: ${candidate.photo_attribution}` : '';
   ctx.fillText(
-    'CITIZEN VERIFICATION PORTAL • apnaneta.in • REPRODUCED UNDER SEC 79 IT ACT & DPDP ACT 2023',
+    `CITIZEN VERIFICATION PORTAL • apnaneta.in • SEC 79 IT ACT & DPDPA 2023${photoNote}`,
     pad,
     footY
   );

@@ -85,6 +85,35 @@ class R2StorageClient:
 
         return f"crops/{crop_key}"
 
+    def upload_candidate_photo(
+        self,
+        image_bytes: bytes,
+        candidate_id: str,
+        content_type: str = "image/webp",
+        extension: str = "webp",
+    ) -> str:
+        """
+        Uploads an extracted or cached candidate profile photo to R2 under avatars/{candidate_id}.{extension}.
+        Returns the public URL or object key.
+        """
+        object_key = f"avatars/{candidate_id}.{extension}"
+        client = self._get_client()
+        if client:
+            client.put_object(
+                Bucket=self.bucket_name,
+                Key=object_key,
+                Body=image_bytes,
+                ContentType=content_type,
+            )
+            logger.info(f"Uploaded candidate photo to R2: {object_key}")
+        else:
+            logger.info(f"[Dry-Run] Would upload candidate photo to R2: {object_key}")
+
+        base_url = (settings.R2_PUBLIC_BASE_URL or "").rstrip("/")
+        if base_url:
+            return f"{base_url}/{object_key}"
+        return f"https://{self.bucket_name}.r2.cloudflarestorage.com/{object_key}"
+
     def download_affidavit_pdf(self, object_key: str) -> Optional[bytes]:
         """
         Downloads an affidavit PDF from Cloudflare R2 given its object key.

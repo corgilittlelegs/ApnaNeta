@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   FileMagnifyingGlass,
   SealCheck,
+  Info,
 } from '@phosphor-icons/react';
 import { Candidate } from '../types/candidate';
 import { DiscrepancyBadge } from './DiscrepancyBadge';
@@ -48,33 +49,82 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
       {/* Top Banner & Candidate Identity */}
       <div className="p-5">
         <div className="flex items-start justify-between gap-3 mb-4">
-          <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="font-serif font-bold text-slate-900 text-lg sm:text-xl hover:text-blue-700 transition-colors cursor-pointer leading-tight truncate">
-                {candidate.name}
-              </h3>
-              {candidate.alias && (
-                <span className="text-[11px] px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full font-medium">
-                  "{candidate.alias}"
-                </span>
+          <div className="flex items-start gap-3 flex-1 min-w-0">
+            {/* Candidate Avatar with Legal Attribution Badge */}
+            <div className="relative flex-shrink-0">
+              {candidate.photo_url ? (
+                <img
+                  src={candidate.photo_url}
+                  alt={candidate.name}
+                  loading="lazy"
+                  className="w-12 h-12 rounded-full object-cover border-2 border-slate-200 shadow-2xs bg-slate-50"
+                  onError={(e) => {
+                    // Hide failed image and display monogram sibling
+                    const target = e.currentTarget;
+                    target.style.display = 'none';
+                    const next = target.nextElementSibling as HTMLElement;
+                    if (next) next.style.display = 'flex';
+                  }}
+                />
+              ) : null}
+              <div
+                className={`w-12 h-12 rounded-full items-center justify-center font-bold text-xs text-slate-700 bg-slate-100 border-2 border-slate-200 shadow-2xs ${
+                  candidate.photo_url ? 'hidden' : 'flex'
+                }`}
+              >
+                {candidate.name
+                  .split(' ')
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((n) => n[0])
+                  .join('')
+                  .toUpperCase()}
+              </div>
+
+              {/* Attribution info tooltip badge */}
+              {candidate.photo_attribution && (
+                <a
+                  href={candidate.photo_license_url || '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  title={candidate.photo_attribution}
+                  className="absolute -bottom-1 -right-1 bg-slate-900/80 hover:bg-slate-900 text-white rounded-full p-0.5 shadow-xs transition-colors"
+                >
+                  <span className="sr-only">Photo Attribution: {candidate.photo_attribution}</span>
+                  <Info size={11} weight="bold" />
+                </a>
               )}
             </div>
-            <p className="text-xs text-slate-500 mt-1 font-sans">
-              <span className="font-semibold text-slate-700">{candidate.house}</span> •{' '}
-              {candidate.constituency &&
-              candidate.constituency !== candidate.state &&
-              candidate.constituency !== 'National' &&
-              candidate.constituency !== 'Parliament of India' ? (
-                <>
-                  <span className="font-medium text-slate-800">{candidate.constituency}</span>
-                  {candidate.state && candidate.state !== 'India' ? `, ${candidate.state}` : ''}
-                </>
-              ) : (
-                <span className="font-medium text-slate-800">
-                  {candidate.state && candidate.state !== 'India' ? candidate.state : (candidate.constituency || 'India')}
-                </span>
-              )}
-            </p>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="font-serif font-bold text-slate-900 text-lg sm:text-xl hover:text-blue-700 transition-colors cursor-pointer leading-tight truncate">
+                  {candidate.name}
+                </h3>
+                {candidate.alias && (
+                  <span className="text-[11px] px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full font-medium">
+                    "{candidate.alias}"
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-500 mt-1 font-sans">
+                <span className="font-semibold text-slate-700">{candidate.house}</span> •{' '}
+                {candidate.constituency &&
+                candidate.constituency !== candidate.state &&
+                candidate.constituency !== 'National' &&
+                candidate.constituency !== 'Parliament of India' ? (
+                  <>
+                    <span className="font-medium text-slate-800">{candidate.constituency}</span>
+                    {candidate.state && candidate.state !== 'India' ? `, ${candidate.state}` : ''}
+                  </>
+                ) : (
+                  <span className="font-medium text-slate-800">
+                    {candidate.state && candidate.state !== 'India' ? candidate.state : (candidate.constituency || 'India')}
+                  </span>
+                )}
+              </p>
+            </div>
           </div>
 
           <div className="flex items-center gap-1.5 flex-shrink-0">

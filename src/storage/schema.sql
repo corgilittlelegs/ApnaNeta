@@ -32,8 +32,15 @@ ALTER TABLE candidates ADD COLUMN IF NOT EXISTS delta_immovable NUMERIC(15, 2) D
 ALTER TABLE candidates ADD COLUMN IF NOT EXISTS wealth_discrepancy_ratio NUMERIC(10, 2);
 ALTER TABLE candidates ADD COLUMN IF NOT EXISTS has_anomalous_wealth_ratio BOOLEAN DEFAULT FALSE;
 
+-- Profile photo and statutory/creative commons licensing attribution
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS photo_url TEXT;
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS photo_source TEXT; -- 'wikimedia', 'sansad', 'affidavit_form26'
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS photo_attribution TEXT;
+ALTER TABLE candidates ADD COLUMN IF NOT EXISTS photo_license_url TEXT;
+
 CREATE INDEX IF NOT EXISTS idx_candidates_name ON candidates (name);
 CREATE INDEX IF NOT EXISTS idx_candidates_constituency ON candidates (state, constituency);
+CREATE INDEX IF NOT EXISTS idx_candidates_photo ON candidates (photo_url) WHERE photo_url IS NOT NULL;
 
 -- 2. Affidavits Table (Form 26 Filings)
 CREATE TABLE IF NOT EXISTS affidavits (

@@ -135,10 +135,21 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
                         </button>
                       </div>
 
-                      <h3 className="font-bold text-slate-900 text-base leading-tight">{cand.name}</h3>
-                      {cand.alias && (
-                        <p className="text-xs text-slate-500 italic mt-0.5">"{cand.alias}"</p>
-                      )}
+                      <div className="flex items-center gap-2.5 mb-2">
+                        {cand.photo_url ? (
+                          <img
+                            src={cand.photo_url}
+                            alt={cand.name}
+                            className="w-10 h-10 rounded-full object-cover border border-slate-200 shadow-2xs flex-shrink-0"
+                          />
+                        ) : null}
+                        <div>
+                          <h3 className="font-bold text-slate-900 text-base leading-tight">{cand.name}</h3>
+                          {cand.alias && (
+                            <p className="text-xs text-slate-500 italic mt-0.5">"{cand.alias}"</p>
+                          )}
+                        </div>
+                      </div>
                       <p className="text-xs text-slate-600 mt-1 font-medium">
                         {cand.constituency}, {cand.state} • <span className="text-slate-500">{cand.house}</span>
                       </p>

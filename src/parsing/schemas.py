@@ -68,6 +68,7 @@ class CandidateIdentity(BaseModel):
     education_level: Optional[str] = Field(None, description="Highest educational qualification")
     education_institution: Optional[str] = Field(None, description="School, college or university")
     proof_bbox: Optional[BoundingBox] = Field(None, description="Bounding box on identity declaration page")
+    photo_bbox: Optional[BoundingBox] = Field(None, description="Bounding box of the candidate passport photograph on Page 1")
 
 
 class AssetItem(BaseModel):

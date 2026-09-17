@@ -357,9 +357,20 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                           {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
                         </td>
                         <td className="py-3 px-4">
-                          <div className="font-bold text-slate-900">{row.candidate.name}</div>
-                          <div className="text-[11px] text-slate-500">
-                            {row.candidate.party || 'Independent'} • {row.candidate.constituency}, {row.candidate.state}
+                          <div className="flex items-center gap-2.5">
+                            {row.candidate.photo_url ? (
+                              <img
+                                src={row.candidate.photo_url}
+                                alt={row.candidate.name}
+                                className="w-8 h-8 rounded-full object-cover border border-slate-200 shadow-2xs flex-shrink-0"
+                              />
+                            ) : null}
+                            <div>
+                              <div className="font-bold text-slate-900">{row.candidate.name}</div>
+                              <div className="text-[11px] text-slate-500">
+                                {row.candidate.party || 'Independent'} • {row.candidate.constituency}, {row.candidate.state}
+                              </div>
+                            </div>
                           </div>
                         </td>
                         <td className="py-3 px-4 font-mono font-medium text-slate-700">

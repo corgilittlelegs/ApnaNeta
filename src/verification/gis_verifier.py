@@ -239,3 +239,23 @@ class MPLADSGISVerifier:
 
 
 gis_verifier = MPLADSGISVerifier()
+
+if __name__ == "__main__":
+    import asyncio
+
+    async def main():
+        logger.info("Starting MPLADS Satellite & GIS Geolocation Ghost Project Audit...")
+        candidates = await supabase.select("candidates", {"limit": "50"})
+        for cand in candidates:
+            c_id = cand.get("id")
+            c_const = cand.get("constituency", "")
+            if c_id and c_const:
+                res = await gis_verifier.audit_candidate_works(c_id, c_const)
+                if res.get("total_works", 0) > 0:
+                    logger.info(f"Audited {cand.get('name')} ({c_const}): {res}")
+        logger.info("GIS Geolocation Audit Complete.")
+
+    try:
+        asyncio.run(main())
+    except Exception as e:
+        logger.error(f"GIS verifier error: {e}")

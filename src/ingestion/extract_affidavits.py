@@ -69,6 +69,41 @@ def parse_bbox(raw_bbox: Any) -> Optional[BoundingBox]:
         return None
 
 
+def crop_candidate_photo(pdf_bytes: bytes, photo_bbox: BoundingBox) -> Optional[bytes]:
+    """
+    Crops the candidate photograph from Page 1 using PyMuPDF (fitz)
+    based on normalized 0-1000 coordinates.
+    Returns JPEG bytes.
+    """
+    if not pdf_bytes or not photo_bbox:
+        return None
+    try:
+        import fitz  # PyMuPDF
+        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+        if len(doc) == 0:
+            return None
+        page_idx = max(0, min(len(doc) - 1, (photo_bbox.page or 1) - 1))
+        page = doc[page_idx]
+        rect = page.rect
+
+        x0 = (photo_bbox.xmin / 1000.0) * rect.width
+        y0 = (photo_bbox.ymin / 1000.0) * rect.height
+        x1 = (photo_bbox.xmax / 1000.0) * rect.width
+        y1 = (photo_bbox.ymax / 1000.0) * rect.height
+
+        # Sanity check: Ensure valid non-degenerate box
+        if x1 <= x0 or y1 <= y0:
+            return None
+
+        crop_rect = fitz.Rect(x0, y0, x1, y1)
+        mat = fitz.Matrix(2.0, 2.0)  # High-DPI crop for crisp avatar
+        pix = page.get_pixmap(matrix=mat, clip=crop_rect)
+        return pix.tobytes("jpeg")
+    except Exception as e:
+        logger.warning(f"Failed to crop candidate photo from affidavit PDF: {e}")
+        return None
+
+
 class AffidavitExtractionWorker:
     """
     Autonomous cloud document AI extraction pipeline connecting Cloudflare R2,
@@ -172,6 +207,7 @@ class AffidavitExtractionWorker:
             education_level=raw_cand.get("education_level"),
             education_institution=raw_cand.get("education_institution"),
             proof_bbox=parse_bbox(raw_cand.get("proof_bbox")),
+            photo_bbox=parse_bbox(raw_cand.get("photo_bbox")),
         )
 
         # 1. Movable Asset Items
@@ -473,6 +509,38 @@ class AffidavitExtractionWorker:
             payload=payload,
             audit=audit_result,
         )
+
+        # 6. Extract and upload candidate passport photograph from Page 1 if detected
+        if payload.candidate and payload.candidate.photo_bbox and pdf_bytes and candidate_id:
+            try:
+                existing_cands = await supabase.select(
+                    "candidates", {"id": f"eq.{candidate_id}", "select": "photo_url,photo_source"}
+                )
+                existing_photo = existing_cands[0].get("photo_url") if existing_cands else None
+                existing_source = existing_cands[0].get("photo_source") if existing_cands else None
+
+                if not existing_photo or existing_source == "affidavit_form26":
+                    cropped_bytes = crop_candidate_photo(pdf_bytes, payload.candidate.photo_bbox)
+                    if cropped_bytes:
+                        photo_url = r2_storage.upload_candidate_photo(
+                            image_bytes=cropped_bytes,
+                            candidate_id=candidate_id,
+                            content_type="image/jpeg",
+                            extension="jpg",
+                        )
+                        await supabase.update(
+                            "candidates",
+                            {
+                                "photo_url": photo_url,
+                                "photo_source": "affidavit_form26",
+                                "photo_attribution": "Extracted from Sworn ECI Form 26 Affidavit",
+                                "photo_license_url": "https://affidavit.eci.gov.in",
+                            },
+                            {"id": f"eq.{candidate_id}"},
+                        )
+                        logger.info(f"📸 Successfully extracted and uploaded affidavit passport photo: {photo_url}")
+            except Exception as photo_err:
+                logger.warning(f"Note: Candidate photo extraction bypassed or failed ({photo_err})")
 
         logger.info(f"✅ Completed extraction and audit for {cand_name}:")
         logger.info(f"   • Net Worth: ₹{audit_result.total_net_worth:,.2f}")
