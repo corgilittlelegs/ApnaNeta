@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       limit:
-        description: "Max number of parliamentarian photos to query and sync"
+        description: "Max number of parliamentarian photos to sync ('all' to automatically query all MPs, or a specific limit like 100)"
         required: false
-        default: "500"
+        default: "all"
 
 jobs:
   sync_photos:

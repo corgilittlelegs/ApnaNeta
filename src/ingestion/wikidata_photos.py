@@ -90,10 +90,12 @@ class WikidataPhotoSynchronizer:
         logger.info(f"Indexed {len(exact_index)} candidates for photo resolution.")
         return exact_index, token_index
 
-    async def fetch_wikidata_mp_photos(self, limit: int = 1000) -> List[Dict[str, Any]]:
+    async def fetch_wikidata_mp_photos(self, limit: Optional[int] = None) -> List[Dict[str, Any]]:
         """
         Executes SPARQL query against Wikidata for Lok Sabha & Rajya Sabha MPs with photos.
+        If limit is None or <= 0, queries all matching records without an artificial limit.
         """
+        limit_clause = f"LIMIT {limit}" if (limit and limit > 0) else ""
         sparql_query = f"""
         SELECT ?politician ?politicianLabel ?image WHERE {{
           {{ ?politician wdt:P39 wd:Q16556694. }} # Member of Lok Sabha
@@ -102,7 +104,7 @@ class WikidataPhotoSynchronizer:
           ?politician wdt:P18 ?image.
           SERVICE wikibase:label {{ bd:serviceParam wikibase:language "en". }}
         }}
-        LIMIT {limit}
+        {limit_clause}
         """
 
         headers = {
@@ -178,7 +180,7 @@ class WikidataPhotoSynchronizer:
 
         return {}
 
-    async def sync_photos(self, limit: int = 1000) -> int:
+    async def sync_photos(self, limit: Optional[int] = None) -> int:
         """Main synchronizer loop: queries Wikidata, resolves metadata, and updates Supabase."""
         exact_index, token_index = await self.fetch_existing_candidates()
         if not exact_index:
@@ -241,10 +243,16 @@ class WikidataPhotoSynchronizer:
 synchronizer = WikidataPhotoSynchronizer()
 
 if __name__ == "__main__":
-    raw_limit = os.getenv("LIMIT", "500")
-    try:
-        limit_val = int(raw_limit)
-    except ValueError:
-        limit_val = 500
+    raw_limit = (os.getenv("LIMIT") or (sys.argv[1] if len(sys.argv) > 1 else "all")).strip().lower()
+    if raw_limit in ("all", "0", "none", "", "unlimited"):
+        limit_val = None
+        logger.info("Running photo sync with limit=ALL (querying all available parliamentarians with photos)")
+    else:
+        try:
+            limit_val = int(raw_limit)
+            logger.info(f"Running photo sync with limit={limit_val}")
+        except ValueError:
+            limit_val = None
+            logger.info("Running photo sync with limit=ALL (fallback)")
 
     asyncio.run(synchronizer.sync_photos(limit=limit_val))
