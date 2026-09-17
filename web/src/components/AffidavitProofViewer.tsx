@@ -76,7 +76,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
       <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[92vh]">
         {/* Header Bar */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50 gap-4 flex-wrap">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50 gap-4 flex-wrap flex-shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <div className="p-2.5 bg-blue-100/80 text-blue-700 rounded-xl flex-shrink-0">
               <ShieldCheck size={22} weight="duotone" />
@@ -193,7 +193,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
         </div>
 
         {/* Claim & Statutory Compliance Bar */}
-        <div className="px-6 py-2.5 bg-amber-50 border-b border-amber-200/80 flex items-center justify-between text-xs">
+        <div className="px-6 py-2.5 bg-amber-50 border-b border-amber-200/80 flex items-center justify-between text-xs flex-shrink-0">
           <div className="flex items-center gap-2 text-amber-950 flex-wrap">
             <span className="font-semibold text-slate-700">Audited Claim:</span>
             <span className="px-2 py-0.5 rounded bg-white border border-amber-300 font-medium">
@@ -219,8 +219,8 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
 
         {/* Modal Body: Switch between tabs */}
         {activeTab === 'raw_pdf' ? (
-          <div className="flex-1 p-6 bg-slate-100 flex flex-col items-center justify-center min-h-[420px]">
-            <div className="max-w-md w-full bg-white p-6 rounded-2xl shadow border border-slate-200 text-center">
+          <div className="flex-1 overflow-auto p-6 bg-slate-50 min-h-[420px]">
+            <div className="max-w-md mx-auto w-full bg-white p-6 rounded-2xl shadow border border-slate-200 text-center">
               <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200 text-blue-600 mx-auto flex items-center justify-center mb-3">
                 <FileText size={24} weight="duotone" />
               </div>
@@ -1027,7 +1027,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
         )}
 
         {/* Footer Guarantee */}
-        <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-between text-xs text-slate-500">
+        <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-between text-xs text-slate-500 flex-shrink-0">
           <p className="flex items-center gap-1.5">
             <SealCheck size={16} weight="duotone" className="text-blue-600" />
             Cryptographic SHA-256 verified copy stored on Cloudflare R2 • Safe-harbor evidence under IT Act § 79.
