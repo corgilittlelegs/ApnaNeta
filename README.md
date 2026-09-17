@@ -1,73 +1,76 @@
 # Apna Neta (अपना नेता)
-### Automated Political Accountability Infrastructure in India
+### Automated Civic Intelligence & Electoral Integrity Infrastructure in India
 
-> **100% Free & Open-Source Civic Intelligence Platform**  
-> Autonomous Ingestion, Multimodal Document AI (Gemini 3.8 Flash), Double-Entry Forensic Auditing, and Multi-Dimensional Governance Tracking.
-
----
-
-## 🚀 Key Features
-
-1. **Autonomous Cloud Crawling**: Scheduled **GitHub Actions** cron workers poll the Election Commission of India (ECI), `sansad.in`, and MoSPI portals without requiring a local machine running 24/7.
-2. **Multimodal Document AI (Gemini 3.8 Flash)**: Extracts handwritten, stamped, and complex tabular Form 26 electoral affidavits directly into verified, structured JSON using Google AI Studio's free tier (up to 1,500 requests/day).
-3. **Double-Entry Forensic Auditing**: 
-   - Compares itemized Part A assets against Part B abstract totals ($\Delta_{\text{movable}}, \Delta_{\text{immovable}}$) to detect arithmetic variances.
-   - Computes the **Wealth Discrepancy Ratio (WDR)** against 5-year Income Tax Returns (ITR).
-4. **Visual Proof-of-Source (Section 79 Safe Harbor)**: Every data point links to an interactive **PDF.js Canvas Bounding-Box Overlay** showing the exact notarized row and signature from the candidate's sworn filing.
-5. **Continuous Governance Tracking**: Tracks Parliamentary attendance, Question Hour activity, MPLADS spending velocity, and defection dynamics.
-6. **DPDPA 2023 Compliant**: Built-in PII redaction that automatically masks PANs, bank accounts, and personal phone numbers under Section 3(c)(ii) statutory exemptions.
+> **Sovereign Transparency • Primary-Source Verification • Forensic Auditability**  
+> Democratizing sworn electoral disclosures, public procurement data, and legislative performance records for every Indian citizen, journalist, and legal researcher.
 
 ---
 
-## 🏗️ 100% Free Cloud Architecture
+## ⚖️ The Civic Mission
 
-* **Cloud Ingestion & Cron**: GitHub Actions (2,000 free minutes/month)
-* **Document AI (Tier 3)**: Google AI Studio Gemini 3.8 Flash (1,500 free requests/day)
-* **Cloud Database & Live API**: Supabase Free Tier (500 MB PostgreSQL + PostgREST)
-* **Document & Image Storage**: Cloudflare R2 (10 GB free storage, $0 egress fees)
-* **Public Web Portal**: Cloudflare Pages (Unlimited visitor traffic, global CDN)
+Representative democracy depends on informed citizens. While the Supreme Court of India established the constitutional right of voters to know the criminal, financial, and educational background of candidates (*Union of India v. Association for Democratic Reforms, 2002*), official disclosures frequently remain scattered across disparate portals, sealed in unindexed image scans, or obscured by complex financial summaries.
+
+**Apna Neta** is an independent civic intelligence platform that transforms public gazettes into an interactive, mathematically reconciled, and verifiable public ledger. Every metric displayed on the platform is directly traceable to sworn affidavits and official government records with pixel-accurate cryptographic evidence.
 
 ---
 
-## 🛠️ Quick Start (100% Online)
+## 🔍 Core Forensic & Civic Intelligence Capabilities
 
-### 1. Configure Cloud Secrets
-In your GitHub repository settings under **Settings > Secrets and variables > Actions**, add the following free secrets:
-* `SUPABASE_URL`: Your free Supabase project URL (e.g. `https://xyz.supabase.co`)
-* `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase service role secret
-* `GEMINI_API_KEY`: Your free Google AI Studio API key (from [aistudio.google.com](https://aistudio.google.com/))
-* `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`: From your free Cloudflare dashboard
+### 1. Sworn Form 26 Double-Entry Mathematical Reconciliation
+* **Schedule Cross-Tabulation**: Compares itemized Part A asset declarations against Part B abstract totals to detect hidden arithmetic discrepancies ($\Delta_{\text{movable}}, \Delta_{\text{immovable}}$) in sworn nomination papers.
+* **Wealth Discrepancy Ratio (WDR)**: Evaluates total sworn net worth against cumulative 5-year declared Income Tax Returns (ITR) to highlight anomalous accumulation trajectories.
+* **Longitudinal Multi-Term Wealth Trajectory**: Analyzes candidate filings across consecutive general elections to calculate true Compound Annual Growth Rates (CAGR) and identify rapid wealth accumulation ($\ge 300\%$).
 
-### 2. Initialize Database Tables
-Open the **SQL Editor** in your Supabase dashboard and paste the contents of:
-[`src/storage/schema.sql`](src/storage/schema.sql)
+### 2. Commercial Conflict of Interest Auditing (Section 9A RPA, 1951)
+* **Procurement Cross-Auditing**: Cross-references candidate and family corporate directorships with awarded Central and State government procurement tenders.
+* **Statutory Safe-Harbor Scrutiny**: Flags potential disqualifications under Section 9A of the Representation of the People Act, 1951, which bars individuals holding subsisting commercial contracts with the appropriate government from serving in Parliament or State Legislatures.
 
-### 3. Run Cloud Seed Data Ingestion
-Navigate to the **Actions** tab in your GitHub repository, select **"Seed Database with Indian Parliamentarians"**, and click **Run workflow**. 
-This will stream 8,368 Indian parliamentarians directly into your Supabase database in the cloud with zero disk usage on your personal laptop.
+### 3. Judicial Dockets & RPA Section 8 Disqualification Evaluation
+* **National Judicial Data Grid (NJDG) Tracking**: Corroborates declared criminal cases against official 16-character Case Record Numbers (CNR) to verify court names, trial stages, and last hearing dates.
+* **Statutory Legal Classification**: Differentiates civil disobedience, public assembly, and political agitation citations from serious offenses under the Indian Penal Code (IPC) and the Bharatiya Nyaya Sanhita (BNS).
+* **Automatic Section 8 Evaluation**: Analyzes final convictions and framed charges punishable by imprisonment exceeding statutory thresholds to identify prospective or active electoral disqualifications.
+
+### 4. Political Mobility Dynamics & Career Defection Index
+* **Longitudinal Transition Tracking**: Maps candidate migrations between political parties across election cycles.
+* **Career Defection Index (CDI)**: Computes a normalized transition velocity score assessing coalition-switching dynamics, timing relative to elections, and governance continuity.
+
+### 5. MoSPI MPLADS Fund Velocity & Statutory Social Audits
+* **Constituency Fund Expenditure**: Tracks releases, completed works, and unspent balances from official Ministry of Statistics & Programme Implementation (MoSPI) records.
+* **Statutory SC/ST Sub-Allocation Compliance**: Audits local development expenditures against mandatory central guidelines requiring at least 15% allocation to Scheduled Caste (SC) areas and 7.5% to Scheduled Tribe (ST) areas.
+
+### 6. Parliamentary Record & Legislative Participation
+* **Sansad Sittings**: Monitors Lok Sabha and Rajya Sabha attendance rates, debate participations, and parliamentary questions tabled during each legislative term.
 
 ---
 
-## 📂 Repository Structure
+## 📜 Verifiable Proof-of-Source & Forensic Export
 
-```
-apnaneta/
-├── .github/
-│   └── workflows/
-│       └── seed_database.yml       # Cloud ingestion of 8,368 Indian MPs
-├── config/
-│   └── settings.py                 # Environment configuration
-├── src/
-│   ├── ingestion/
-│   │   └── seed_loaders.py         # OpenSanctions & TCPD streaming loaders
-│   ├── parsing/
-│   │   └── schemas.py              # Canonical Pydantic Form 26 models & BBoxes
-│   ├── storage/
-│   │   ├── schema.sql              # Supabase PostgreSQL tables & indexes
-│   │   └── supabase_client.py      # Async PostgREST client
-│   └── verification/               # Math reconciler & WDR analyzers
-├── tests/
-│   └── test_schemas.py             # Automated unit tests
-├── pyproject.toml                  # Python 3.12 dependencies
-└── README.md
-```
+* **Interactive Form 26 Coordinate Overlays**: Every verified data point connects directly to the underlying sworn document with normalized bounding boxes, highlighting the exact notarized row, deponent declaration, and Returning Officer signature.
+* **Court-Ready 1-Page Forensic Audit Dossiers**: Generates high-resolution A4 forensic audit reports complete with verification timestamps, statutory references, and cryptographic document hashes—formatted specifically for Right to Information (RTI) submissions, election petitions, and legal scrutiny.
+* **Citizen Report Card Graphics**: Produces high-contrast, ready-to-share social audit cards designed to communicate key financial, legal, and legislative indicators clearly across community networks.
+
+---
+
+## 🛡️ Statutory Compliance & Data Protection Framework
+
+Apna Neta operates strictly within the legal and regulatory framework of the Republic of India:
+
+* **Section 79, Information Technology Act, 2000**:  
+  The platform functions exclusively as an automated civic research index and document retrieval utility, reproducing official public filings under statutory intermediary safe-harbor protections.
+* **Section 3(c)(ii), Digital Personal Data Protection Act (DPDPA), 2023**:  
+  All sensitive personal identifiers (Permanent Account Numbers [PAN], mobile numbers, and personal bank accounts) are automatically sanitized and redacted before display, protecting personal privacy while preserving sworn financial transparency.
+* **Rule 4A, Conduct of Elections Rules, 1961**:  
+  All candidate demographic, asset, liability, and criminal disclosures are referenced directly from sworn affidavits executed before an authorized Notary Public or Oath Commissioner.
+
+---
+
+## 💎 The Absolute Data Integrity Pledge
+
+* **100% Primary-Source Grounding**: All figures and facts originate from the Election Commission of India (ECI), the Parliament of India (*sansad.in*), the Ministry of Statistics and Programme Implementation (MoSPI), the Ministry of Corporate Affairs (MCA21), the Central Public Procurement Portal (CPPP), and the National Judicial Data Grid (eCourts).
+* **Zero Synthetic or Placeholder Data**: Apna Neta strictly prohibits mock values, simulated estimates, or placeholder fallbacks. Where official records are unavailable, missing, or omitted by statutory authorities, the platform represents the field explicitly as unverified or `null`.
+
+---
+
+## 🤝 Public Interest & Civic Governance
+
+Apna Neta is created for public interest research, non-partisan civic awareness, and journalistic inquiry. To report an indexing discrepancy or submit verified official gazettes for audit reconciliation, please open a public issue in this repository.
