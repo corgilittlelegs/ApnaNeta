@@ -274,18 +274,43 @@ ALTER TABLE conflict_of_interest_audits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE political_mobility_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE campaign_donations ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Public Read Access" ON candidates;
 CREATE POLICY "Public Read Access" ON candidates FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public Read Access" ON affidavits;
 CREATE POLICY "Public Read Access" ON affidavits FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public Read Access" ON assets;
 CREATE POLICY "Public Read Access" ON assets FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public Read Access" ON criminal_cases;
 CREATE POLICY "Public Read Access" ON criminal_cases FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public Read Access" ON audit_discrepancies;
 CREATE POLICY "Public Read Access" ON audit_discrepancies FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public Read Access" ON sansad_records;
 CREATE POLICY "Public Read Access" ON sansad_records FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public Read Access" ON mplads_records;
 CREATE POLICY "Public Read Access" ON mplads_records FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public Read Access" ON historical_wealth_cagr;
 CREATE POLICY "Public Read Access" ON historical_wealth_cagr FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public Read Access" ON corporate_associations;
 CREATE POLICY "Public Read Access" ON corporate_associations FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public Read Access" ON procurement_tenders;
 CREATE POLICY "Public Read Access" ON procurement_tenders FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public Read Access" ON conflict_of_interest_audits;
 CREATE POLICY "Public Read Access" ON conflict_of_interest_audits FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public Read Access" ON political_mobility_records;
 CREATE POLICY "Public Read Access" ON political_mobility_records FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public Read Access" ON campaign_donations;
 CREATE POLICY "Public Read Access" ON campaign_donations FOR SELECT USING (true);
 
 -- 16. Grants & Schema Cache Reload
