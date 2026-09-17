@@ -97,7 +97,11 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
               <img
                 src={candidate.photo_url}
                 alt={candidateName}
+                referrerPolicy="no-referrer"
                 className="w-11 h-11 rounded-full object-cover border-2 border-slate-200 shadow-2xs flex-shrink-0"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
               />
             ) : (
               <div className="p-2.5 bg-blue-100/80 text-blue-700 rounded-xl flex-shrink-0">

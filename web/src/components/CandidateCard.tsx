@@ -57,6 +57,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                   src={candidate.photo_url}
                   alt={candidate.name}
                   loading="lazy"
+                  referrerPolicy="no-referrer"
                   className="w-12 h-12 rounded-full object-cover border-2 border-slate-200 shadow-2xs bg-slate-50"
                   onError={(e) => {
                     // Hide failed image and display monogram sibling

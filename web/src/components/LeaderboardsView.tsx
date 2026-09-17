@@ -362,7 +362,11 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                               <img
                                 src={row.candidate.photo_url}
                                 alt={row.candidate.name}
+                                referrerPolicy="no-referrer"
                                 className="w-8 h-8 rounded-full object-cover border border-slate-200 shadow-2xs flex-shrink-0"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
                               />
                             ) : null}
                             <div>

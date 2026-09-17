@@ -140,7 +140,11 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
                           <img
                             src={cand.photo_url}
                             alt={cand.name}
+                            referrerPolicy="no-referrer"
                             className="w-10 h-10 rounded-full object-cover border border-slate-200 shadow-2xs flex-shrink-0"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
                           />
                         ) : null}
                         <div>

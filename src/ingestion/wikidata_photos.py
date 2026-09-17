@@ -5,7 +5,7 @@ import sys
 import logging
 import asyncio
 from typing import List, Dict, Any, Optional, Tuple
-from urllib.parse import unquote
+from urllib.parse import quote, unquote
 try:
     import httpx
 except ImportError:
@@ -214,7 +214,10 @@ class WikidataPhotoSynchronizer:
                 file_name = unquote(raw_image_url.split("/")[-1])
                 meta = await self.fetch_wikimedia_file_metadata(client, file_name)
 
-                photo_url = meta.get("thumb_url") or raw_image_url
+                fallback_url = f"https://commons.wikimedia.org/wiki/Special:FilePath/{quote(file_name)}?width=300"
+                photo_url = meta.get("thumb_url") or fallback_url
+                if photo_url.startswith("http://"):
+                    photo_url = "https://" + photo_url[7:]
                 attribution = meta.get("attribution") or "Photo via Wikimedia Commons (CC BY-SA)"
                 license_url = meta.get("license_url") or "https://creativecommons.org"
 

@@ -52,6 +52,7 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
       photoImg = await new Promise<HTMLImageElement>((resolve, reject) => {
         const img = new Image();
         img.crossOrigin = 'anonymous';
+        img.referrerPolicy = 'no-referrer';
         img.onload = () => resolve(img);
         img.onerror = () => reject(new Error('Image failed to load'));
         img.src = candidate.photo_url!;
