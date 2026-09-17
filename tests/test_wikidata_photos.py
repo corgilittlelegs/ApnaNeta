@@ -54,6 +54,44 @@ class TestWikidataPhotos(unittest.TestCase):
         self.assertIn("modi narendra", tokens)
         self.assertEqual(exact["narendra modi"]["id"], "cand-1")
 
+    @patch("src.ingestion.wikidata_photos.supabase")
+    def test_match_candidate_fuzzy_indian_names(self, mock_supabase):
+        mock_supabase.select = AsyncMock(
+            side_effect=[
+                [
+                    {"id": "c-1", "name": "Narendra Damodardas Modi", "state": "UP", "constituency": "Varanasi", "party": "BJP"},
+                    {"id": "c-2", "name": "Dr. Shashi Tharoor", "state": "Kerala", "constituency": "Thiruvananthapuram", "party": "INC"},
+                    {"id": "c-3", "name": "Amit Anilchandra Shah", "state": "Gujarat", "constituency": "Gandhinagar", "party": "BJP"},
+                    {"id": "c-4", "name": "Smt. Hema Malini", "state": "UP", "constituency": "Mathura", "party": "BJP"},
+                ],
+                [],
+            ]
+        )
+
+        import asyncio
+        syncer = WikidataPhotoSynchronizer()
+        exact, tokens = asyncio.run(syncer.fetch_existing_candidates())
+
+        # Test middle name matching (Narendra Modi -> Narendra Damodardas Modi)
+        m1 = syncer.match_candidate("Narendra Modi", exact, tokens)
+        self.assertIsNotNone(m1)
+        self.assertEqual(m1["id"], "c-1")
+
+        # Test honorific title stripping (Shashi Tharoor -> Dr. Shashi Tharoor)
+        m2 = syncer.match_candidate("Shashi Tharoor", exact, tokens)
+        self.assertIsNotNone(m2)
+        self.assertEqual(m2["id"], "c-2")
+
+        # Test middle name matching (Amit Shah -> Amit Anilchandra Shah)
+        m3 = syncer.match_candidate("Amit Shah", exact, tokens)
+        self.assertIsNotNone(m3)
+        self.assertEqual(m3["id"], "c-3")
+
+        # Test honorific prefix (Hema Malini -> Smt. Hema Malini)
+        m4 = syncer.match_candidate("Hema Malini", exact, tokens)
+        self.assertIsNotNone(m4)
+        self.assertEqual(m4["id"], "c-4")
+
 
 if __name__ == "__main__":
     unittest.main()

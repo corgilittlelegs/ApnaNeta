@@ -21,6 +21,22 @@ COMMONS_API_ENDPOINT = "https://commons.wikimedia.org/w/api.php"
 USER_AGENT = "ApnaNeta/1.0 (https://apnaneta.in; civic-tech electoral integrity; open-data audit)"
 
 
+HONORIFICS = {
+    "dr", "prof", "shri", "smt", "adv", "advocate", "ku", "km", "kumari",
+    "mr", "mrs", "ms", "chaudhary", "ch", "sardar", "thakur", "pandit",
+    "late", "alhaj", "begum", "syed", "capt", "captain", "colonel", "col",
+    "justice", "swami", "sant", "yogi"
+}
+
+
+def clean_name_tokens(name: str) -> List[str]:
+    """Strips parenthetical notes, honorifics, and returns lowercase clean tokens."""
+    name = re.sub(r"\(.*?\)", "", name)
+    cleaned = "".join(c.lower() if (c.isalnum() or c.isspace()) else " " for c in name)
+    tokens = [t for t in cleaned.split() if t not in HONORIFICS and len(t) > 0]
+    return tokens
+
+
 def normalize_name(name: str) -> str:
     """Normalizes candidate names for fuzzy index matching."""
     cleaned = "".join(c.lower() for c in name if c.isalnum() or c.isspace())
@@ -49,12 +65,14 @@ class WikidataPhotoSynchronizer:
 
     def __init__(self, rate_limiter: Optional[PoliteRateLimiter] = None):
         self.rate_limiter = rate_limiter or PoliteRateLimiter(min_delay=0.5, max_delay=1.2)
+        self.first_last_index: Dict[Tuple[str, str], List[Dict[str, Any]]] = {}
 
     async def fetch_existing_candidates(self) -> Tuple[Dict[str, Dict[str, Any]], Dict[str, Dict[str, Any]]]:
         """Loads candidates from Supabase into normalized lookup indices."""
         logger.info("Loading candidates index from Supabase for photo matching...")
         exact_index: Dict[str, Dict[str, Any]] = {}
         token_index: Dict[str, Dict[str, Any]] = {}
+        first_last_index: Dict[Tuple[str, str], List[Dict[str, Any]]] = {}
         offset = 0
         batch_size = 1000
 
@@ -75,10 +93,19 @@ class WikidataPhotoSynchronizer:
                     raw_name = row.get("name", "")
                     norm = normalize_name(raw_name)
                     t_key = name_tokens_key(raw_name)
+                    c_toks = clean_name_tokens(raw_name)
+                    row["_clean_tokens"] = c_toks
+
                     if norm:
                         exact_index[norm] = row
                     if t_key:
                         token_index[t_key] = row
+                    if c_toks:
+                        c_key = " ".join(sorted(c_toks))
+                        token_index[c_key] = row
+                        if len(c_toks) >= 2:
+                            fl_pair = (c_toks[0], c_toks[-1])
+                            first_last_index.setdefault(fl_pair, []).append(row)
 
                 offset += len(records)
                 if len(records) < batch_size:
@@ -87,24 +114,61 @@ class WikidataPhotoSynchronizer:
                 logger.warning(f"Error paginating candidates at offset {offset}: {e}")
                 break
 
+        self.first_last_index = first_last_index
         logger.info(f"Indexed {len(exact_index)} candidates for photo resolution.")
         return exact_index, token_index
+
+    def match_candidate(
+        self,
+        wiki_name: str,
+        exact_index: Dict[str, Dict[str, Any]],
+        token_index: Dict[str, Dict[str, Any]],
+    ) -> Optional[Dict[str, Any]]:
+        """Matches a Wikidata politician name against candidate indices with fuzzy Indian name handling."""
+        norm = normalize_name(wiki_name)
+        if norm in exact_index:
+            return exact_index[norm]
+
+        t_key = name_tokens_key(wiki_name)
+        if t_key in token_index:
+            return token_index[t_key]
+
+        w_toks = clean_name_tokens(wiki_name)
+        if not w_toks:
+            return None
+
+        c_key = " ".join(sorted(w_toks))
+        if c_key in token_index:
+            return token_index[c_key]
+
+        if len(w_toks) >= 2 and hasattr(self, "first_last_index"):
+            fl_pair = (w_toks[0], w_toks[-1])
+            candidates = self.first_last_index.get(fl_pair, [])
+            if len(candidates) == 1:
+                return candidates[0]
+            elif len(candidates) > 1:
+                w_set = set(w_toks)
+                for cand in candidates:
+                    cand_set = set(cand.get("_clean_tokens", []))
+                    if w_set.issubset(cand_set):
+                        return cand
+                return candidates[0]
+
+        return None
 
     async def fetch_wikidata_mp_photos(self, limit: Optional[int] = None) -> List[Dict[str, Any]]:
         """
         Executes SPARQL query against Wikidata for Lok Sabha & Rajya Sabha MPs with photos.
-        If limit is None or <= 0, queries all matching records without an artificial limit.
+        Queries all matching parliamentarian photos without an artificial SPARQL limit.
         """
-        limit_clause = f"LIMIT {limit}" if (limit and limit > 0) else ""
-        sparql_query = f"""
-        SELECT ?politician ?politicianLabel ?image WHERE {{
-          {{ ?politician wdt:P39 wd:Q16556694. }} # Member of Lok Sabha
+        sparql_query = """
+        SELECT ?politician ?politicianLabel ?image WHERE {
+          { ?politician wdt:P39 wd:Q16556694. } # Member of Lok Sabha
           UNION
-          {{ ?politician wdt:P39 wd:Q196879. }}    # Member of Rajya Sabha
+          { ?politician wdt:P39 wd:Q196879. }    # Member of Rajya Sabha
           ?politician wdt:P18 ?image.
-          SERVICE wikibase:label {{ bd:serviceParam wikibase:language "en". }}
-        }}
-        {limit_clause}
+          SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+        }
         """
 
         headers = {
@@ -187,7 +251,7 @@ class WikidataPhotoSynchronizer:
             logger.warning("No candidates found in Supabase database to match against.")
             return 0
 
-        wiki_items = await self.fetch_wikidata_mp_photos(limit=limit)
+        wiki_items = await self.fetch_wikidata_mp_photos()
         if not wiki_items:
             logger.info("No Wikidata items returned.")
             return 0
@@ -195,13 +259,14 @@ class WikidataPhotoSynchronizer:
         updated_count = 0
         async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
             for item in wiki_items:
+                if limit and updated_count >= limit:
+                    logger.info(f"Target update limit of {limit} reached. Stopping sync.")
+                    break
+
                 raw_name = item["name"]
                 raw_image_url = item["image_url"]
 
-                norm = normalize_name(raw_name)
-                t_key = name_tokens_key(raw_name)
-
-                matched_cand = exact_index.get(norm) or token_index.get(t_key)
+                matched_cand = self.match_candidate(raw_name, exact_index, token_index)
                 if not matched_cand:
                     continue
 

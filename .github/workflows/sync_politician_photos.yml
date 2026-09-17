@@ -31,7 +31,7 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          LIMIT: ${{ inputs.limit || '500' }}
+          LIMIT: ${{ inputs.limit || 'all' }}
           PYTHONPATH: .
         run: |
           python -m src.ingestion.wikidata_photos
