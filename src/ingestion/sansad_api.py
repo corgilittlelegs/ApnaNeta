@@ -4,7 +4,10 @@ import os
 import sys
 import logging
 from typing import List, Dict, Any, Optional, Tuple
-import httpx
+try:
+    import httpx
+except ImportError:
+    httpx = None
 from src.utils.rate_limiter import PoliteRateLimiter
 from src.storage.supabase_client import supabase
 
@@ -22,12 +25,21 @@ API_LS_MEMBERS = f"{SANSAD_BASE}/api_ls/member"
 API_RS_MEMBERS = f"{SANSAD_BASE}/api_rs/member"
 
 
+from datetime import datetime
+
+
 def parse_date(d_str: str) -> Optional[str]:
-    """Converts DD-MM-YYYY to YYYY-MM-DD for PostgreSQL DATE column."""
+    """Converts DD-MM-YYYY, DD Mon YY, etc. to YYYY-MM-DD for PostgreSQL DATE column."""
     if not d_str or d_str.strip().lower() in ("in office", "none", "", "null"):
         return None
+    d = d_str.strip()
+    for fmt in ("%d %b %y", "%d %b %Y", "%d-%m-%Y", "%Y-%m-%d", "%d/%m/%Y", "%d %B %Y"):
+        try:
+            return datetime.strptime(d, fmt).strftime("%Y-%m-%d")
+        except ValueError:
+            pass
     try:
-        parts = d_str.strip().split("-")
+        parts = d.split("-")
         if len(parts) == 3 and len(parts[2]) == 4:
             return f"{parts[2]}-{parts[1].zfill(2)}-{parts[0].zfill(2)}"
     except Exception:
@@ -96,7 +108,7 @@ class SansadScraper:
                 records = await supabase.select(
                     "candidates",
                     {
-                        "select": "id,name,state,constituency,party",
+                        "select": "id,name,state,constituency,party,house",
                         "limit": str(batch_size),
                         "offset": str(offset),
                     }
@@ -193,6 +205,7 @@ class SansadScraper:
                             update_payload,
                             {"id": f"eq.{candidate_id}"}
                         )
+                        matched_cand.update(update_payload)
                         updated_candidates += 1
                     except Exception as e:
                         logger.debug(f"Failed to update candidate {raw_name}: {e}")
@@ -251,6 +264,9 @@ class SansadScraper:
             await supabase.insert("sansad_records", sansad_batch)
             synced_count += len(sansad_batch)
 
+        logger.info(f"Sync finished: {synced_count} records inserted, {updated_candidates} candidates updated.")
+        return synced_count
+
     async def sync_division_votes(self, divisions_payload: List[Dict[str, Any]]) -> int:
         """
         Synchronizes parliamentary division roll-call votes for landmark legislative acts.
@@ -260,6 +276,7 @@ class SansadScraper:
             return 0
 
         synced_votes = 0
+        exact_index, token_index = await self.fetch_existing_candidates_index()
         for div in divisions_payload:
             bill_title = div.get("bill_title")
             div_date = div.get("division_date")
@@ -293,7 +310,6 @@ class SansadScraper:
                 continue
 
             # 2. Match candidate and insert vote
-            exact_index, token_index = await self.fetch_existing_candidates_index()
             vote_batch = []
             for v in votes:
                 cand_name = v.get("candidate_name", "")

@@ -51,5 +51,26 @@ class TestSansadIntelligence(unittest.TestCase):
         self.assertEqual(starred + unstarred, total_questions)
 
 
+    def test_parse_date_formats(self):
+        from src.ingestion.sansad_api import parse_date
+        self.assertEqual(parse_date("18 May 09"), "2009-05-18")
+        self.assertEqual(parse_date("13 Oct 12"), "2012-10-13")
+        self.assertEqual(parse_date("18-05-2009"), "2009-05-18")
+        self.assertEqual(parse_date("2024-06-04"), "2024-06-04")
+        self.assertIsNone(parse_date("In office"))
+        self.assertIsNone(parse_date(""))
+        self.assertIsNone(parse_date(None))
+
+    def test_parse_attendance_and_ints(self):
+        from src.ingestion.sansad_api import parse_attendance, parse_int
+        self.assertEqual(parse_attendance("85.00%"), 85.0)
+        self.assertEqual(parse_attendance("100%"), 100.0)
+        self.assertEqual(parse_attendance(""), 0.0)
+        self.assertEqual(parse_int("42"), 42)
+        self.assertEqual(parse_int("37.0"), 37)
+        self.assertEqual(parse_int(""), 0)
+
+
 if __name__ == "__main__":
     unittest.main()
+
