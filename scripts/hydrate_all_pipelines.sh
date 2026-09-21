@@ -9,8 +9,9 @@
 # ==============================================================================
 
 set -euo pipefail
-
-REPO_NAME="${GITHUB_REPOSITORY:-corgilittlelegs/ApnaNeta}"
+# Auto-detect repository from git remote or GITHUB_REPOSITORY environment variable
+DEFAULT_REPO="$(git config --get remote.origin.url 2>/dev/null | sed -E 's/.*github\.com[:\/](.+?)(\.git)?$/\1/' || echo '')"
+REPO_NAME="${GITHUB_REPOSITORY:-${DEFAULT_REPO:-corgilittlelegs/ApnaNeta}}"
 TARGET_TERM="${1:-all}"
 AFFIDAVIT_BATCH_LIMIT="${2:-10}"
 

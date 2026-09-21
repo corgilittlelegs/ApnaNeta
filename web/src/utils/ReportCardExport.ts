@@ -441,6 +441,17 @@ export async function downloadReportCard(candidate: Candidate, existingDataUrl?:
 
 export type NativeShareResult = 'shared' | 'cancelled' | 'unsupported';
 
+export const getAppBaseUrl = (): string => {
+  const envUrl = (import.meta as any).env?.VITE_APP_URL;
+  if (envUrl && typeof envUrl === 'string' && envUrl.trim()) {
+    return envUrl.trim().replace(/\/+$/, '');
+  }
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return window.location.origin;
+  }
+  return 'https://apnaneta.in';
+};
+
 /**
  * Share via native Web Share API on mobile devices (e.g. Android Chrome, iOS Safari).
  * Enables direct image sending into WhatsApp, Twitter, or Instagram.
@@ -458,7 +469,7 @@ export async function shareReportCardViaNative(candidate: Candidate): Promise<Na
     const shareData = {
       title: `${candidate.name} Civic Report Card`,
       text: `Audit Report Card for ${candidate.name} (${candidate.party || 'IND'}, ${candidate.constituency}). Verified from official sworn ECI Form 26 affidavit on Apna Neta.`,
-      url: 'https://apnaneta.corgi-littlelegs.workers.dev',
+      url: getAppBaseUrl(),
       files: [file],
     };
 
@@ -550,7 +561,7 @@ export function getReportCardFactSheet(candidate: Candidate): string {
     }`,
     candidate.defection_count ? `🔄 *Political Mobility:* ${candidate.defection_count} Career Party Transitions` : '',
     `━━━━━━━━━━━━━━━━━━━━━`,
-    `Verified against sworn ECI Form 26 affidavit at https://apnaneta.corgi-littlelegs.workers.dev`,
+    `Verified against sworn ECI Form 26 affidavit at ${getAppBaseUrl()}`,
   ].filter(Boolean);
 
   return lines.join('\n');
@@ -573,6 +584,6 @@ export function getTwitterShareUrl(candidate: Candidate): string {
     : '✅ 100% Clean Audit';
   
   const text = `Official ECI sworn affidavit audit report for ${candidate.name}${safeParty} from ${candidate.constituency}, ${candidate.state}.\n\n💰 Declared Net Worth: ${netWorth}\n⚖️ Audit Verdict: ${auditVerdict}\n\nInspect verified court proofs on Apna Neta:`;
-  const url = 'https://apnaneta.corgi-littlelegs.workers.dev';
+  const url = getAppBaseUrl();
   return `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}&hashtags=ApnaNeta,Transparency,ECI`;
 }

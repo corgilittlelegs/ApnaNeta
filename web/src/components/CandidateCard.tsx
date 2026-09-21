@@ -20,6 +20,11 @@ import { DiscrepancyBadge } from './DiscrepancyBadge';
 import { exportCandidateDossierPdf } from '../utils/DossierPdfExport';
 import { useViewMode } from '../context/ViewModeContext';
 import { CivicTerm } from './CivicTerm';
+import {
+  CIVIC_IMPACT_BENCHMARKS,
+  CIVIC_THRESHOLDS,
+  WEALTH_TIERS,
+} from '../utils/civicConstants';
 
 interface CandidateCardProps {
   candidate: Candidate;
@@ -72,9 +77,9 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
 
     // 2. Attendance
     if (candidate.attendance_rate !== undefined) {
-      if (candidate.attendance_rate >= 85) {
+      if (candidate.attendance_rate >= CIVIC_THRESHOLDS.ATTENDANCE_HIGH_PERCENT) {
         parts.push(`highly active in Parliament (${candidate.attendance_rate.toFixed(0)}% attendance)`);
-      } else if (candidate.attendance_rate >= 65) {
+      } else if (candidate.attendance_rate >= CIVIC_THRESHOLDS.ATTENDANCE_LOW_PERCENT) {
         parts.push(`average Parliament attendance (${candidate.attendance_rate.toFixed(0)}%)`);
       } else {
         parts.push(`low Parliament attendance (${candidate.attendance_rate.toFixed(0)}%)`);
@@ -83,9 +88,9 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
 
     // 3. MPLADS Local Fund
     if (candidate.mplads) {
-      if (candidate.mplads.utilization_rate >= 80) {
+      if (candidate.mplads.utilization_rate >= CIVIC_THRESHOLDS.MPLADS_GOOD_SPEND_PERCENT) {
         parts.push(`and spent ${candidate.mplads.utilization_rate.toFixed(0)}% of local development funds`);
-      } else if (candidate.mplads.unspent_balance > 10000000) {
+      } else if (candidate.mplads.unspent_balance > WEALTH_TIERS.TIER_1CR_TO_10CR) {
         parts.push(`but left ${formatINR(candidate.mplads.unspent_balance)} in local development funds unspent`);
       }
     }
@@ -234,9 +239,9 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                 className={`p-1.5 rounded-lg border font-medium ${
                   !candidate.mplads
                     ? 'bg-slate-50 border-slate-200 text-slate-600'
-                    : candidate.mplads.utilization_rate >= 75
+                    : candidate.mplads.utilization_rate >= CIVIC_THRESHOLDS.MPLADS_FAIR_SPEND_PERCENT
                     ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                    : candidate.mplads.utilization_rate >= 60
+                    : candidate.mplads.utilization_rate >= CIVIC_THRESHOLDS.MPLADS_LOW_SPEND_PERCENT
                     ? 'bg-amber-50 border-amber-200 text-amber-800'
                     : 'bg-rose-50 border-rose-200 text-rose-800'
                 }`}
@@ -245,9 +250,9 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                 <span className="block font-bold">
                   {!candidate.mplads
                     ? '⚪ N/A'
-                    : candidate.mplads.utilization_rate >= 75
+                    : candidate.mplads.utilization_rate >= CIVIC_THRESHOLDS.MPLADS_FAIR_SPEND_PERCENT
                     ? '🟢 Good'
-                    : candidate.mplads.utilization_rate >= 60
+                    : candidate.mplads.utilization_rate >= CIVIC_THRESHOLDS.MPLADS_LOW_SPEND_PERCENT
                     ? '🟡 Fair'
                     : '🔴 Low'}
                 </span>
@@ -259,9 +264,9 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                 className={`p-1.5 rounded-lg border font-medium ${
                   candidate.attendance_rate === undefined
                     ? 'bg-slate-50 border-slate-200 text-slate-600'
-                    : candidate.attendance_rate >= 80
+                    : candidate.attendance_rate >= CIVIC_THRESHOLDS.ATTENDANCE_FAIR_PERCENT
                     ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                    : candidate.attendance_rate >= 65
+                    : candidate.attendance_rate >= CIVIC_THRESHOLDS.ATTENDANCE_LOW_PERCENT
                     ? 'bg-amber-50 border-amber-200 text-amber-800'
                     : 'bg-rose-50 border-rose-200 text-rose-800'
                 }`}
@@ -270,9 +275,9 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                 <span className="block font-bold">
                   {candidate.attendance_rate === undefined
                     ? '⚪ N/A'
-                    : candidate.attendance_rate >= 80
+                    : candidate.attendance_rate >= CIVIC_THRESHOLDS.ATTENDANCE_FAIR_PERCENT
                     ? '🟢 Active'
-                    : candidate.attendance_rate >= 65
+                    : candidate.attendance_rate >= CIVIC_THRESHOLDS.ATTENDANCE_LOW_PERCENT
                     ? '🟡 Fair'
                     : '🔴 Inactive'}
                 </span>
@@ -285,7 +290,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                   candidate.has_anomalous_wealth_ratio ||
                   (latestWealthGrowth && latestWealthGrowth.is_rapid_accumulation)
                     ? 'bg-rose-50 border-rose-200 text-rose-800'
-                    : candidate.wealth_discrepancy_ratio && candidate.wealth_discrepancy_ratio > 3
+                    : candidate.wealth_discrepancy_ratio && candidate.wealth_discrepancy_ratio > CIVIC_THRESHOLDS.WEALTH_DISCREPANCY_RATIO_MODERATE
                     ? 'bg-amber-50 border-amber-200 text-amber-800'
                     : 'bg-emerald-50 border-emerald-200 text-emerald-800'
                 }`}
@@ -295,7 +300,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                   {candidate.has_anomalous_wealth_ratio ||
                   (latestWealthGrowth && latestWealthGrowth.is_rapid_accumulation)
                     ? '🔴 High Gap'
-                    : candidate.wealth_discrepancy_ratio && candidate.wealth_discrepancy_ratio > 3
+                    : candidate.wealth_discrepancy_ratio && candidate.wealth_discrepancy_ratio > CIVIC_THRESHOLDS.WEALTH_DISCREPANCY_RATIO_MODERATE
                     ? '🟡 Moderate'
                     : '🟢 Normal'}
                 </span>
@@ -412,7 +417,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                 <div className="flex items-center gap-1.5">
                   <span
                     className={`font-mono tabular-nums font-bold ${
-                      candidate.mplads.utilization_rate < 60 ? 'text-rose-700' : 'text-emerald-700'
+                      candidate.mplads.utilization_rate < CIVIC_THRESHOLDS.MPLADS_LOW_SPEND_PERCENT ? 'text-rose-700' : 'text-emerald-700'
                     }`}
                   >
                     {candidate.mplads.utilization_rate.toFixed(1)}% Spent
@@ -427,21 +432,21 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
               <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all ${
-                    candidate.mplads.utilization_rate < 60 ? 'bg-rose-500' : 'bg-emerald-600'
+                    candidate.mplads.utilization_rate < CIVIC_THRESHOLDS.MPLADS_LOW_SPEND_PERCENT ? 'bg-rose-500' : 'bg-emerald-600'
                   }`}
                   style={{ width: `${Math.min(candidate.mplads.utilization_rate, 100)}%` }}
                 ></div>
               </div>
 
               {/* CITIZEN MODE: "What This Means For You" Real-World Impact Callout */}
-              {isCitizenMode && candidate.mplads.unspent_balance >= 20000000 && (
+              {isCitizenMode && candidate.mplads.unspent_balance >= CIVIC_IMPACT_BENCHMARKS.MIN_UNSPENT_BALANCE_FOR_CALLOUT && (
                 <div className="mt-2 pt-2 border-t border-slate-100 text-[11px] text-slate-600 flex items-start gap-1.5">
                   <Lightbulb size={14} weight="fill" className="text-amber-500 flex-shrink-0 mt-0.5" />
                   <p>
                     <strong className="text-slate-800">What this unspent fund means:</strong>{' '}
                     {formatINR(candidate.mplads.unspent_balance)} could have funded ~
-                    {Math.floor(candidate.mplads.unspent_balance / 2500000)} local health clinics or ~
-                    {Math.floor(candidate.mplads.unspent_balance / 1500000)} km of community solar
+                    {Math.floor(candidate.mplads.unspent_balance / CIVIC_IMPACT_BENCHMARKS.COST_PER_PRIMARY_CLINIC)} local health clinics or ~
+                    {Math.floor(candidate.mplads.unspent_balance / CIVIC_IMPACT_BENCHMARKS.COST_PER_KM_COMMUNITY_INFRA)} km of community solar
                     street lighting.
                   </p>
                 </div>
