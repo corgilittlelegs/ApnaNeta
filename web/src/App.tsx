@@ -24,14 +24,13 @@ import {
   CheckCircle,
 } from '@phosphor-icons/react';
 
-import { SAMPLE_CANDIDATES } from './data/sampleCandidates';
 import { PROMINENT_PARTY_MAP } from './data/politicianLookup';
 import { CIVIC_IMPACT_BENCHMARKS } from './utils/civicConstants';
 
 const AppContent: React.FC = () => {
   const { isCitizenMode } = useViewMode();
   const [isCivicGuideOpen, setIsCivicGuideOpen] = useState<boolean>(false);
-  const [candidates, setCandidates] = useState<Candidate[]>(SAMPLE_CANDIDATES);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [totalDatabaseCount, setTotalDatabaseCount] = useState<number>(0);
   const [displayLimit, setDisplayLimit] = useState<number>(50);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -116,11 +115,7 @@ const AppContent: React.FC = () => {
 
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
-          const sampleNames = new Set(SAMPLE_CANDIDATES.map((c) => c.name.toLowerCase()));
-
-          const dbCandidates: Candidate[] = data
-            .filter((row: any) => !sampleNames.has((row.name || '').toLowerCase()))
-            .map((row: any) => {
+          const dbCandidates: Candidate[] = data.map((row: any) => {
               const sansad = Array.isArray(row.sansad_records) && row.sansad_records.length > 0 ? row.sansad_records[0] : null;
               const attendance = sansad?.attendance_rate != null ? Number(sansad.attendance_rate) : undefined;
               const debates = sansad?.debates_count != null ? Number(sansad.debates_count) : undefined;
@@ -351,11 +346,11 @@ const AppContent: React.FC = () => {
           }
 
           const uniqueDbCandidates = Array.from(candidateMap.values());
-          setCandidates([...SAMPLE_CANDIDATES, ...uniqueDbCandidates]);
+          setCandidates(uniqueDbCandidates);
           setIsLiveConnected(true);
         }
       } catch (err) {
-        console.error('Failed to load live Supabase candidates, showing local sample data:', err);
+        console.error('Failed to load live Supabase candidates:', err);
       } finally {
         setIsLoading(false);
       }
@@ -603,7 +598,16 @@ const AppContent: React.FC = () => {
 
             {filteredCandidates.length === 0 ? (
               <div className="p-12 text-center bg-white rounded-2xl border border-slate-200 shadow-2xs">
-                <p className="text-slate-600 text-sm font-medium">No parliamentarians found matching your selected filters.</p>
+                {!isLiveConnected && !isLoading ? (
+                  <div className="space-y-2 max-w-md mx-auto">
+                    <p className="text-slate-800 text-sm font-semibold">Live Database Not Connected</p>
+                    <p className="text-slate-500 text-xs leading-relaxed">
+                      ApnaNeta operates strictly on authentic government data with zero synthetic placeholders. Please configure <code className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 font-mono text-[11px]">VITE_SUPABASE_URL</code> and <code className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 font-mono text-[11px]">VITE_SUPABASE_ANON_KEY</code> to query verified records.
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-slate-600 text-sm font-medium">No parliamentarians found matching your selected filters.</p>
+                )}
               </div>
             ) : (
               <>

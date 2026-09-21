@@ -2,6 +2,7 @@ import os
 import sys
 import logging
 import asyncio
+import re
 from typing import List, Dict, Any, Optional
 try:
     import httpx
@@ -90,14 +91,38 @@ class MoSPIMPLADSClient:
     async def fetch_constituency_mplads_online(self, state: str, constituency: str) -> Optional[Dict[str, Any]]:
         """
         Polls official e-SAKSHI summary endpoints for live constituency MPLADS figures.
+        Follows redirects, handles browser content negotiation, and parses HTML dashboards.
         """
         logger.info(f"Querying e-SAKSHI portal for {constituency}, {state}...")
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+            "Accept": "application/json, text/html, application/xhtml+xml, */*",
+        }
         try:
-            async with httpx.AsyncClient(timeout=20.0) as client:
+            async with httpx.AsyncClient(timeout=25.0, follow_redirects=True, headers=headers) as client:
                 url = f"{ESAKSHI_BASE_URL}/api/public/summary?state={state}&constituency={constituency}"
-                resp = await client.get(url, headers={"User-Agent": "Mozilla/5.0 ApnaNeta/1.0"})
+                resp = await client.get(url)
                 if resp.status_code == 200:
-                    return resp.json()
+                    content_type = resp.headers.get("content-type", "").lower()
+                    if "application/json" in content_type:
+                        return resp.json()
+                    if "text/html" in content_type:
+                        from bs4 import BeautifulSoup
+                        soup = BeautifulSoup(resp.text, "html.parser")
+                        table = soup.find("table")
+                        if table:
+                            rows = table.find_all("tr")
+                            for r in rows:
+                                cells = [c.get_text(strip=True) for c in r.find_all(["td", "th"])]
+                                if len(cells) >= 4 and any(constituency.lower() in c.lower() for c in cells):
+                                    return {
+                                        "constituency": constituency,
+                                        "state": state,
+                                        "released_amount": float(re.sub(r"[^\d.]", "", cells[1]) or 0),
+                                        "expenditure_amount": float(re.sub(r"[^\d.]", "", cells[2]) or 0),
+                                        "unspent_balance": float(re.sub(r"[^\d.]", "", cells[3]) or 0),
+                                    }
+                logger.warning(f"e-SAKSHI live query returned status {resp.status_code} for {constituency}, {state}")
                 return None
         except Exception as e:
             logger.debug(f"e-SAKSHI live query returned: {e}")

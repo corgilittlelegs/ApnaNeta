@@ -2,6 +2,7 @@ import os
 import sys
 import logging
 import asyncio
+import re
 from typing import List, Dict, Any, Optional
 try:
     import httpx
@@ -50,14 +51,36 @@ class ESAKSHISessionCrawler:
 
         logger.info(f"Querying e-SAKSHI granular works: {url}")
         try:
-            async with httpx.AsyncClient(timeout=30.0, headers=self.headers) as client:
+            async with httpx.AsyncClient(timeout=30.0, follow_redirects=True, headers=self.headers) as client:
                 resp = await client.get(url)
                 if resp.status_code == 200:
-                    data = resp.json()
-                    works = data if isinstance(data, list) else data.get("works", [])
-                    logger.info(f"Discovered {len(works)} work sanctions for {district_name}, {state_name}.")
-                    return works
-                logger.warning(f"e-SAKSHI returned status {resp.status_code}")
+                    content_type = resp.headers.get("content-type", "").lower()
+                    if "application/json" in content_type:
+                        data = resp.json()
+                        works = data if isinstance(data, list) else data.get("works", [])
+                        logger.info(f"Discovered {len(works)} work sanctions for {district_name}, {state_name}.")
+                        return works
+                    if "text/html" in content_type:
+                        from bs4 import BeautifulSoup
+                        soup = BeautifulSoup(resp.text, "html.parser")
+                        table = soup.find("table")
+                        if table:
+                            works = []
+                            for row in table.find_all("tr")[1:]:
+                                cols = [td.get_text(strip=True) for td in row.find_all("td")]
+                                if len(cols) >= 4:
+                                    works.append({
+                                        "work_id": cols[0],
+                                        "work_title": cols[1],
+                                        "sector": cols[2] if len(cols) > 2 else "Infrastructure",
+                                        "sanctioned_amount": float(re.sub(r"[^\d.]", "", cols[3]) or 0),
+                                        "expenditure_amount": float(re.sub(r"[^\d.]", "", cols[4]) or 0) if len(cols) > 4 else 0,
+                                        "status": cols[5] if len(cols) > 5 else "Sanctioned",
+                                    })
+                            if works:
+                                logger.info(f"Parsed {len(works)} work sanctions from HTML table for {district_name}, {state_name}.")
+                                return works
+                logger.warning(f"e-SAKSHI returned status {resp.status_code} for {district_name}, {state_name}")
                 return []
         except Exception as e:
             logger.debug(f"e-SAKSHI live query encountered error: {e}")
