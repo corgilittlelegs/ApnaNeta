@@ -199,7 +199,18 @@ class WikidataPhotoSynchronizer:
         """
         lok_sabha_query = """
         SELECT ?politician ?politicianLabel ?image WHERE {
-          VALUES ?pos { wd:Q16556694 wd:Q124806085 wd:Q64009214 }
+          VALUES ?pos {
+            wd:Q16556694   # Member of the Lok Sabha
+            wd:Q125498038  # Member of the 18th Lok Sabha (current)
+            wd:Q56051771   # Member of the 17th Lok Sabha
+            wd:Q42509248   # Member of the 16th Lok Sabha
+            wd:Q15686919   # Member of the 15th Lok Sabha
+            wd:Q15686915   # Member of the 14th Lok Sabha
+            wd:Q63098715   # Leader of the Opposition in Lok Sabha (e.g. Rahul Gandhi)
+            wd:Q1058223    # Member of Parliament, Lok Sabha
+            wd:Q1055743    # Member of Parliament in India
+            wd:Q14212      # Prime Minister of India
+          }
           ?politician wdt:P39 ?pos;
                       wdt:P18 ?image.
           SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
@@ -208,7 +219,13 @@ class WikidataPhotoSynchronizer:
 
         rajya_sabha_query = """
         SELECT ?politician ?politicianLabel ?image WHERE {
-          ?politician wdt:P39 wd:Q17324844;
+          VALUES ?pos {
+            wd:Q17324844   # Member of the Rajya Sabha
+            wd:Q1058225    # Member of Parliament, Rajya Sabha
+            wd:Q63098716   # Leader of the Opposition in Rajya Sabha
+            wd:Q3347071    # Leader of the House in Rajya Sabha
+          }
+          ?politician wdt:P39 ?pos;
                       wdt:P18 ?image.
           SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
         }
@@ -226,7 +243,18 @@ class WikidataPhotoSynchronizer:
                 logger.info("Retrying Lok Sabha query with direct rdfs:label...")
                 ls_alt = """
                 SELECT ?politician ?politicianLabel ?image WHERE {
-                  VALUES ?pos { wd:Q16556694 wd:Q124806085 wd:Q64009214 }
+                  VALUES ?pos {
+                    wd:Q16556694
+                    wd:Q125498038
+                    wd:Q56051771
+                    wd:Q42509248
+                    wd:Q15686919
+                    wd:Q15686915
+                    wd:Q63098715
+                    wd:Q1058223
+                    wd:Q1055743
+                    wd:Q14212
+                  }
                   ?politician wdt:P39 ?pos;
                               wdt:P18 ?image;
                               rdfs:label ?politicianLabel.
@@ -240,7 +268,13 @@ class WikidataPhotoSynchronizer:
                 logger.info("Retrying Rajya Sabha query with direct rdfs:label...")
                 rs_alt = """
                 SELECT ?politician ?politicianLabel ?image WHERE {
-                  ?politician wdt:P39 wd:Q17324844;
+                  VALUES ?pos {
+                    wd:Q17324844
+                    wd:Q1058225
+                    wd:Q63098716
+                    wd:Q3347071
+                  }
+                  ?politician wdt:P39 ?pos;
                               wdt:P18 ?image;
                               rdfs:label ?politicianLabel.
                   FILTER(LANG(?politicianLabel) = "en")
