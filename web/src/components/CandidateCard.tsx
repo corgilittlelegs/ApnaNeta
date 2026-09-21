@@ -101,9 +101,10 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
   return (
     <article className="bg-white rounded-2xl border border-slate-200/90 shadow-sm hover:shadow-md hover:border-slate-300 transition-all overflow-hidden flex flex-col justify-between">
       {/* Top Banner & Candidate Identity */}
-      <div className="p-5">
-        <div className="flex items-start justify-between gap-3 mb-3.5">
-          <div className="flex items-start gap-3 flex-1 min-w-0">
+      {/* Top Banner & Candidate Identity */}
+      <div className="p-4 sm:p-5">
+        <div className="flex items-start justify-between gap-2.5 sm:gap-3 mb-3">
+          <div className="flex items-start gap-2.5 sm:gap-3 flex-1 min-w-0">
             {/* Candidate Avatar */}
             <div className="relative flex-shrink-0">
               {candidate.photo_url ? (
@@ -112,7 +113,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                   alt={candidate.name}
                   loading="lazy"
                   referrerPolicy="no-referrer"
-                  className="w-12 h-12 rounded-full object-cover border-2 border-slate-200 shadow-2xs bg-slate-50"
+                  className="w-11 h-11 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-slate-200 shadow-2xs bg-slate-50"
                   onError={(e) => {
                     const target = e.currentTarget;
                     target.style.display = 'none';
@@ -122,7 +123,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                 />
               ) : null}
               <div
-                className={`w-12 h-12 rounded-full items-center justify-center font-bold text-xs text-slate-700 bg-slate-100 border-2 border-slate-200 shadow-2xs ${
+                className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full items-center justify-center font-bold text-xs text-slate-700 bg-slate-100 border-2 border-slate-200 shadow-2xs ${
                   candidate.photo_url ? 'hidden' : 'flex'
                 }`}
               >
@@ -137,17 +138,17 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
             </div>
 
             <div className="flex-1 min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h3 className="font-serif font-bold text-slate-900 text-lg sm:text-xl hover:text-blue-700 transition-colors cursor-pointer leading-tight truncate">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h3 className="font-serif font-bold text-slate-900 text-base sm:text-lg hover:text-blue-700 transition-colors cursor-pointer leading-tight truncate">
                   {candidate.name}
                 </h3>
                 {candidate.alias && (
-                  <span className="text-[11px] px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full font-medium">
+                  <span className="text-[10px] sm:text-[11px] px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded-full font-medium">
                     "{candidate.alias}"
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-500 mt-1 font-sans">
+              <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 sm:mt-1 font-sans line-clamp-1">
                 <span className="font-semibold text-slate-700">{candidate.house}</span> •{' '}
                 {candidate.constituency &&
                 candidate.constituency !== candidate.state &&
@@ -168,11 +169,11 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 flex-shrink-0">
+          <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
             {onToggleComparison && (
               <button
                 onClick={() => onToggleComparison(candidate)}
-                className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg border transition-all ${
+                className={`inline-flex items-center gap-1 text-[11px] sm:text-xs font-semibold px-2 sm:px-2.5 py-1 rounded-lg border transition-all ${
                   isSelectedForComparison
                     ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
                     : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-2xs'
@@ -181,18 +182,18 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
               >
                 {isSelectedForComparison ? (
                   <>
-                    <Check size={13} weight="bold" />
-                    <span>Added</span>
+                    <Check size={12} weight="bold" />
+                    <span className="hidden sm:inline">Added</span>
                   </>
                 ) : (
                   <>
-                    <Plus size={13} weight="bold" className="text-blue-600" />
-                    <span>Compare</span>
+                    <Plus size={12} weight="bold" className="text-blue-600" />
+                    <span className="hidden sm:inline">Compare</span>
                   </>
                 )}
               </button>
             )}
-            <span className="text-[11px] font-semibold px-2.5 py-1 bg-slate-100 text-slate-800 border border-slate-200 rounded-lg">
+            <span className="text-[10px] sm:text-[11px] font-semibold px-2 sm:px-2.5 py-1 bg-slate-100 text-slate-800 border border-slate-200 rounded-lg max-w-[90px] sm:max-w-none truncate">
               {candidate.party || 'Independent'}
             </span>
           </div>
@@ -206,16 +207,16 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
               <span className="font-bold text-[10px] uppercase tracking-wider text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded flex-shrink-0 mt-0.5">
                 Summary
               </span>
-              <p className="leading-relaxed font-sans text-slate-800">
+              <p className="leading-relaxed font-sans text-slate-800 text-[11px] sm:text-xs">
                 {generateCitizenSummary()}
               </p>
             </div>
 
             {/* 4 Traffic-Light Ratings */}
-            <div className="grid grid-cols-4 gap-1.5 text-center text-[10px]">
+            <div className="grid grid-cols-4 gap-1 sm:gap-1.5 text-center text-[9px] sm:text-[10px]">
               {/* 1. Crime Traffic Light */}
               <div
-                className={`p-1.5 rounded-lg border font-medium ${
+                className={`p-1 sm:p-1.5 rounded-lg border font-medium ${
                   candidate.serious_criminal_cases_count > 0 || candidate.is_rpa_section_8_disqualified
                     ? 'bg-rose-50 border-rose-200 text-rose-800'
                     : candidate.criminal_cases_count > 0
@@ -224,19 +225,19 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                 }`}
                 title="Criminal record status"
               >
-                <span className="block font-bold">
+                <span className="block font-bold truncate">
                   {candidate.serious_criminal_cases_count > 0
                     ? '🔴 Serious'
                     : candidate.criminal_cases_count > 0
                     ? '🟡 Agitation'
                     : '🟢 Clean'}
                 </span>
-                <span className="text-[9.5px] text-slate-500">Record</span>
+                <span className="text-[8.5px] sm:text-[9.5px] text-slate-500">Record</span>
               </div>
 
               {/* 2. MPLADS Spending Traffic Light */}
               <div
-                className={`p-1.5 rounded-lg border font-medium ${
+                className={`p-1 sm:p-1.5 rounded-lg border font-medium ${
                   !candidate.mplads
                     ? 'bg-slate-50 border-slate-200 text-slate-600'
                     : candidate.mplads.utilization_rate >= CIVIC_THRESHOLDS.MPLADS_FAIR_SPEND_PERCENT
@@ -247,7 +248,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                 }`}
                 title="Local development fund utilization"
               >
-                <span className="block font-bold">
+                <span className="block font-bold truncate">
                   {!candidate.mplads
                     ? '⚪ N/A'
                     : candidate.mplads.utilization_rate >= CIVIC_THRESHOLDS.MPLADS_FAIR_SPEND_PERCENT
@@ -256,12 +257,12 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                     ? '🟡 Fair'
                     : '🔴 Low'}
                 </span>
-                <span className="text-[9.5px] text-slate-500">Local Fund</span>
+                <span className="text-[8.5px] sm:text-[9.5px] text-slate-500">Local Fund</span>
               </div>
 
               {/* 3. Parliament Attendance Traffic Light */}
               <div
-                className={`p-1.5 rounded-lg border font-medium ${
+                className={`p-1 sm:p-1.5 rounded-lg border font-medium ${
                   candidate.attendance_rate === undefined
                     ? 'bg-slate-50 border-slate-200 text-slate-600'
                     : candidate.attendance_rate >= CIVIC_THRESHOLDS.ATTENDANCE_FAIR_PERCENT
@@ -272,7 +273,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                 }`}
                 title="Parliament attendance rating"
               >
-                <span className="block font-bold">
+                <span className="block font-bold truncate">
                   {candidate.attendance_rate === undefined
                     ? '⚪ N/A'
                     : candidate.attendance_rate >= CIVIC_THRESHOLDS.ATTENDANCE_FAIR_PERCENT
@@ -281,12 +282,12 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                     ? '🟡 Fair'
                     : '🔴 Inactive'}
                 </span>
-                <span className="text-[9.5px] text-slate-500">Attendance</span>
+                <span className="text-[8.5px] sm:text-[9.5px] text-slate-500">Attendance</span>
               </div>
 
               {/* 4. Wealth Discrepancy Traffic Light */}
               <div
-                className={`p-1.5 rounded-lg border font-medium ${
+                className={`p-1 sm:p-1.5 rounded-lg border font-medium ${
                   candidate.has_anomalous_wealth_ratio ||
                   (latestWealthGrowth && latestWealthGrowth.is_rapid_accumulation)
                     ? 'bg-rose-50 border-rose-200 text-rose-800'
@@ -296,7 +297,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                 }`}
                 title="Wealth growth check"
               >
-                <span className="block font-bold">
+                <span className="block font-bold truncate">
                   {candidate.has_anomalous_wealth_ratio ||
                   (latestWealthGrowth && latestWealthGrowth.is_rapid_accumulation)
                     ? '🔴 High Gap'
@@ -304,7 +305,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                     ? '🟡 Moderate'
                     : '🟢 Normal'}
                 </span>
-                <span className="text-[9.5px] text-slate-500">Wealth</span>
+                <span className="text-[8.5px] sm:text-[9.5px] text-slate-500">Wealth</span>
               </div>
             </div>
           </div>
@@ -577,26 +578,29 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
       </div>
 
       {/* Card Footer with Court-Ready PDF and Proof Inspection */}
-      <div className="px-5 py-3 bg-slate-50/90 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
-        <span className="font-mono text-[11px]">Filing: {candidate.filing_year}</span>
-        <div className="flex items-center gap-2">
+      <div className="px-4 sm:px-5 py-2.5 sm:py-3 bg-slate-50/90 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 text-xs text-slate-500">
+        <span className="font-mono text-[10.5px] sm:text-[11px] flex-shrink-0">
+          Filing: {candidate.filing_year}
+        </span>
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end">
           {onOpenShareCard && (
             <button
               onClick={() => onOpenShareCard(candidate)}
               title="Generate 1-Click WhatsApp & Social Report Card Graphic"
-              className="inline-flex items-center gap-1 text-slate-700 hover:text-slate-900 font-semibold bg-white hover:bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg shadow-2xs transition-all active:scale-95"
+              className="inline-flex items-center gap-1 text-slate-700 hover:text-slate-900 font-semibold bg-white hover:bg-slate-100 border border-slate-200 px-2 sm:px-2.5 py-1 rounded-lg shadow-2xs transition-all active:scale-95 text-[11px] sm:text-xs"
             >
-              <ShareNetwork size={14} weight="duotone" className="text-emerald-600" />
+              <ShareNetwork size={13} weight="duotone" className="text-emerald-600" />
               <span>Share</span>
             </button>
           )}
           <button
             onClick={() => exportCandidateDossierPdf(candidate)}
             title="Download Court-Ready 1-Page Forensic Audit Dossier PDF"
-            className="inline-flex items-center gap-1 text-slate-700 hover:text-slate-900 font-semibold bg-white hover:bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg shadow-2xs transition-all active:scale-95"
+            className="inline-flex items-center gap-1 text-slate-700 hover:text-slate-900 font-semibold bg-white hover:bg-slate-100 border border-slate-200 px-2 sm:px-2.5 py-1 rounded-lg shadow-2xs transition-all active:scale-95 text-[11px] sm:text-xs"
           >
-            <FilePdf size={14} weight="duotone" className="text-blue-700" />
-            <span>PDF Dossier</span>
+            <FilePdf size={13} weight="duotone" className="text-blue-700" />
+            <span className="hidden sm:inline">PDF Dossier</span>
+            <span className="sm:hidden">Dossier</span>
           </button>
           <button
             onClick={() =>
@@ -608,10 +612,10 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                 candidate
               )
             }
-            className="text-blue-700 hover:text-blue-900 font-semibold hover:underline flex items-center gap-1 active:scale-95"
+            className="text-blue-700 hover:text-blue-900 font-semibold hover:underline flex items-center gap-1 active:scale-95 text-[11px] sm:text-xs"
           >
-            <FileMagnifyingGlass size={14} weight="bold" />
-            <span>Form 26 Proof →</span>
+            <FileMagnifyingGlass size={13} weight="bold" />
+            <span>Proof →</span>
           </button>
         </div>
       </div>

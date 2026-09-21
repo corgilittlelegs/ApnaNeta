@@ -88,145 +88,147 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
   const hasSpouse = candidate?.spouse_status === 'Declared' || Boolean(candidate?.spouse_name);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4 overflow-y-auto">
+      <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[92dvh] sm:max-h-[92vh]">
         {/* Header Bar */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50 gap-4 flex-wrap flex-shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            {candidate?.photo_url ? (
-              <img
-                src={candidate.photo_url}
-                alt={candidateName}
-                referrerPolicy="no-referrer"
-                className="w-11 h-11 rounded-full object-cover border-2 border-slate-200 shadow-2xs flex-shrink-0"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-            ) : (
-              <div className="p-2.5 bg-blue-100/80 text-blue-700 rounded-xl flex-shrink-0">
-                <ShieldCheck size={22} weight="duotone" />
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100 bg-slate-50 flex-shrink-0">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+              {candidate?.photo_url ? (
+                <img
+                  src={candidate.photo_url}
+                  alt={candidateName}
+                  referrerPolicy="no-referrer"
+                  className="w-10 h-10 sm:w-11 sm:h-11 rounded-full object-cover border-2 border-slate-200 shadow-2xs flex-shrink-0"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              ) : (
+                <div className="p-2 sm:p-2.5 bg-blue-100/80 text-blue-700 rounded-xl flex-shrink-0">
+                  <ShieldCheck size={20} weight="duotone" />
+                </div>
+              )}
+              <div className="min-w-0">
+                <h3 className="font-bold text-slate-900 text-sm sm:text-base leading-tight truncate">
+                  Forensic Verification
+                </h3>
+                <div className="flex items-center gap-1.5 sm:gap-2 mt-0.5 flex-wrap">
+                  <span className="text-[11px] sm:text-xs text-slate-500 truncate">
+                    {candidateName} • {constituency} ({house})
+                  </span>
+                  <span className="text-[8.5px] sm:text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-md border border-emerald-300 whitespace-nowrap">
+                    Section 79
+                  </span>
+                </div>
               </div>
-            )}
-            <div className="min-w-0">
-              <h3 className="font-bold text-slate-900 text-base leading-tight truncate">
-                Forensic Civic Intelligence Verification
-              </h3>
-              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                <span className="text-xs text-slate-500 truncate">
-                  {candidateName} • {constituency}, {state} ({house}) • {filingYear}
-                </span>
-                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-md border border-emerald-300 whitespace-nowrap">
-                  Section 79 Safe Harbor
-                </span>
-              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+              {/* 1-Click PDF Export Button (Desktop) */}
+              {candidate && (
+                <button
+                  onClick={() => exportCandidateDossierPdf(candidate)}
+                  title="Download Court-Ready 1-Page Forensic Audit Dossier PDF"
+                  className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 font-semibold text-xs rounded-xl border border-blue-200 transition-all shadow-sm"
+                >
+                  <FilePdf size={15} weight="duotone" className="text-blue-600" />
+                  <span>PDF Dossier</span>
+                </button>
+              )}
+
+              {/* Zoom Controls */}
+              {activeTab === 'transcript' && (
+                <div className="hidden sm:flex items-center gap-1 bg-white border border-slate-200 rounded-xl px-2 py-1 shadow-sm">
+                  <button
+                    onClick={() => setZoom((z) => Math.max(75, z - 15))}
+                    className="p-1 text-slate-500 hover:text-slate-800 rounded hover:bg-slate-100 transition-colors"
+                    title="Zoom Out"
+                  >
+                    <MagnifyingGlassMinus size={14} />
+                  </button>
+                  <span className="text-[11px] font-mono font-medium text-slate-700 w-9 text-center">{zoom}%</span>
+                  <button
+                    onClick={() => setZoom((z) => Math.min(135, z + 15))}
+                    className="p-1 text-slate-500 hover:text-slate-800 rounded hover:bg-slate-100 transition-colors"
+                    title="Zoom In"
+                  >
+                    <MagnifyingGlassPlus size={14} />
+                  </button>
+                </div>
+              )}
+
+              <button
+                onClick={onClose}
+                className="p-1.5 sm:p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-xl transition-colors"
+                title="Close Dialog"
+              >
+                <X size={18} weight="bold" />
+              </button>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
-            {/* View Mode Tabs */}
-            <div className="flex items-center bg-slate-200/90 p-1 rounded-xl text-xs font-medium">
+          {/* View Mode Tabs (Touch Scrollable on Mobile) */}
+          <div className="mt-2.5 pt-2 border-t border-slate-200/60 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar touch-pan-x">
+            <div className="flex items-center bg-slate-200/90 p-0.5 sm:p-1 rounded-xl text-xs font-medium whitespace-nowrap">
               <button
                 onClick={() => setActiveTab('transcript')}
-                className={`px-3 py-1.5 rounded-lg transition-all ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition-all text-[11px] sm:text-xs ${
                   activeTab === 'transcript' ? 'bg-white text-slate-900 shadow-sm font-semibold' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Form 26 Transcript
+                Transcript
               </button>
               <button
                 onClick={() => setActiveTab('integrity_audit')}
-                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 text-[11px] sm:text-xs ${
                   activeTab === 'integrity_audit' ? 'bg-white text-slate-900 shadow-sm font-semibold' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <Scales size={14} weight="duotone" className="text-purple-600" />
-                <span>Integrity & Conflicts</span>
+                <span>Integrity</span>
                 {(candidate?.has_section_9a_conflict || candidate?.is_rpa_section_8_disqualified || (candidate?.defection_count ?? 0) > 0) && (
                   <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
                 )}
               </button>
               <button
                 onClick={() => setActiveTab('mplads')}
-                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 text-[11px] sm:text-xs ${
                   activeTab === 'mplads' ? 'bg-white text-slate-900 shadow-sm font-semibold' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <Bank size={14} weight="duotone" className="text-blue-600" />
-                MPLADS
+                <span>MPLADS</span>
               </button>
               <button
                 onClick={() => setActiveTab('wealth_history')}
-                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 text-[11px] sm:text-xs ${
                   activeTab === 'wealth_history' ? 'bg-white text-slate-900 shadow-sm font-semibold' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <TrendUp size={14} weight="bold" className="text-emerald-600" />
-                10-Yr Wealth
+                <span>10-Yr Wealth</span>
               </button>
               <button
                 onClick={() => setActiveTab('raw_pdf')}
-                className={`px-3 py-1.5 rounded-lg transition-all ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg transition-all text-[11px] sm:text-xs ${
                   activeTab === 'raw_pdf' ? 'bg-white text-slate-900 shadow-sm font-semibold' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Raw ECI
+                Raw PDF
               </button>
             </div>
-
-            {/* 1-Click PDF Export Button */}
-            {candidate && (
-              <button
-                onClick={() => exportCandidateDossierPdf(candidate)}
-                title="Download Court-Ready 1-Page Forensic Audit Dossier PDF"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 font-semibold text-xs rounded-xl border border-blue-200 transition-all shadow-sm"
-              >
-                <FilePdf size={15} weight="duotone" className="text-blue-600" />
-                <span>PDF Dossier</span>
-              </button>
-            )}
-
-            {/* Zoom Controls */}
-            {activeTab === 'transcript' && (
-              <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl px-2 py-1 shadow-sm">
-                <button
-                  onClick={() => setZoom((z) => Math.max(75, z - 15))}
-                  className="p-1 text-slate-500 hover:text-slate-800 rounded hover:bg-slate-100 transition-colors"
-                  title="Zoom Out"
-                >
-                  <MagnifyingGlassMinus size={14} />
-                </button>
-                <span className="text-[11px] font-mono font-medium text-slate-700 w-9 text-center">{zoom}%</span>
-                <button
-                  onClick={() => setZoom((z) => Math.min(135, z + 15))}
-                  className="p-1 text-slate-500 hover:text-slate-800 rounded hover:bg-slate-100 transition-colors"
-                  title="Zoom In"
-                >
-                  <MagnifyingGlassPlus size={14} />
-                </button>
-              </div>
-            )}
-
-            <div className="h-6 w-px bg-slate-200" />
-
-            <button
-              onClick={onClose}
-              className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-xl transition-colors"
-              title="Close Dialog"
-            >
-              <X size={18} weight="bold" />
-            </button>
           </div>
         </div>
 
         {/* Claim & Statutory Compliance Bar */}
-        <div className="px-6 py-2.5 bg-amber-50 border-b border-amber-200/80 flex items-center justify-between text-xs flex-shrink-0">
-          <div className="flex items-center gap-2 text-amber-950 flex-wrap">
-            <span className="font-semibold text-slate-700">Audited Claim:</span>
-            <span className="px-2 py-0.5 rounded bg-white border border-amber-300 font-medium">
+        <div className="px-4 sm:px-6 py-2 sm:py-2.5 bg-amber-50 border-b border-amber-200/80 flex items-center justify-between text-xs flex-shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 text-amber-950 flex-wrap">
+            <span className="font-semibold text-slate-700 text-[11px] sm:text-xs">Audited Claim:</span>
+            <span className="px-2 py-0.5 rounded bg-white border border-amber-300 font-medium text-[11px] sm:text-xs">
               {fieldLabel}
             </span>
-            <span className="px-2 py-0.5 rounded bg-amber-200/70 font-mono font-bold">
+            <span className="px-2 py-0.5 rounded bg-amber-200/70 font-mono font-bold text-[11px] sm:text-xs">
               {claimedValue}
             </span>
             <span className="text-[11px] text-amber-800/80 flex items-center gap-1 ml-2">

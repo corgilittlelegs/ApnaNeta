@@ -45,30 +45,30 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-slate-950/70 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-6xl max-h-[92vh] flex flex-col overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-6xl max-h-[92dvh] sm:max-h-[92vh] flex flex-col overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
         
         {/* Header Bar */}
-        <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-100 border border-blue-200 flex items-center justify-center text-blue-700 shadow-sm">
-              <Layers className="w-5 h-5" />
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between gap-3 sm:gap-4">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-100 border border-blue-200 flex items-center justify-center text-blue-700 shadow-sm flex-shrink-0">
+              <Layers className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-slate-900">Head-to-Head Candidate Matrix</h2>
-                <span className="text-xs bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded-full font-mono">
-                  {candidates.length} / 3 Candidates
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <h2 className="text-base sm:text-lg font-bold text-slate-900 truncate">Candidate Matrix</h2>
+                <span className="text-[10px] sm:text-xs bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded-full font-mono flex-shrink-0">
+                  {candidates.length}/3
                 </span>
               </div>
-              <p className="text-xs text-slate-500">
-                Comparative audit across sworn ECI Form 26 disclosures, Sansad attendance, and MPLADS velocity.
+              <p className="text-[11px] sm:text-xs text-slate-500 truncate sm:line-clamp-none">
+                Comparative audit across ECI Form 26 disclosures, Sansad attendance, and MPLADS.
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors"
+            className="p-1.5 sm:p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors flex-shrink-0"
             title="Close Comparison"
           >
             <X className="w-5 h-5" />
@@ -77,12 +77,12 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
 
         {/* Mobile Candidate Switcher Tab (< md) */}
         {candidates.length > 1 && (
-          <div className="md:hidden flex border-b border-slate-200 bg-slate-100/80 p-1.5 gap-1 overflow-x-auto">
+          <div className="md:hidden flex border-b border-slate-200 bg-slate-100/80 p-1.5 gap-1 overflow-x-auto no-scrollbar touch-pan-x">
             {candidates.map((cand, idx) => (
               <button
                 key={cand.id}
                 onClick={() => setActiveMobileIndex(idx)}
-                className={`flex-1 py-2 px-3 text-xs font-semibold rounded-lg truncate text-center transition-all ${
+                className={`flex-1 py-1.5 px-2.5 text-xs font-semibold rounded-lg truncate text-center transition-all whitespace-nowrap ${
                   activeMobileIndex === idx
                     ? 'bg-white text-blue-700 shadow-sm border border-slate-200'
                     : 'text-slate-600 hover:text-slate-900'

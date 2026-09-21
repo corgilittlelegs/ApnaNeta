@@ -229,96 +229,101 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
       </div>
 
       {/* Tabs Navigation */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-2 shadow-sm flex flex-wrap gap-1.5 items-center justify-between">
-        <div className="flex flex-wrap gap-1">
+      <div className="bg-white rounded-2xl border border-slate-200 p-2 sm:p-2.5 shadow-sm space-y-2 sm:space-y-0 sm:flex sm:flex-wrap sm:items-center sm:justify-between sm:gap-2">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 sm:pb-0 touch-pan-x sm:flex-wrap">
           <button
             onClick={() => setActiveTab('wealth_growth')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-semibold whitespace-nowrap flex-shrink-0 transition-all ${
               activeTab === 'wealth_growth'
                 ? 'bg-blue-600 text-white shadow-sm'
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
             <TrendingUp className="w-3.5 h-3.5" />
-            <span>
+            <span className="sm:hidden">Wealth Growth</span>
+            <span className="hidden sm:inline">
               {isCitizenMode ? 'Fastest Growing Wealth (तेज़ी से बढ़ती संपत्ति)' : 'Wealth Growth (CAGR)'}
             </span>
           </button>
 
           <button
             onClick={() => setActiveTab('discrepancy')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-semibold whitespace-nowrap flex-shrink-0 transition-all ${
               activeTab === 'discrepancy'
                 ? 'bg-rose-600 text-white shadow-sm'
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
             <AlertTriangle className="w-3.5 h-3.5" />
-            <span>
+            <span className="sm:hidden">Discrepancies</span>
+            <span className="hidden sm:inline">
               {isCitizenMode ? 'Affidavit Discrepancies (हलफ़नामा जांच)' : 'Discrepancy Watchlist'}
             </span>
           </button>
 
           <button
             onClick={() => setActiveTab('sansad')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-semibold whitespace-nowrap flex-shrink-0 transition-all ${
               activeTab === 'sansad'
                 ? 'bg-indigo-600 text-white shadow-sm'
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
             <CalendarCheck className="w-3.5 h-3.5" />
-            <span>
+            <span className="sm:hidden">Sansad Activity</span>
+            <span className="hidden sm:inline">
               {isCitizenMode ? 'Parliament Activity (संसद में सक्रियता)' : 'Sansad Attendance'}
             </span>
           </button>
 
           <button
             onClick={() => setActiveTab('mplads')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-semibold whitespace-nowrap flex-shrink-0 transition-all ${
               activeTab === 'mplads'
                 ? 'bg-emerald-600 text-white shadow-sm'
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
             <Landmark className="w-3.5 h-3.5" />
-            <span>
+            <span className="sm:hidden">MPLADS Spend</span>
+            <span className="hidden sm:inline">
               {isCitizenMode ? 'Local Fund Spending (सांसद निधि खर्च)' : 'MPLADS Fund Velocity'}
             </span>
           </button>
 
           <button
             onClick={() => setActiveTab('averages')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-semibold whitespace-nowrap flex-shrink-0 transition-all ${
               activeTab === 'averages'
                 ? 'bg-amber-600 text-white shadow-sm'
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
             <Award className="w-3.5 h-3.5" />
-            <span>
+            <span className="sm:hidden">State & Party</span>
+            <span className="hidden sm:inline">
               {isCitizenMode ? 'Party & State Comparison (राज्य और दल)' : 'State & Party Averages'}
             </span>
           </button>
         </div>
 
         {/* Global Filter Bar for Leaderboards */}
-        <div className="flex items-center gap-2 px-2 py-1">
-          <div className="relative">
+        <div className="flex items-center gap-2 w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+          <div className="relative flex-1 sm:flex-initial">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchFilter}
               onChange={(e) => setSearchFilter(e.target.value)}
               placeholder="Search politician or party..."
-              className="pl-8 pr-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200/60 focus:bg-white border border-transparent focus:border-blue-400 rounded-lg outline-none transition-all w-44 sm:w-56"
+              className="w-full sm:w-56 pl-8 pr-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200/60 focus:bg-white border border-transparent focus:border-blue-400 rounded-lg outline-none transition-all"
             />
           </div>
 
           <select
             value={houseFilter}
             onChange={(e) => setHouseFilter(e.target.value)}
-            className="text-xs bg-slate-100 border border-slate-200 rounded-lg px-2 py-1.5 font-medium text-slate-700 outline-none"
+            className="text-xs bg-slate-100 border border-slate-200 rounded-lg px-2 py-1.5 font-medium text-slate-700 outline-none flex-shrink-0 max-w-[115px] sm:max-w-none"
           >
             <option value="ALL">All Houses</option>
             <option value="Lok Sabha">Lok Sabha</option>
@@ -341,7 +346,101 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
             <span className="text-xs font-mono text-slate-500">{wealthGrowthRankings.length} tracked records</span>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Mobile Card View (< md) */}
+          <div className="md:hidden divide-y divide-slate-100">
+            {wealthGrowthRankings.length === 0 ? (
+              <div className="py-8 text-center text-slate-400 text-xs">
+                No historical wealth trajectories recorded matching current filters.
+              </div>
+            ) : (
+              wealthGrowthRankings.slice(0, 50).map((row, idx) => {
+                const isSelected = selectedForComparison.some((c) => c.id === row.candidate.id);
+                return (
+                  <div key={`${row.candidate.id}-${idx}`} className="p-3.5 hover:bg-slate-50/80 transition-colors">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className="font-mono font-bold text-xs text-slate-400 w-6 flex-shrink-0 text-center">
+                          {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
+                        </span>
+                        {row.candidate.photo_url ? (
+                          <img
+                            src={row.candidate.photo_url}
+                            alt={row.candidate.name}
+                            referrerPolicy="no-referrer"
+                            className="w-9 h-9 rounded-full object-cover border border-slate-200 shadow-2xs flex-shrink-0"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        ) : null}
+                        <div className="min-w-0">
+                          <h4 className="font-bold text-slate-900 text-xs sm:text-sm truncate leading-tight">
+                            {row.candidate.name}
+                          </h4>
+                          <p className="text-[11px] text-slate-500 truncate">
+                            {row.candidate.party || 'Independent'} • {row.candidate.constituency}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="text-right flex-shrink-0">
+                        <span
+                          className={`font-mono font-bold px-2 py-0.5 rounded text-[11px] inline-block ${
+                            row.growth.is_rapid_accumulation
+                              ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                              : 'bg-emerald-100 text-emerald-800'
+                          }`}
+                        >
+                          +{row.growth.percentage_increase}%
+                        </span>
+                        {row.growth.cagr_percent && (
+                          <span className="block text-[10px] font-mono text-blue-700 font-semibold mt-0.5">
+                            {row.growth.cagr_percent}% CAGR
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-600">
+                      <span className="font-mono text-[10.5px]">
+                        {formatINR(row.growth.initial_assets)} &rarr; {formatINR(row.growth.final_assets)}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => onToggleComparison(row.candidate)}
+                          className={`p-1.5 rounded-lg border transition-all ${
+                            isSelected
+                              ? 'bg-blue-600 text-white border-blue-600'
+                              : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200'
+                          }`}
+                          title={isSelected ? 'Remove from Comparison' : 'Add to Comparison'}
+                        >
+                          {isSelected ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                        </button>
+                        <button
+                          onClick={() => onOpenShareCard(row.candidate)}
+                          className="p-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 transition-colors"
+                          title="Share Report Card"
+                        >
+                          <Share2 className="w-3.5 h-3.5 text-emerald-600" />
+                        </button>
+                        <button
+                          onClick={() => exportCandidateDossierPdf(row.candidate)}
+                          className="p-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 transition-colors"
+                          title="Download Legal Dossier PDF"
+                        >
+                          <FileDown className="w-3.5 h-3.5 text-blue-600" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Desktop Table View (>= md) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50/70 text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
@@ -471,7 +570,86 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
             </span>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Mobile Card View (< md) */}
+          <div className="md:hidden divide-y divide-slate-100">
+            {discrepancyWatchlist.length === 0 ? (
+              <div className="py-8 text-center text-slate-400 text-xs">
+                Zero discrepancies detected in the active dataset.
+              </div>
+            ) : (
+              discrepancyWatchlist.map((cand, idx) => {
+                const totalDelta = Math.abs(cand.delta_movable) + Math.abs(cand.delta_immovable);
+                const isSelected = selectedForComparison.some((c) => c.id === cand.id);
+
+                return (
+                  <div key={cand.id} className="p-3.5 hover:bg-rose-50/30 transition-colors">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="font-mono font-bold text-xs text-rose-600 w-6 flex-shrink-0 text-center">
+                          #{idx + 1}
+                        </span>
+                        <div className="min-w-0">
+                          <h4 className="font-bold text-slate-900 text-xs sm:text-sm truncate leading-tight">
+                            {cand.name}
+                          </h4>
+                          <p className="text-[11px] text-slate-500 truncate">
+                            {cand.party || 'Independent'} • {cand.constituency}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="text-right flex-shrink-0">
+                        <span className="font-mono font-bold text-rose-700 bg-rose-100 px-2 py-0.5 rounded border border-rose-200 text-[11px]">
+                          {formatINR(totalDelta)} Δ
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                      <button
+                        onClick={() =>
+                          onVerifyProof(
+                            cand.name,
+                            'Forensic Mathematical Discrepancy',
+                            formatINR(totalDelta),
+                            cand.pdf_source_url,
+                            cand
+                          )
+                        }
+                        className="text-blue-600 hover:text-blue-800 font-medium hover:underline text-[11px]"
+                      >
+                        Inspect Scan &rarr;
+                      </button>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => onToggleComparison(cand)}
+                          className={`p-1.5 rounded-lg border transition-all ${
+                            isSelected
+                              ? 'bg-blue-600 text-white border-blue-600'
+                              : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200'
+                          }`}
+                          title={isSelected ? 'Remove from Comparison' : 'Add to Comparison'}
+                        >
+                          {isSelected ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                        </button>
+                        <button
+                          onClick={() => onOpenShareCard(cand)}
+                          className="p-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 transition-colors"
+                          title="Share Report Card"
+                        >
+                          <Share2 className="w-3.5 h-3.5 text-emerald-600" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Desktop Table View (>= md) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50/70 text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
@@ -601,7 +779,74 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Mobile Card View (< md) */}
+          <div className="md:hidden divide-y divide-slate-100">
+            {sansadRankings.slice(0, 50).map((cand, idx) => {
+              const isSelected = selectedForComparison.some((c) => c.id === cand.id);
+              const att = cand.attendance_rate || 0;
+
+              return (
+                <div key={cand.id} className="p-3.5 hover:bg-slate-50/80 transition-colors">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="font-mono font-bold text-xs text-slate-400 w-6 flex-shrink-0 text-center">
+                        #{idx + 1}
+                      </span>
+                      <div className="min-w-0">
+                        <h4 className="font-bold text-slate-900 text-xs sm:text-sm truncate leading-tight">
+                          {cand.name}
+                        </h4>
+                        <p className="text-[11px] text-slate-500 truncate">
+                          {cand.party || 'Independent'} • {cand.constituency} ({cand.house})
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="text-right flex-shrink-0">
+                      <span
+                        className={`font-mono font-bold text-xs ${
+                          att >= 80 ? 'text-emerald-700' : att >= 60 ? 'text-blue-700' : 'text-rose-700'
+                        }`}
+                      >
+                        {att}% Att.
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-600">
+                    <div className="flex items-center gap-2 text-[10.5px]">
+                      <span>Debates: <strong>{cand.debates_count ?? '—'}</strong></span>
+                      <span>•</span>
+                      <span>Questions: <strong>{cand.questions_count ?? '—'}</strong></span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => onToggleComparison(cand)}
+                        className={`p-1.5 rounded-lg border transition-all ${
+                          isSelected
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200'
+                        }`}
+                        title={isSelected ? 'Remove from Comparison' : 'Add to Comparison'}
+                      >
+                        {isSelected ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                      </button>
+                      <button
+                        onClick={() => onOpenShareCard(cand)}
+                        className="p-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 transition-colors"
+                        title="Share Report Card"
+                      >
+                        <Share2 className="w-3.5 h-3.5 text-emerald-600" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop Table View (>= md) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50/70 text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
@@ -731,7 +976,76 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Mobile Card View (< md) */}
+          <div className="md:hidden divide-y divide-slate-100">
+            {mpladsRankings.slice(0, 50).map((cand, idx) => {
+              const m = cand.mplads!;
+              const isSelected = selectedForComparison.some((c) => c.id === cand.id);
+
+              return (
+                <div key={cand.id} className="p-3.5 hover:bg-slate-50/80 transition-colors">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="font-mono font-bold text-xs text-slate-400 w-6 flex-shrink-0 text-center">
+                        #{idx + 1}
+                      </span>
+                      <div className="min-w-0">
+                        <h4 className="font-bold text-slate-900 text-xs sm:text-sm truncate leading-tight">
+                          {cand.constituency}, {cand.state}
+                        </h4>
+                        <p className="text-[11px] text-slate-500 truncate">
+                          {cand.name} ({cand.party || 'IND'})
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="text-right flex-shrink-0">
+                      <span
+                        className={`font-mono font-bold px-2 py-0.5 rounded text-[11px] inline-block ${
+                          m.utilization_rate < 60
+                            ? 'bg-rose-100 text-rose-800'
+                            : 'bg-emerald-100 text-emerald-800'
+                        }`}
+                      >
+                        {m.utilization_rate.toFixed(1)}% Spent
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-600">
+                    <div className="text-[10.5px]">
+                      <span className="font-mono">{formatINR(m.unspent_balance)} unspent</span>
+                      <span className="text-slate-400 block text-[9.5px]">
+                        Works: {m.works_completed}/{m.works_recommended}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => onToggleComparison(cand)}
+                        className={`p-1.5 rounded-lg border transition-all ${
+                          isSelected
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200'
+                        }`}
+                        title={isSelected ? 'Remove from Comparison' : 'Add to Comparison'}
+                      >
+                        {isSelected ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                      </button>
+                      <button
+                        onClick={() => onOpenShareCard(cand)}
+                        className="p-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-600 border border-slate-200"
+                      >
+                        <Share2 className="w-3.5 h-3.5 text-emerald-600" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop Table View (>= md) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50/70 text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
@@ -848,7 +1162,55 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Mobile Card View (< md) */}
+          <div className="md:hidden divide-y divide-slate-100">
+            {aggregateAverages.map((row) => (
+              <div key={row.groupKey} className="p-3.5 hover:bg-slate-50/80 transition-colors">
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <h4 className="font-bold text-slate-900 text-xs sm:text-sm">{row.groupKey}</h4>
+                  <span className="font-mono text-xs text-slate-500 font-medium">
+                    {row.count} MP{row.count === 1 ? '' : 's'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
+                  <div>
+                    <span className="text-[10px] text-slate-400 block">Avg Net Worth</span>
+                    <span className="font-mono font-bold text-slate-800">{formatINR(row.avgNetWorth)}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 block">Avg Attendance</span>
+                    <span className="font-mono font-bold text-slate-800">
+                      {row.avgAttendance !== null ? `${row.avgAttendance.toFixed(1)}%` : '—'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 block">Discrepancy Rate</span>
+                    <span
+                      className={`font-mono font-bold ${
+                        row.discrepancyRate > 15 ? 'text-rose-700' : 'text-emerald-700'
+                      }`}
+                    >
+                      {row.discrepancyRate.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 block">Serious Crime Rate</span>
+                    <span
+                      className={`font-mono font-bold ${
+                        row.seriousCrimeRate > 20 ? 'text-rose-700' : 'text-slate-700'
+                      }`}
+                    >
+                      {row.seriousCrimeRate.toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table View (>= md) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50/70 text-slate-500 font-semibold uppercase tracking-wider text-[10px]">

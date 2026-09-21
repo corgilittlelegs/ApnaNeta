@@ -53,22 +53,22 @@ export const ConstituencyFilter: React.FC<ConstituencyFilterProps> = ({
   return (
     <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-4 mb-6 transition-all">
       {/* Header Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
-        <div className="flex items-center gap-2.5">
-          <div className="p-1.5 bg-blue-50 text-blue-700 rounded-lg border border-blue-100">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-slate-100">
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          <div className="p-1.5 bg-blue-50 text-blue-700 rounded-lg border border-blue-100 flex-shrink-0">
             <MapPin size={16} weight="duotone" />
           </div>
           <div>
             <h3 className="font-serif font-bold text-sm tracking-tight text-slate-900">
               Constituency & Forensic Filter Dock
             </h3>
-            <p className="text-[11px] text-slate-500 font-sans">
+            <p className="text-[11px] text-slate-500 font-sans line-clamp-1 sm:line-clamp-none">
               Audit across India's 543 Lok Sabha seats, financial disclosures, and algorithmic flags
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
           <span className="text-xs font-mono tabular-nums font-bold px-2.5 py-1 bg-slate-100 text-slate-800 rounded-lg border border-slate-200">
             {totalMatches.toLocaleString()} matching MP{totalMatches === 1 ? '' : 's'}
           </span>
@@ -84,11 +84,11 @@ export const ConstituencyFilter: React.FC<ConstituencyFilterProps> = ({
       </div>
 
       {/* 1-Tap Quick Filter Pills (Touch Scrollable on Mobile) */}
-      <div className="flex items-center gap-2 overflow-x-auto py-3 no-scrollbar text-xs border-b border-slate-100 whitespace-nowrap">
-        <span className="text-[10px] uppercase font-mono font-semibold text-slate-400 pl-0.5">Quick Filters:</span>
+      <div className="flex items-center gap-2 overflow-x-auto py-3 -mx-4 px-4 sm:mx-0 sm:px-0 no-scrollbar text-xs border-b border-slate-100 whitespace-nowrap touch-pan-x">
+        <span className="text-[10px] uppercase font-mono font-semibold text-slate-400 pl-0.5 flex-shrink-0">Quick Filters:</span>
         <button
           onClick={() => handleQuickPill('ALL')}
-          className={`px-3 py-1 rounded-full text-xs font-semibold transition-all border ${
+          className={`px-3 py-1 rounded-full text-xs font-semibold transition-all border flex-shrink-0 ${
             filters.forensicFlag === 'ALL'
               ? 'bg-[#0A192F] text-white border-[#0A192F] shadow-2xs'
               : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
@@ -98,7 +98,7 @@ export const ConstituencyFilter: React.FC<ConstituencyFilterProps> = ({
         </button>
         <button
           onClick={() => handleQuickPill('DISCREPANCY')}
-          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold transition-all border ${
+          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold transition-all border flex-shrink-0 ${
             filters.forensicFlag === 'DISCREPANCY'
               ? 'bg-amber-600 text-white border-amber-600 shadow-2xs'
               : 'bg-amber-50 text-amber-800 border-amber-200/80 hover:bg-amber-100'
@@ -109,7 +109,7 @@ export const ConstituencyFilter: React.FC<ConstituencyFilterProps> = ({
         </button>
         <button
           onClick={() => handleQuickPill('RAPID_WEALTH')}
-          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold transition-all border ${
+          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold transition-all border flex-shrink-0 ${
             filters.forensicFlag === 'RAPID_WEALTH'
               ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
               : 'bg-blue-50 text-blue-800 border-blue-200/80 hover:bg-blue-100'
@@ -120,7 +120,7 @@ export const ConstituencyFilter: React.FC<ConstituencyFilterProps> = ({
         </button>
         <button
           onClick={() => handleQuickPill('CRIMINAL')}
-          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold transition-all border ${
+          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold transition-all border flex-shrink-0 ${
             filters.forensicFlag === 'CRIMINAL'
               ? 'bg-rose-600 text-white border-rose-600 shadow-2xs'
               : 'bg-rose-50 text-rose-800 border-rose-200/80 hover:bg-rose-100'
@@ -131,11 +131,11 @@ export const ConstituencyFilter: React.FC<ConstituencyFilterProps> = ({
         </button>
       </div>
 
-      {/* Advanced Filter Selectors Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 pt-3">
+      {/* Advanced Filter Selectors Grid (2-columns on mobile, saving vertical space) */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3 pt-3">
         {/* State Selection */}
         <div>
-          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 truncate">
             State / UT
           </label>
           <select
@@ -147,7 +147,7 @@ export const ConstituencyFilter: React.FC<ConstituencyFilterProps> = ({
                 constituency: 'ALL',
               })
             }
-            className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-slate-800 font-medium focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none transition-all cursor-pointer hover:border-slate-300"
+            className="w-full text-[11.5px] sm:text-xs bg-slate-50 border border-slate-200 rounded-xl px-2 sm:px-2.5 py-1.5 sm:py-2 text-slate-800 font-medium focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none transition-all cursor-pointer hover:border-slate-300 truncate"
           >
             <option value="ALL">All States / UTs ({availableStates.length})</option>
             {availableStates.map((s) => (
@@ -160,13 +160,13 @@ export const ConstituencyFilter: React.FC<ConstituencyFilterProps> = ({
 
         {/* Constituency Selection */}
         <div>
-          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 truncate">
             Constituency
           </label>
           <select
             value={filters.constituency}
             onChange={(e) => onFilterChange({ ...filters, constituency: e.target.value })}
-            className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-slate-800 font-medium focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none transition-all cursor-pointer hover:border-slate-300"
+            className="w-full text-[11.5px] sm:text-xs bg-slate-50 border border-slate-200 rounded-xl px-2 sm:px-2.5 py-1.5 sm:py-2 text-slate-800 font-medium focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none transition-all cursor-pointer hover:border-slate-300 truncate"
           >
             <option value="ALL">All Constituencies</option>
             {availableConstituencies.map((c) => (
@@ -179,13 +179,13 @@ export const ConstituencyFilter: React.FC<ConstituencyFilterProps> = ({
 
         {/* Political Party Selection */}
         <div>
-          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-            Political Party
+          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 truncate">
+            Party
           </label>
           <select
             value={filters.party}
             onChange={(e) => onFilterChange({ ...filters, party: e.target.value })}
-            className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-slate-800 font-medium focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none transition-all cursor-pointer hover:border-slate-300"
+            className="w-full text-[11.5px] sm:text-xs bg-slate-50 border border-slate-200 rounded-xl px-2 sm:px-2.5 py-1.5 sm:py-2 text-slate-800 font-medium focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none transition-all cursor-pointer hover:border-slate-300 truncate"
           >
             <option value="ALL">All Parties</option>
             {availableParties.map((p) => (
@@ -198,8 +198,8 @@ export const ConstituencyFilter: React.FC<ConstituencyFilterProps> = ({
 
         {/* Forensic Audit Flag Filter */}
         <div>
-          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-            Forensic Audit Flag
+          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 truncate">
+            Audit Flag
           </label>
           <select
             value={filters.forensicFlag}
@@ -209,20 +209,20 @@ export const ConstituencyFilter: React.FC<ConstituencyFilterProps> = ({
                 forensicFlag: e.target.value as FilterState['forensicFlag'],
               })
             }
-            className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-slate-800 font-medium focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none transition-all cursor-pointer hover:border-slate-300"
+            className="w-full text-[11.5px] sm:text-xs bg-slate-50 border border-slate-200 rounded-xl px-2 sm:px-2.5 py-1.5 sm:py-2 text-slate-800 font-medium focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none transition-all cursor-pointer hover:border-slate-300 truncate"
           >
             <option value="ALL">All Candidates</option>
-            <option value="DISCREPANCY">⚠️ Discrepancy Flagged</option>
-            <option value="HIGH_WDR">📈 High WDR Ratio Anomaly</option>
-            <option value="CRIMINAL">⚖️ Declared Criminal Charges</option>
-            <option value="LOW_MPLADS">📉 Low MPLADS Spend (&lt;60%)</option>
-            <option value="RAPID_WEALTH">🚀 Rapid Wealth Surge (&ge;300%)</option>
+            <option value="DISCREPANCY">⚠️ Discrepancy</option>
+            <option value="HIGH_WDR">📈 High WDR Ratio</option>
+            <option value="CRIMINAL">⚖️ Criminal Charges</option>
+            <option value="LOW_MPLADS">📉 Low MPLADS (&lt;60%)</option>
+            <option value="RAPID_WEALTH">🚀 Wealth Surge (≥300%)</option>
           </select>
         </div>
 
-        {/* Wealth Tier Filter */}
-        <div>
-          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+        {/* Wealth Tier Filter (Spans across 2 cols on mobile) */}
+        <div className="col-span-2 sm:col-span-1 lg:col-span-1">
+          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 truncate">
             Declared Net Worth
           </label>
           <select
@@ -233,7 +233,7 @@ export const ConstituencyFilter: React.FC<ConstituencyFilterProps> = ({
                 wealthTier: e.target.value as FilterState['wealthTier'],
               })
             }
-            className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-slate-800 font-medium focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none transition-all cursor-pointer hover:border-slate-300"
+            className="w-full text-[11.5px] sm:text-xs bg-slate-50 border border-slate-200 rounded-xl px-2 sm:px-2.5 py-1.5 sm:py-2 text-slate-800 font-medium focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none transition-all cursor-pointer hover:border-slate-300 truncate"
           >
             <option value="ALL">All Wealth Tiers</option>
             <option value="100CR_PLUS">&ge; ₹100 Crore</option>

@@ -528,33 +528,33 @@ const AppContent: React.FC = () => {
           </div>
 
           {/* Quick Telemetry Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-6">
-            <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80 shadow-2xs">
-              <span className="text-[11px] text-slate-500 font-medium block">MPs & Candidates Indexed</span>
-              <p className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-slate-900 mt-1">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4 mt-6">
+            <div className="p-3 sm:p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80 shadow-2xs">
+              <span className="text-[10px] sm:text-[11px] text-slate-500 font-medium block truncate">MPs & Candidates</span>
+              <p className="text-lg sm:text-2xl font-bold font-mono tabular-nums text-slate-900 mt-0.5 sm:mt-1">
                 {(totalDatabaseCount || candidates.length).toLocaleString()}
               </p>
-              <span className="text-[10px] text-emerald-700 font-medium">
+              <span className="text-[9.5px] sm:text-[10px] text-emerald-700 font-medium block truncate">
                 {isLiveConnected ? 'Live from Supabase' : 'Verified OpenSanctions'}
               </span>
             </div>
 
-            <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80 shadow-2xs">
-              <span className="text-[11px] text-slate-500 font-medium block">Double-Entry Audits</span>
-              <p className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-slate-900 mt-1">100%</p>
-              <span className="text-[10px] text-slate-500">Automated arithmetic checks</span>
+            <div className="p-3 sm:p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80 shadow-2xs">
+              <span className="text-[10px] sm:text-[11px] text-slate-500 font-medium block truncate">Double-Entry Audits</span>
+              <p className="text-lg sm:text-2xl font-bold font-mono tabular-nums text-slate-900 mt-0.5 sm:mt-1">100%</p>
+              <span className="text-[9.5px] sm:text-[10px] text-slate-500 block truncate">Automated checks</span>
             </div>
 
-            <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80 shadow-2xs">
-              <span className="text-[11px] text-slate-500 font-medium block">MoSPI MPLADS Velocity</span>
-              <p className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-slate-900 mt-1">10-Yr Flow</p>
-              <span className="text-[10px] text-blue-700 font-medium">Constituency Fund Tracking</span>
+            <div className="p-3 sm:p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80 shadow-2xs">
+              <span className="text-[10px] sm:text-[11px] text-slate-500 font-medium block truncate">MPLADS Velocity</span>
+              <p className="text-lg sm:text-2xl font-bold font-mono tabular-nums text-slate-900 mt-0.5 sm:mt-1">10-Yr Flow</p>
+              <span className="text-[9.5px] sm:text-[10px] text-blue-700 font-medium block truncate">Fund Tracking</span>
             </div>
 
-            <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80 shadow-2xs">
-              <span className="text-[11px] text-slate-500 font-medium block">Monthly Operating Cost</span>
-              <p className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-emerald-700 mt-1">$0.00</p>
-              <span className="text-[10px] text-slate-500">100% Free Public Good</span>
+            <div className="p-3 sm:p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80 shadow-2xs">
+              <span className="text-[10px] sm:text-[11px] text-slate-500 font-medium block truncate">Operating Cost</span>
+              <p className="text-lg sm:text-2xl font-bold font-mono tabular-nums text-emerald-700 mt-0.5 sm:mt-1">$0.00</p>
+              <span className="text-[9.5px] sm:text-[10px] text-slate-500 block truncate">100% Free Public Good</span>
             </div>
           </div>
         </div>
@@ -642,35 +642,39 @@ const AppContent: React.FC = () => {
 
       {/* Sticky Bottom Comparison Drawer */}
       {selectedForComparison.length > 0 && (
-        <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-40 bg-[#0A192F] text-white rounded-2xl shadow-2xl px-4 sm:px-6 py-3 border border-slate-700 flex items-center gap-3 sm:gap-5 animate-in slide-in-from-bottom-6 max-w-[95vw]">
-          <div className="flex items-center gap-2">
+        <div className="fixed bottom-[4.75rem] md:bottom-6 left-1/2 -translate-x-1/2 z-40 bg-[#0A192F] text-white rounded-2xl shadow-2xl px-3 sm:px-5 py-2.5 sm:py-3 border border-slate-700 flex items-center justify-between gap-2 sm:gap-4 animate-in slide-in-from-bottom-6 w-[calc(100%-1.25rem)] max-w-xl">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
             <Stack size={18} weight="duotone" className="text-blue-400 flex-shrink-0" />
             <span className="text-xs font-semibold hidden md:inline">Compare:</span>
-            <div className="flex items-center gap-1.5 overflow-x-auto max-w-[200px] sm:max-w-xs md:max-w-md">
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar max-w-[130px] sm:max-w-xs md:max-w-md">
               {selectedForComparison.map((c) => (
                 <div
                   key={c.id}
-                  className="flex items-center gap-1.5 bg-slate-800 text-xs px-2.5 py-1 rounded-lg border border-slate-700 whitespace-nowrap"
+                  className="flex items-center gap-1 bg-slate-800 text-xs px-2 py-1 rounded-lg border border-slate-700 whitespace-nowrap flex-shrink-0"
                 >
-                  <span className="truncate max-w-[90px] font-medium">{c.name.split(' ')[0]}</span>
+                  <span className="truncate max-w-[70px] sm:max-w-[90px] font-medium text-[11px] sm:text-xs">
+                    {c.name.split(' ')[0]}
+                  </span>
                   <button
                     onClick={() => handleRemoveFromComparison(c.id)}
                     className="text-slate-400 hover:text-rose-400 p-0.5 rounded transition-colors"
                     title="Remove"
                   >
-                    <X size={12} weight="bold" />
+                    <X size={11} weight="bold" />
                   </button>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
             <button
               onClick={() => setIsComparisonOpen(true)}
-              className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center gap-1 cursor-pointer active:scale-95 whitespace-nowrap"
             >
-              <span>Side-by-Side ({selectedForComparison.length})</span>
+              <span className="hidden sm:inline">Side-by-Side</span>
+              <span className="sm:hidden">Compare</span>
+              <span>({selectedForComparison.length})</span>
               <ArrowRight size={13} weight="bold" />
             </button>
             <button
@@ -684,10 +688,10 @@ const AppContent: React.FC = () => {
       )}
 
       {/* Mobile Sticky Bottom Navigation Dock */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-[#0A192F]/95 backdrop-blur-md border-t border-slate-800 flex items-center justify-around h-16 px-2 text-white shadow-lg">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-[#0A192F]/95 backdrop-blur-md border-t border-slate-800 flex items-center justify-around h-16 px-2 pb-[env(safe-area-inset-bottom,0px)] text-white shadow-lg">
         <button
           onClick={() => setActiveView('directory')}
-          className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${
+          className={`flex flex-col items-center justify-center flex-1 py-1 min-h-[48px] transition-colors ${
             activeView === 'directory' ? 'text-blue-400 font-bold' : 'text-slate-400 hover:text-slate-200'
           }`}
         >
@@ -697,7 +701,7 @@ const AppContent: React.FC = () => {
 
         <button
           onClick={() => setActiveView('leaderboards')}
-          className={`flex flex-col items-center justify-center flex-1 py-1 transition-colors ${
+          className={`flex flex-col items-center justify-center flex-1 py-1 min-h-[48px] transition-colors ${
             activeView === 'leaderboards' ? 'text-amber-400 font-bold' : 'text-slate-400 hover:text-slate-200'
           }`}
         >
@@ -711,12 +715,12 @@ const AppContent: React.FC = () => {
               setIsComparisonOpen(true);
             }
           }}
-          className="flex flex-col items-center justify-center flex-1 py-1 text-slate-400 hover:text-slate-200 relative"
+          className="flex flex-col items-center justify-center flex-1 py-1 min-h-[48px] text-slate-400 hover:text-slate-200 relative"
         >
           <Scales size={20} weight="duotone" />
           <span className="text-[10px] mt-0.5 font-sans">Compare</span>
           {selectedForComparison.length > 0 && (
-            <span className="absolute top-1 right-5 w-4 h-4 bg-blue-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center font-mono">
+            <span className="absolute top-1 right-1/4 sm:right-6 w-4 h-4 bg-blue-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center font-mono">
               {selectedForComparison.length}
             </span>
           )}

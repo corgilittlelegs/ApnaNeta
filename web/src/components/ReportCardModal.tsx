@@ -110,41 +110,41 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-slate-950/75 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl flex flex-col overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[92dvh] sm:max-h-[92vh] flex flex-col overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
         
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-emerald-100 border border-emerald-200 flex items-center justify-center text-emerald-700">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between gap-3 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-emerald-100 border border-emerald-200 flex items-center justify-center text-emerald-700 flex-shrink-0">
               <Sparkles className="w-4 h-4" />
             </div>
-            <div>
-              <h2 className="text-base font-bold text-slate-900">Citizen Report Card Graphic</h2>
-              <p className="text-xs text-slate-500">1080x1080 PNG • Ready for WhatsApp & Social Sharing</p>
+            <div className="min-w-0">
+              <h2 className="text-sm sm:text-base font-bold text-slate-900 truncate">Citizen Report Card Graphic</h2>
+              <p className="text-[11px] sm:text-xs text-slate-500 truncate">1080x1080 PNG • Ready for WhatsApp & Social</p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors flex-shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Body: Graphic Preview */}
-        <div className="p-6 bg-slate-900/95 flex flex-col items-center justify-center min-h-[380px]">
+        <div className="p-3 sm:p-6 bg-slate-900/95 flex flex-col items-center justify-center min-h-[260px] sm:min-h-[380px] max-h-[50vh] overflow-hidden">
           {isGenerating ? (
             <div className="flex flex-col items-center gap-3 text-slate-300">
               <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
               <p className="text-xs font-mono">Generating high-contrast audit graphic...</p>
             </div>
           ) : dataUrl ? (
-            <div className="relative group max-w-sm sm:max-w-md w-full shadow-2xl rounded-2xl overflow-hidden border border-slate-700/80">
+            <div className="relative group max-w-xs sm:max-w-md w-full shadow-2xl rounded-2xl overflow-hidden border border-slate-700/80 max-h-[45vh] sm:max-h-[55vh] flex items-center justify-center">
               <img
                 src={dataUrl}
                 alt={`${candidate.name} Civic Report Card`}
-                className="w-full h-auto object-contain select-none"
+                className="w-full max-h-[45vh] sm:max-h-[55vh] object-contain select-none"
               />
             </div>
           ) : (
