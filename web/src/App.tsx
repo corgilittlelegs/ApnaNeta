@@ -27,6 +27,238 @@ import {
 import { PROMINENT_PARTY_MAP } from './data/politicianLookup';
 import { CIVIC_IMPACT_BENCHMARKS } from './utils/civicConstants';
 
+const CANDIDATE_SELECT_QUERY =
+  'select=*,sansad_records(attendance_rate,debates_count,questions_count),affidavits(id,filing_year,source_url,r2_storage_key,audit_discrepancies(*),criminal_cases(*)),mplads_records(*),mplads_works(*),historical_wealth_cagr(*),conflict_of_interest_audits(*),political_mobility_records(*),corporate_associations(*)';
+
+function parseCandidateRow(row: any): Candidate {
+  const sansad = Array.isArray(row.sansad_records) && row.sansad_records.length > 0 ? row.sansad_records[0] : null;
+  const attendance = sansad?.attendance_rate != null ? Number(sansad.attendance_rate) : undefined;
+  const debates = sansad?.debates_count != null ? Number(sansad.debates_count) : undefined;
+  const questions = sansad?.questions_count != null ? Number(sansad.questions_count) : undefined;
+
+  const aff = Array.isArray(row.affidavits) && row.affidavits.length > 0 ? row.affidavits[0] : null;
+  const audit = aff?.audit_discrepancies && Array.isArray(aff.audit_discrepancies) && aff.audit_discrepancies.length > 0
+    ? aff.audit_discrepancies[0]
+    : (aff?.audit_discrepancies && !Array.isArray(aff.audit_discrepancies) ? aff.audit_discrepancies : null);
+  const cases = aff && Array.isArray(aff.criminal_cases) ? aff.criminal_cases : [];
+
+  const totalMovable = Number(audit?.part_b_movable_total ?? row.total_movable_assets ?? 0.0);
+  const totalImmovable = Number(audit?.part_b_immovable_total ?? row.total_immovable_assets ?? 0.0);
+  const totalLiabilities = Number(row.total_liabilities ?? 0.0);
+  const totalNetWorth = Number(audit?.total_net_worth ?? row.total_net_worth ?? 0.0);
+  const totalIncome = Number(audit?.total_five_year_declared_income ?? row.total_five_year_income ?? 0.0);
+  const deltaMovable = Number(audit?.delta_movable ?? row.delta_movable ?? 0.0);
+  const deltaImmovable = Number(audit?.delta_immovable ?? row.delta_immovable ?? 0.0);
+  const hasArithDiscrepancy = Boolean(audit?.has_arithmetic_discrepancy ?? row.has_arithmetic_discrepancy ?? false);
+  const wdr = audit?.wealth_discrepancy_ratio != null
+    ? Number(audit.wealth_discrepancy_ratio)
+    : (row.wealth_discrepancy_ratio != null ? Number(row.wealth_discrepancy_ratio) : 1.0);
+  const hasAnomalousWdr = Boolean(audit?.has_anomalous_wealth_ratio ?? row.has_anomalous_wealth_ratio ?? false);
+
+  const parsedDockets = cases.map((c: any) => ({
+    id: c.id,
+    case_type: c.case_type,
+    fir_or_case_number: c.fir_or_case_number || 'Case',
+    police_station: c.police_station,
+    court_name: c.court_name,
+    statutory_charges: c.statutory_charges,
+    charges_framed: c.charges_framed,
+    charges_framed_date: c.charges_framed_date,
+    is_serious_category: c.is_serious_category,
+    category_justification: c.category_justification,
+    cnr_number: c.cnr_number,
+    ecourts_verified: Boolean(c.ecourts_verified),
+    ecourts_stage: c.ecourts_stage,
+    is_rpa_section_8_disqualified: Boolean(c.is_rpa_section_8_disqualified),
+  }));
+
+  const crimCount = parsedDockets.length > 0 ? parsedDockets.length : Number(row.criminal_cases_count ?? 0);
+  const seriousCount = parsedDockets.length > 0
+    ? parsedDockets.filter((c: any) => c.is_serious_category).length
+    : Number(row.serious_criminal_cases_count ?? 0);
+  const protestCount = Number(row.protest_cases_count ?? 0);
+  const isDisqualified = parsedDockets.some((d: any) => d.is_rpa_section_8_disqualified);
+
+  const conflictList = Array.isArray(row.conflict_of_interest_audits) ? row.conflict_of_interest_audits : [];
+  const hasConflict = conflictList.length > 0;
+
+  const mobilityList = Array.isArray(row.political_mobility_records) ? row.political_mobility_records : [];
+  const defectionCount = mobilityList.length;
+
+  const corpList = Array.isArray(row.corporate_associations) ? row.corporate_associations : [];
+
+  const pdfSourceUrl = aff?.source_url || row.pdf_source_url || 'https://affidavit.eci.gov.in';
+  const r2Key = aff?.r2_storage_key || row.r2_storage_key || undefined;
+
+  // Parse MoSPI MPLADS Record if available
+  const mpladsRaw = Array.isArray(row.mplads_records) && row.mplads_records.length > 0 ? row.mplads_records[0] : null;
+  const mpladsRecord = mpladsRaw
+    ? {
+        entitled_amount: Number(mpladsRaw.entitled_amount ?? CIVIC_IMPACT_BENCHMARKS.DEFAULT_5YR_MPLADS_ENTITLEMENT),
+        released_amount: Number(mpladsRaw.released_amount ?? 0.0),
+        expenditure_amount: Number(mpladsRaw.expenditure_amount ?? 0.0),
+        unspent_balance: Number(mpladsRaw.unspent_balance ?? 0.0),
+        utilization_rate: Number(mpladsRaw.utilization_rate ?? 0.0),
+        works_recommended: Number(mpladsRaw.works_recommended ?? 0),
+        works_completed: Number(mpladsRaw.works_completed ?? 0),
+        term_years: mpladsRaw.term_years || '2019-2024',
+      }
+    : undefined;
+
+  // Parse Historical Wealth CAGR if available
+  const cagrRawList = Array.isArray(row.historical_wealth_cagr) ? row.historical_wealth_cagr : [];
+  const cagrRecords =
+    cagrRawList.length > 0
+      ? cagrRawList.map((c: any) => ({
+          from_year: Number(c.from_year),
+          to_year: Number(c.to_year),
+          initial_assets: Number(c.initial_assets),
+          final_assets: Number(c.final_assets),
+          absolute_increase: Number(c.absolute_increase),
+          percentage_increase: Number(c.percentage_increase),
+          cagr_percent: c.cagr_percent != null ? Number(c.cagr_percent) : undefined,
+          is_rapid_accumulation: Boolean(c.is_rapid_accumulation),
+        }))
+      : undefined;
+
+  const known = PROMINENT_PARTY_MAP[row.name ? row.name.toLowerCase().trim() : ''];
+  const resolvedParty =
+    known?.party ||
+    (row.party && row.party !== 'Parliamentarian' && row.party !== 'None' && row.party !== 'null' && row.party !== 'Unknown'
+      ? row.party
+      : 'Independent');
+  const resolvedState =
+    known?.state ||
+    (row.state && row.state !== 'India' && row.state !== 'National'
+      ? row.state
+      : (row.state || 'India'));
+  const resolvedConstituency =
+    known?.constituency ||
+    (row.constituency && row.constituency !== 'Parliament of India' && row.constituency !== 'National'
+      ? row.constituency
+      : (row.constituency || 'National'));
+
+  const rawHouse = row.house ? String(row.house).trim() : '';
+  let resolvedHouse: 'Lok Sabha' | 'Rajya Sabha' | 'Vidhan Sabha' = known?.house || 'Lok Sabha';
+  if (!known?.house) {
+    if (rawHouse === 'Rajya Sabha') {
+      resolvedHouse = 'Rajya Sabha';
+    } else if (rawHouse.includes('Vidhan')) {
+      resolvedHouse = 'Vidhan Sabha';
+    } else {
+      resolvedHouse = 'Lok Sabha';
+    }
+  }
+
+  // Parse MoSPI e-SAKSHI Granular Public Works if available
+  const worksRawList = Array.isArray(row.mplads_works) ? row.mplads_works : [];
+  const worksRecords =
+    worksRawList.length > 0
+      ? worksRawList.map((w: any) => ({
+          work_id: String(w.work_id || w.id),
+          work_title: String(w.work_title || 'Community Development Work'),
+          sector: w.sector || undefined,
+          sanctioned_amount: Number(w.sanctioned_amount ?? 0),
+          expenditure_amount: Number(w.expenditure_amount ?? 0),
+          status: String(w.status || 'Sanctioned'),
+          latitude: w.latitude != null ? Number(w.latitude) : null,
+          longitude: w.longitude != null ? Number(w.longitude) : null,
+          sc_st_category: w.sc_st_category || undefined,
+          completion_date: w.completion_date || undefined,
+          gis_verified: Boolean(w.gis_verified),
+          constituency_boundary_valid: w.constituency_boundary_valid != null ? Boolean(w.constituency_boundary_valid) : undefined,
+          duplicate_coordinate_flag: Boolean(w.duplicate_coordinate_flag),
+          ghost_project_risk: w.ghost_project_risk || 'LOW',
+          gis_audit_notes: w.gis_audit_notes || undefined,
+        }))
+      : undefined;
+
+  return {
+    id: String(row.id),
+    name: row.name,
+    alias: row.alias || undefined,
+    constituency: resolvedConstituency,
+    state: resolvedState,
+    house: resolvedHouse,
+    party: resolvedParty,
+    filing_year: aff?.filing_year || 2024,
+    total_movable_assets: totalMovable,
+    total_immovable_assets: totalImmovable,
+    total_liabilities: totalLiabilities,
+    total_net_worth: totalNetWorth,
+    total_five_year_income: totalIncome,
+    criminal_cases_count: crimCount,
+    serious_criminal_cases_count: seriousCount,
+    protest_cases_count: protestCount,
+    dockets: parsedDockets,
+    is_rpa_section_8_disqualified: isDisqualified,
+    attendance_rate: attendance,
+    debates_count: debates,
+    questions_count: questions,
+    mplads: mpladsRecord,
+    mplads_works: worksRecords,
+    historical_wealth: cagrRecords,
+    has_section_9a_conflict: hasConflict,
+    conflicts_of_interest: conflictList,
+    corporate_associations: corpList,
+    political_mobility: mobilityList,
+    defection_count: defectionCount,
+    has_arithmetic_discrepancy: hasArithDiscrepancy,
+    delta_movable: deltaMovable,
+    delta_immovable: deltaImmovable,
+    wealth_discrepancy_ratio: wdr,
+    has_anomalous_wealth_ratio: hasAnomalousWdr,
+    pdf_source_url: pdfSourceUrl,
+    r2_storage_key: r2Key,
+    photo_url: row.photo_url || undefined,
+    photo_source: row.photo_source || undefined,
+    photo_attribution: row.photo_attribution || undefined,
+    photo_license_url: row.photo_license_url || undefined,
+  };
+}
+
+function mergeCandidatesIntoMap(map: Map<string, Candidate>, newCandidates: Candidate[]) {
+  for (const cand of newCandidates) {
+    const key = `${cand.name.toLowerCase().trim()}::${cand.house.toLowerCase()}`;
+    const existing = map.get(key);
+    if (!existing) {
+      map.set(key, cand);
+    } else {
+      const merged: Candidate = {
+        ...existing,
+        constituency:
+          existing.constituency !== 'Parliament of India' && existing.constituency !== 'National'
+            ? existing.constituency
+            : cand.constituency,
+        state:
+          existing.state !== 'India' && existing.state !== 'National'
+            ? existing.state
+            : cand.state,
+        party:
+          existing.party !== 'Independent' && existing.party !== 'Parliamentarian'
+            ? existing.party
+            : cand.party,
+        attendance_rate: existing.attendance_rate ?? cand.attendance_rate,
+        debates_count: existing.debates_count ?? cand.debates_count,
+        questions_count: existing.questions_count ?? cand.questions_count,
+        mplads: existing.mplads ?? cand.mplads,
+        mplads_works: existing.mplads_works ?? cand.mplads_works,
+        historical_wealth: existing.historical_wealth ?? cand.historical_wealth,
+        photo_url: existing.photo_url ?? cand.photo_url,
+        photo_source: existing.photo_source ?? cand.photo_source,
+        photo_attribution: existing.photo_attribution ?? cand.photo_attribution,
+        photo_license_url: existing.photo_license_url ?? cand.photo_license_url,
+        total_net_worth: existing.total_net_worth > 0 ? existing.total_net_worth : cand.total_net_worth,
+        total_movable_assets: existing.total_movable_assets > 0 ? existing.total_movable_assets : cand.total_movable_assets,
+        total_immovable_assets: existing.total_immovable_assets > 0 ? existing.total_immovable_assets : cand.total_immovable_assets,
+        criminal_cases_count: Math.max(existing.criminal_cases_count, cand.criminal_cases_count),
+        dockets: existing.dockets && existing.dockets.length > 0 ? existing.dockets : cand.dockets,
+      };
+      map.set(key, merged);
+    }
+  }
+}
+
 const AppContent: React.FC = () => {
   const { isCitizenMode } = useViewMode();
   const [isCivicGuideOpen, setIsCivicGuideOpen] = useState<boolean>(false);
@@ -34,6 +266,7 @@ const AppContent: React.FC = () => {
   const [totalDatabaseCount, setTotalDatabaseCount] = useState<number>(0);
   const [displayLimit, setDisplayLimit] = useState<number>(50);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isSearching, setIsSearching] = useState<boolean>(false);
   const [isLiveConnected, setIsLiveConnected] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedHouse, setSelectedHouse] = useState('ALL');
@@ -76,6 +309,7 @@ const AppContent: React.FC = () => {
     wealthTier: 'ALL',
   });
 
+  // Initial fetch: first 1,000 candidates + total record count
   useEffect(() => {
     const metaEnv = (import.meta as any).env || {};
     const rawUrl = String(metaEnv.VITE_SUPABASE_URL || '').trim();
@@ -91,7 +325,7 @@ const AppContent: React.FC = () => {
       setIsLoading(true);
       try {
         const res = await fetch(
-          `${cleanUrl}/rest/v1/candidates?select=*,sansad_records(attendance_rate,debates_count,questions_count),affidavits(id,filing_year,source_url,r2_storage_key,audit_discrepancies(*),criminal_cases(*)),mplads_records(*),mplads_works(*),historical_wealth_cagr(*),conflict_of_interest_audits(*),political_mobility_records(*),corporate_associations(*)&order=name.asc&limit=10000`,
+          `${cleanUrl}/rest/v1/candidates?${CANDIDATE_SELECT_QUERY}&order=name.asc&limit=1000`,
           {
             headers: {
               apikey: rawKey,
@@ -115,235 +349,9 @@ const AppContent: React.FC = () => {
 
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
-          const dbCandidates: Candidate[] = data.map((row: any) => {
-              const sansad = Array.isArray(row.sansad_records) && row.sansad_records.length > 0 ? row.sansad_records[0] : null;
-              const attendance = sansad?.attendance_rate != null ? Number(sansad.attendance_rate) : undefined;
-              const debates = sansad?.debates_count != null ? Number(sansad.debates_count) : undefined;
-              const questions = sansad?.questions_count != null ? Number(sansad.questions_count) : undefined;
-
-              const aff = Array.isArray(row.affidavits) && row.affidavits.length > 0 ? row.affidavits[0] : null;
-              const audit = aff?.audit_discrepancies && Array.isArray(aff.audit_discrepancies) && aff.audit_discrepancies.length > 0
-                ? aff.audit_discrepancies[0]
-                : (aff?.audit_discrepancies && !Array.isArray(aff.audit_discrepancies) ? aff.audit_discrepancies : null);
-              const cases = aff && Array.isArray(aff.criminal_cases) ? aff.criminal_cases : [];
-
-              const totalMovable = Number(audit?.part_b_movable_total ?? row.total_movable_assets ?? 0.0);
-              const totalImmovable = Number(audit?.part_b_immovable_total ?? row.total_immovable_assets ?? 0.0);
-              const totalLiabilities = Number(row.total_liabilities ?? 0.0);
-              const totalNetWorth = Number(audit?.total_net_worth ?? row.total_net_worth ?? 0.0);
-              const totalIncome = Number(audit?.total_five_year_declared_income ?? row.total_five_year_income ?? 0.0);
-              const deltaMovable = Number(audit?.delta_movable ?? row.delta_movable ?? 0.0);
-              const deltaImmovable = Number(audit?.delta_immovable ?? row.delta_immovable ?? 0.0);
-              const hasArithDiscrepancy = Boolean(audit?.has_arithmetic_discrepancy ?? row.has_arithmetic_discrepancy ?? false);
-              const wdr = audit?.wealth_discrepancy_ratio != null
-                ? Number(audit.wealth_discrepancy_ratio)
-                : (row.wealth_discrepancy_ratio != null ? Number(row.wealth_discrepancy_ratio) : 1.0);
-              const hasAnomalousWdr = Boolean(audit?.has_anomalous_wealth_ratio ?? row.has_anomalous_wealth_ratio ?? false);
-
-              const parsedDockets = cases.map((c: any) => ({
-                id: c.id,
-                case_type: c.case_type,
-                fir_or_case_number: c.fir_or_case_number || 'Case',
-                police_station: c.police_station,
-                court_name: c.court_name,
-                statutory_charges: c.statutory_charges,
-                charges_framed: c.charges_framed,
-                charges_framed_date: c.charges_framed_date,
-                is_serious_category: c.is_serious_category,
-                category_justification: c.category_justification,
-                cnr_number: c.cnr_number,
-                ecourts_verified: Boolean(c.ecourts_verified),
-                ecourts_stage: c.ecourts_stage,
-                is_rpa_section_8_disqualified: Boolean(c.is_rpa_section_8_disqualified),
-              }));
-
-              const crimCount = parsedDockets.length > 0 ? parsedDockets.length : Number(row.criminal_cases_count ?? 0);
-              const seriousCount = parsedDockets.length > 0
-                ? parsedDockets.filter((c: any) => c.is_serious_category).length
-                : Number(row.serious_criminal_cases_count ?? 0);
-              const protestCount = Number(row.protest_cases_count ?? 0);
-              const isDisqualified = parsedDockets.some((d: any) => d.is_rpa_section_8_disqualified);
-
-              const conflictList = Array.isArray(row.conflict_of_interest_audits) ? row.conflict_of_interest_audits : [];
-              const hasConflict = conflictList.length > 0;
-
-              const mobilityList = Array.isArray(row.political_mobility_records) ? row.political_mobility_records : [];
-              const defectionCount = mobilityList.length;
-
-              const corpList = Array.isArray(row.corporate_associations) ? row.corporate_associations : [];
-
-              const pdfSourceUrl = aff?.source_url || row.pdf_source_url || 'https://affidavit.eci.gov.in';
-              const r2Key = aff?.r2_storage_key || row.r2_storage_key || undefined;
-
-              // Parse MoSPI MPLADS Record if available
-              const mpladsRaw = Array.isArray(row.mplads_records) && row.mplads_records.length > 0 ? row.mplads_records[0] : null;
-              const mpladsRecord = mpladsRaw
-                ? {
-                    entitled_amount: Number(mpladsRaw.entitled_amount ?? CIVIC_IMPACT_BENCHMARKS.DEFAULT_5YR_MPLADS_ENTITLEMENT),
-                    released_amount: Number(mpladsRaw.released_amount ?? 0.0),
-                    expenditure_amount: Number(mpladsRaw.expenditure_amount ?? 0.0),
-                    unspent_balance: Number(mpladsRaw.unspent_balance ?? 0.0),
-                    utilization_rate: Number(mpladsRaw.utilization_rate ?? 0.0),
-                    works_recommended: Number(mpladsRaw.works_recommended ?? 0),
-                    works_completed: Number(mpladsRaw.works_completed ?? 0),
-                    term_years: mpladsRaw.term_years || '2019-2024',
-                  }
-                : undefined;
-
-              // Parse Historical Wealth CAGR if available
-              const cagrRawList = Array.isArray(row.historical_wealth_cagr) ? row.historical_wealth_cagr : [];
-              const cagrRecords =
-                cagrRawList.length > 0
-                  ? cagrRawList.map((c: any) => ({
-                      from_year: Number(c.from_year),
-                      to_year: Number(c.to_year),
-                      initial_assets: Number(c.initial_assets),
-                      final_assets: Number(c.final_assets),
-                      absolute_increase: Number(c.absolute_increase),
-                      percentage_increase: Number(c.percentage_increase),
-                      cagr_percent: c.cagr_percent != null ? Number(c.cagr_percent) : undefined,
-                      is_rapid_accumulation: Boolean(c.is_rapid_accumulation),
-                    }))
-                  : undefined;
-
-              const known = PROMINENT_PARTY_MAP[row.name ? row.name.toLowerCase().trim() : ''];
-              const resolvedParty =
-                known?.party ||
-                (row.party && row.party !== 'Parliamentarian' && row.party !== 'None' && row.party !== 'null' && row.party !== 'Unknown'
-                  ? row.party
-                  : 'Independent');
-              const resolvedState =
-                known?.state ||
-                (row.state && row.state !== 'India' && row.state !== 'National'
-                  ? row.state
-                  : (row.state || 'India'));
-              const resolvedConstituency =
-                known?.constituency ||
-                (row.constituency && row.constituency !== 'Parliament of India' && row.constituency !== 'National'
-                  ? row.constituency
-                  : (row.constituency || 'National'));
-
-              const rawHouse = row.house ? String(row.house).trim() : '';
-              let resolvedHouse: 'Lok Sabha' | 'Rajya Sabha' | 'Vidhan Sabha' = known?.house || 'Lok Sabha';
-              if (!known?.house) {
-                if (rawHouse === 'Rajya Sabha') {
-                  resolvedHouse = 'Rajya Sabha';
-                } else if (rawHouse.includes('Vidhan')) {
-                  resolvedHouse = 'Vidhan Sabha';
-                } else {
-                  resolvedHouse = 'Lok Sabha';
-                }
-              }
-
-              // Parse MoSPI e-SAKSHI Granular Public Works if available
-              const worksRawList = Array.isArray(row.mplads_works) ? row.mplads_works : [];
-              const worksRecords =
-                worksRawList.length > 0
-                  ? worksRawList.map((w: any) => ({
-                      work_id: String(w.work_id || w.id),
-                      work_title: String(w.work_title || 'Community Development Work'),
-                      sector: w.sector || undefined,
-                      sanctioned_amount: Number(w.sanctioned_amount ?? 0),
-                      expenditure_amount: Number(w.expenditure_amount ?? 0),
-                      status: String(w.status || 'Sanctioned'),
-                      latitude: w.latitude != null ? Number(w.latitude) : null,
-                      longitude: w.longitude != null ? Number(w.longitude) : null,
-                      sc_st_category: w.sc_st_category || undefined,
-                      completion_date: w.completion_date || undefined,
-                      gis_verified: Boolean(w.gis_verified),
-                      constituency_boundary_valid: w.constituency_boundary_valid != null ? Boolean(w.constituency_boundary_valid) : undefined,
-                      duplicate_coordinate_flag: Boolean(w.duplicate_coordinate_flag),
-                      ghost_project_risk: w.ghost_project_risk || 'LOW',
-                      gis_audit_notes: w.gis_audit_notes || undefined,
-                    }))
-                  : undefined;
-
-              return {
-                id: String(row.id),
-                name: row.name,
-                alias: row.alias || undefined,
-                constituency: resolvedConstituency,
-                state: resolvedState,
-                house: resolvedHouse,
-                party: resolvedParty,
-                filing_year: aff?.filing_year || 2024,
-                total_movable_assets: totalMovable,
-                total_immovable_assets: totalImmovable,
-                total_liabilities: totalLiabilities,
-                total_net_worth: totalNetWorth,
-                total_five_year_income: totalIncome,
-                criminal_cases_count: crimCount,
-                serious_criminal_cases_count: seriousCount,
-                protest_cases_count: protestCount,
-                dockets: parsedDockets,
-                is_rpa_section_8_disqualified: isDisqualified,
-                attendance_rate: attendance,
-                debates_count: debates,
-                questions_count: questions,
-                mplads: mpladsRecord,
-                mplads_works: worksRecords,
-                historical_wealth: cagrRecords,
-                has_section_9a_conflict: hasConflict,
-                conflicts_of_interest: conflictList,
-                corporate_associations: corpList,
-                political_mobility: mobilityList,
-                defection_count: defectionCount,
-                has_arithmetic_discrepancy: hasArithDiscrepancy,
-                delta_movable: deltaMovable,
-                delta_immovable: deltaImmovable,
-                wealth_discrepancy_ratio: wdr,
-                has_anomalous_wealth_ratio: hasAnomalousWdr,
-                pdf_source_url: pdfSourceUrl,
-                r2_storage_key: r2Key,
-                photo_url: row.photo_url || undefined,
-                photo_source: row.photo_source || undefined,
-                photo_attribution: row.photo_attribution || undefined,
-                photo_license_url: row.photo_license_url || undefined,
-              };
-            });
-
-          // Deduplicate dbCandidates to ensure identical candidates are merged and unique
+          const dbCandidates: Candidate[] = data.map(parseCandidateRow);
           const candidateMap = new Map<string, Candidate>();
-          for (const cand of dbCandidates) {
-            const key = `${cand.name.toLowerCase().trim()}::${cand.house.toLowerCase()}`;
-            const existing = candidateMap.get(key);
-            if (!existing) {
-              candidateMap.set(key, cand);
-            } else {
-              // Merge records, prioritizing richer telemetry
-              const merged: Candidate = {
-                ...existing,
-                constituency:
-                  existing.constituency !== 'Parliament of India' && existing.constituency !== 'National'
-                    ? existing.constituency
-                    : cand.constituency,
-                state:
-                  existing.state !== 'India' && existing.state !== 'National'
-                    ? existing.state
-                    : cand.state,
-                party:
-                  existing.party !== 'Independent' && existing.party !== 'Parliamentarian'
-                    ? existing.party
-                    : cand.party,
-                attendance_rate: existing.attendance_rate ?? cand.attendance_rate,
-                debates_count: existing.debates_count ?? cand.debates_count,
-                questions_count: existing.questions_count ?? cand.questions_count,
-                mplads: existing.mplads ?? cand.mplads,
-                mplads_works: existing.mplads_works ?? cand.mplads_works,
-                historical_wealth: existing.historical_wealth ?? cand.historical_wealth,
-                photo_url: existing.photo_url ?? cand.photo_url,
-                photo_source: existing.photo_source ?? cand.photo_source,
-                photo_attribution: existing.photo_attribution ?? cand.photo_attribution,
-                photo_license_url: existing.photo_license_url ?? cand.photo_license_url,
-                total_net_worth: existing.total_net_worth > 0 ? existing.total_net_worth : cand.total_net_worth,
-                total_movable_assets: existing.total_movable_assets > 0 ? existing.total_movable_assets : cand.total_movable_assets,
-                total_immovable_assets: existing.total_immovable_assets > 0 ? existing.total_immovable_assets : cand.total_immovable_assets,
-                criminal_cases_count: Math.max(existing.criminal_cases_count, cand.criminal_cases_count),
-                dockets: existing.dockets && existing.dockets.length > 0 ? existing.dockets : cand.dockets,
-              };
-              candidateMap.set(key, merged);
-            }
-          }
+          mergeCandidatesIntoMap(candidateMap, dbCandidates);
 
           const uniqueDbCandidates = Array.from(candidateMap.values());
           setCandidates(uniqueDbCandidates);
@@ -358,6 +366,140 @@ const AppContent: React.FC = () => {
 
     fetchLiveCandidates();
   }, []);
+
+  // Progressive Background Pagination to load all candidates up to totalDatabaseCount
+  useEffect(() => {
+    if (!isLiveConnected || totalDatabaseCount <= 1000) return;
+
+    let isCancelled = false;
+    const metaEnv = (import.meta as any).env || {};
+    const rawUrl = String(metaEnv.VITE_SUPABASE_URL || '').trim();
+    const rawKey = String(metaEnv.VITE_SUPABASE_ANON_KEY || '').trim();
+    if (!rawUrl || !rawKey) return;
+
+    const cleanUrl = rawUrl.replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
+    const BATCH_SIZE = 1000;
+
+    const loadRemainingPages = async () => {
+      for (let offset = 1000; offset < totalDatabaseCount; offset += BATCH_SIZE) {
+        if (isCancelled) break;
+        try {
+          const res = await fetch(
+            `${cleanUrl}/rest/v1/candidates?${CANDIDATE_SELECT_QUERY}&order=name.asc&offset=${offset}&limit=${BATCH_SIZE}`,
+            {
+              headers: {
+                apikey: rawKey,
+                Authorization: `Bearer ${rawKey}`,
+              },
+            }
+          );
+
+          if (!res.ok) break;
+
+          const data = await res.json();
+          if (!Array.isArray(data) || data.length === 0) break;
+
+          if (isCancelled) break;
+
+          const parsedBatch = data.map(parseCandidateRow);
+          setCandidates((prev) => {
+            const map = new Map<string, Candidate>();
+            for (const c of prev) {
+              map.set(`${c.name.toLowerCase().trim()}::${c.house.toLowerCase()}`, c);
+            }
+            mergeCandidatesIntoMap(map, parsedBatch);
+            return Array.from(map.values());
+          });
+
+          // Polite pacing between batches to prevent hammering network/Supabase
+          await new Promise((r) => setTimeout(r, 150));
+        } catch (err) {
+          console.warn(`Error streaming candidate batch at offset ${offset}:`, err);
+          break;
+        }
+      }
+    };
+
+    loadRemainingPages();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [isLiveConnected, totalDatabaseCount]);
+
+  // Debounced Remote Search across the full database
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (!q || q.length < 2) {
+      setIsSearching(false);
+      return;
+    }
+
+    const metaEnv = (import.meta as any).env || {};
+    const rawUrl = String(metaEnv.VITE_SUPABASE_URL || '').trim();
+    const rawKey = String(metaEnv.VITE_SUPABASE_ANON_KEY || '').trim();
+
+    if (!rawUrl || !rawKey) return;
+
+    const cleanUrl = rawUrl.replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const tokens = q
+          .split(/\s+/)
+          .map((t) => t.trim().replace(/[(),]/g, ''))
+          .filter(Boolean);
+
+        if (tokens.length === 0) {
+          setIsSearching(false);
+          return;
+        }
+
+        let filterParam = '';
+        if (tokens.length === 1) {
+          const enc = encodeURIComponent(tokens[0]);
+          filterParam = `or=(name.ilike.*${enc}*,alias.ilike.*${enc}*,constituency.ilike.*${enc}*,party.ilike.*${enc}*)`;
+        } else {
+          const tokenClauses = tokens.map((t) => {
+            const enc = encodeURIComponent(t);
+            return `or(name.ilike.*${enc}*,alias.ilike.*${enc}*,constituency.ilike.*${enc}*,party.ilike.*${enc}*)`;
+          });
+          filterParam = `and=(${tokenClauses.join(',')})`;
+        }
+
+        const searchUrl = `${cleanUrl}/rest/v1/candidates?${CANDIDATE_SELECT_QUERY}&${filterParam}&limit=100`;
+
+        const res = await fetch(searchUrl, {
+          headers: {
+            apikey: rawKey,
+            Authorization: `Bearer ${rawKey}`,
+          },
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            const newCands = data.map(parseCandidateRow);
+            setCandidates((prev) => {
+              const map = new Map<string, Candidate>();
+              for (const c of prev) {
+                map.set(`${c.name.toLowerCase().trim()}::${c.house.toLowerCase()}`, c);
+              }
+              mergeCandidatesIntoMap(map, newCands);
+              return Array.from(map.values());
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Remote candidate search error:', err);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Proof Viewer Modal State
   const [proofModal, setProofModal] = useState<{
@@ -489,6 +631,7 @@ const AppContent: React.FC = () => {
       <Navbar
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        isSearching={isSearching}
         selectedHouse={selectedHouse}
         onHouseChange={setSelectedHouse}
         activeView={activeView}
@@ -587,9 +730,10 @@ const AppContent: React.FC = () => {
                 <h2 className="font-serif text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
                   Parliamentary Profiles & Audited Declarations ({filteredCandidates.length.toLocaleString()})
                 </h2>
-                {isLoading && (
+                {(isLoading || isSearching) && (
                   <span className="flex items-center gap-1.5 text-xs text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
-                    <SpinnerGap size={14} weight="bold" className="animate-spin text-blue-700" /> Connecting...
+                    <SpinnerGap size={14} weight="bold" className="animate-spin text-blue-700" />
+                    {isSearching ? 'Searching database...' : 'Connecting...'}
                   </span>
                 )}
               </div>

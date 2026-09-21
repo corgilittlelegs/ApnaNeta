@@ -7,6 +7,7 @@ import {
   Users,
   Scales,
   BookOpen,
+  SpinnerGap,
 } from '@phosphor-icons/react';
 import { CivicEmblem } from './CivicEmblem';
 import { useViewMode } from '../context/ViewModeContext';
@@ -14,6 +15,7 @@ import { useViewMode } from '../context/ViewModeContext';
 interface NavbarProps {
   searchQuery: string;
   onSearchChange: (q: string) => void;
+  isSearching?: boolean;
   selectedHouse: string;
   onHouseChange: (h: string) => void;
   activeView?: 'directory' | 'leaderboards';
@@ -24,6 +26,7 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({
   searchQuery,
   onSearchChange,
+  isSearching = false,
   selectedHouse,
   onHouseChange,
   activeView = 'directory',
@@ -62,11 +65,19 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Center: Spacious Search Omnibar (Desktop) */}
             <div className="flex-1 max-w-xl mx-2 hidden md:block">
               <div className="relative">
-                <MagnifyingGlass
-                  size={16}
-                  weight="light"
-                  className="text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
-                />
+                {isSearching ? (
+                  <SpinnerGap
+                    size={16}
+                    weight="bold"
+                    className="text-blue-400 absolute left-3.5 top-1/2 -translate-y-1/2 animate-spin pointer-events-none"
+                  />
+                ) : (
+                  <MagnifyingGlass
+                    size={16}
+                    weight="light"
+                    className="text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                  />
+                )}
                 <input
                   type="text"
                   value={searchQuery}
@@ -119,11 +130,19 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Mobile Search Bar (under header on small screens) */}
           <div className="pb-3 md:hidden">
             <div className="relative">
-              <MagnifyingGlass
-                size={15}
-                weight="light"
-                className="text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
-              />
+              {isSearching ? (
+                <SpinnerGap
+                  size={15}
+                  weight="bold"
+                  className="text-blue-400 absolute left-3 top-1/2 -translate-y-1/2 animate-spin pointer-events-none"
+                />
+              ) : (
+                <MagnifyingGlass
+                  size={15}
+                  weight="light"
+                  className="text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                />
+              )}
               <input
                 type="text"
                 value={searchQuery}
