@@ -408,7 +408,7 @@ export function exportCandidateDossierPdf(candidate: Candidate): void {
     <!-- Identity Banner -->
     <div class="identity-card">
       <div style="display: flex; align-items: center; gap: 14px;">
-        ${candidate.photo_url ? `
+        ${candidate.photo_url && (candidate.photo_url.startsWith('https://') || candidate.photo_url.startsWith('http://')) ? `
           <img src="${escapeHtml(candidate.photo_url)}" alt="${escapeHtml(candidate.name)}" style="width: 52px; height: 52px; border-radius: 50%; object-fit: cover; border: 2px solid #C89D3C;" />
         ` : ''}
         <div>

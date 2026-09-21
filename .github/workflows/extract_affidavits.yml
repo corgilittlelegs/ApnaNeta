@@ -41,10 +41,11 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
           LIMIT: ${{ inputs.limit || '5' }}
+          FORCE: ${{ inputs.force || 'false' }}
           PYTHONPATH: .
         run: |
           EXTRA_FLAGS=""
-          if [ "${{ inputs.force }}" = "true" ]; then
+          if [ "$FORCE" = "true" ]; then
             EXTRA_FLAGS="--force"
           fi
           python -m src.ingestion.extract_affidavits --limit ${LIMIT} ${EXTRA_FLAGS}

@@ -7,6 +7,7 @@ from typing import List, Dict, Any, Optional
 from src.utils.rate_limiter import PoliteRateLimiter
 from src.storage.r2_client import r2_storage
 from src.storage.supabase_client import supabase
+from src.ingestion.eci_affidavits import is_allowed_pdf_url
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("ECIPlaywrightCrawler")
@@ -184,7 +185,8 @@ class ECIPlaywrightCrawler:
         Downloads the affidavit PDF, computes SHA256, stores in R2, and registers in Supabase.
         """
         pdf_url = nomination.get("pdf_url")
-        if not pdf_url:
+        if not pdf_url or not is_allowed_pdf_url(pdf_url):
+            logger.warning(f"Rejected disallowed or potentially malicious PDF download URL (SSRF Protection): {pdf_url}")
             return None
 
         await self.rate_limiter.wait()

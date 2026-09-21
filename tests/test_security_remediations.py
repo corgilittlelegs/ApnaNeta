@@ -64,6 +64,34 @@ class TestSecurityRemediations(unittest.TestCase):
         # Ensure service_role has ALL
         self.assertIn("GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, service_role;", content)
 
+    def test_sec_08_hsts_header_configured(self):
+        headers_path = os.path.join(os.path.dirname(__file__), "..", "web", "public", "_headers")
+        with open(headers_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        self.assertIn("Strict-Transport-Security: max-age=31536000; includeSubDomains; preload", content)
+        self.assertIn("/*", content)
+
+    def test_sec_09_github_actions_script_injection_hardened(self):
+        workflow_path = os.path.join(os.path.dirname(__file__), "..", ".github", "workflows", "extract_affidavits.yml")
+        with open(workflow_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        self.assertIn('FORCE: ${{ inputs.force || \'false\' }}', content)
+        self.assertIn('if [ "$FORCE" = "true" ]; then', content)
+        self.assertNotIn('if [ "${{ inputs.force }}" = "true" ]; then', content)
+
+    def test_sec_10_crawler_and_extractor_ssrf_hardened(self):
+        crawler_path = os.path.join(os.path.dirname(__file__), "..", "src", "ingestion", "eci_crawler.py")
+        with open(crawler_path, "r", encoding="utf-8") as f:
+            crawler_code = f.read()
+        self.assertIn("from src.ingestion.eci_affidavits import is_allowed_pdf_url", crawler_code)
+        self.assertIn("if not pdf_url or not is_allowed_pdf_url(pdf_url):", crawler_code)
+
+        extractor_path = os.path.join(os.path.dirname(__file__), "..", "src", "ingestion", "extract_affidavits.py")
+        with open(extractor_path, "r", encoding="utf-8") as f:
+            extractor_code = f.read()
+        self.assertIn("from src.ingestion.eci_affidavits import is_allowed_pdf_url", extractor_code)
+        self.assertIn("if not is_allowed_pdf_url(source_url):", extractor_code)
+
 
 if __name__ == "__main__":
     unittest.main()

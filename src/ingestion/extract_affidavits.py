@@ -25,6 +25,8 @@ from src.parsing.schemas import (
 from src.verification.math_reconciler import math_reconciler
 from src.verification.legal_classifier import legal_classifier
 from src.utils.rate_limiter import PoliteRateLimiter
+from src.utils.pii_sanitizer import sanitize_payload
+from src.ingestion.eci_affidavits import is_allowed_pdf_url
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("AffidavitExtractionWorker")
@@ -163,35 +165,38 @@ class AffidavitExtractionWorker:
                 return pdf_bytes
 
         if source_url and source_url.startswith("http"):
-            logger.info(f"Attempting live ephemeral download from official source: {source_url}")
-            try:
-                # Try curl_cffi with browser TLS impersonation first
+            if not is_allowed_pdf_url(source_url):
+                logger.warning(f"Rejected disallowed or potentially malicious PDF download URL (SSRF Protection): {source_url}")
+            else:
+                logger.info(f"Attempting live ephemeral download from official source: {source_url}")
                 try:
-                    from curl_cffi import requests as curl_requests
-                    session = curl_requests.Session(impersonate="chrome120")
-                    resp = session.get(
-                        source_url,
-                        timeout=30,
-                        headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"},
-                    )
-                    if resp.status_code == 200 and resp.content.startswith(b"%PDF"):
-                        logger.info(f"Downloaded {len(resp.content):,} bytes via browser TLS session.")
-                        return resp.content
-                except ImportError:
-                    pass
+                    # Try curl_cffi with browser TLS impersonation first
+                    try:
+                        from curl_cffi import requests as curl_requests
+                        session = curl_requests.Session(impersonate="chrome120")
+                        resp = session.get(
+                            source_url,
+                            timeout=30,
+                            headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"},
+                        )
+                        if resp.status_code == 200 and resp.content.startswith(b"%PDF"):
+                            logger.info(f"Downloaded {len(resp.content):,} bytes via browser TLS session.")
+                            return resp.content
+                    except ImportError:
+                        pass
 
-                # Fallback to httpx
-                import httpx
-                async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
-                    resp = await client.get(
-                        source_url,
-                        headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ApnaNeta/1.0"},
-                    )
-                    if resp.status_code == 200 and resp.content.startswith(b"%PDF"):
-                        logger.info(f"Downloaded {len(resp.content):,} bytes from live source URL.")
-                        return resp.content
-            except Exception as e:
-                logger.warning(f"Live download failed: {e}")
+                    # Fallback to httpx
+                    import httpx
+                    async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+                        resp = await client.get(
+                            source_url,
+                            headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ApnaNeta/1.0"},
+                        )
+                        if resp.status_code == 200 and resp.content.startswith(b"%PDF"):
+                            logger.info(f"Downloaded {len(resp.content):,} bytes from live source URL.")
+                            return resp.content
+                except Exception as e:
+                    logger.warning(f"Live download failed: {e}")
 
         raise FileNotFoundError(
             f"Primary Form 26 PDF document could not be retrieved from Cloudflare R2 ({r2_key}) "
@@ -208,6 +213,7 @@ class AffidavitExtractionWorker:
         """
         Converts the raw Gemini JSON dictionary into strict, validated Pydantic models.
         """
+        raw_data = sanitize_payload(raw_data)
         raw_cand = raw_data.get("candidate", {}) or {}
         candidate_identity = CandidateIdentity(
             name=raw_cand.get("name") or (candidate_meta.get("name") if candidate_meta else "Candidate"),
