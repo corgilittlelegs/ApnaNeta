@@ -1133,18 +1133,6 @@ const AppContent: React.FC = () => {
                   : 'Automated civic intelligence cross-referencing ECI affidavits, Sansad parliamentary participation, and MoSPI public fund flows. Every metric is bound to cryptographic PDF coordinates.'}
               </p>
             </div>
-
-            {/* Cloud Engine Telemetry Badges */}
-            <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
-              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl font-semibold shadow-2xs">
-                <Cpu size={15} weight="duotone" className="text-emerald-600" />
-                Gemini 3.8 Flash Active
-              </div>
-              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold shadow-2xs ${isLiveConnected ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-blue-50 text-blue-800 border border-blue-200'}`}>
-                <Database size={15} weight="duotone" className="text-blue-600" />
-                {isLiveConnected ? `Supabase Live (${(totalDatabaseCount || candidates.length).toLocaleString()} MPs)` : 'Supabase & R2 Online'}
-              </div>
-            </div>
           </div>
 
           {/* Quick Telemetry Cards */}
