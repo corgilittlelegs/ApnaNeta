@@ -360,6 +360,14 @@ class MoSPIMPLADSClient:
             logger.info("No matching candidates found for OpenCity MPLADS dataset.")
             return 0
 
+        # Deduplicate records by (candidate_id, term_years) to prevent Postgres error 21000:
+        # "ON CONFLICT DO UPDATE command cannot affect row a second time"
+        unique_records: Dict[tuple, Dict[str, Any]] = {}
+        for rec in records_to_upsert:
+            key = (rec["candidate_id"], rec["term_years"])
+            unique_records[key] = rec
+        records_to_upsert = list(unique_records.values())
+
         # Batch upsert in chunks of 50
         upserted_count = 0
         chunk_size = 50
@@ -379,7 +387,7 @@ class MoSPIMPLADSClient:
         """
         Executes MPLADS fund synchronization:
         1. Ingests authentic 17th Lok Sabha dataset from OpenCity (MoSPI).
-        2. Polls live e-SAKSHI summary endpoint for recent updates.
+        2. Polls live e-SAKSHI summary endpoint for recent updates (with circuit-breaker).
         """
         logger.info("==========================================================")
         logger.info("Starting MoSPI MPLADS Fund Tracking & Velocity Engine")
@@ -388,9 +396,10 @@ class MoSPIMPLADSClient:
         # 1. Ingest authentic MoSPI data from OpenCity
         await self.ingest_opencity_17th_ls_dataset()
 
-        # 2. Query candidates for any live updates
+        # 2. Query candidates for any live updates (with circuit-breaker)
         candidates = await supabase.select("candidates", {"limit": "50"})
         results = []
+        consecutive_misses = 0
 
         for cand in candidates:
             constituency = cand.get("constituency")
@@ -401,6 +410,13 @@ class MoSPIMPLADSClient:
                     res = await self.sync_candidate_mplads(live_data)
                     if res:
                         results.append(res)
+                    consecutive_misses = 0
+                else:
+                    consecutive_misses += 1
+
+                if consecutive_misses >= 3:
+                    logger.info("e-SAKSHI summary endpoint currently unreachable or redirecting. Halting live query loop.")
+                    break
 
         logger.info("==========================================================")
         logger.info(f"MPLADS Sync Complete! Live queries updated {len(results)} parliamentary fund records.")
