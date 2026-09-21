@@ -1,6 +1,8 @@
 import React from 'react';
 import { WarningCircle, CheckCircle, TrendUp, FileMagnifyingGlass } from '@phosphor-icons/react';
 import { Candidate } from '../types/candidate';
+import { useViewMode } from '../context/ViewModeContext';
+import { CivicTerm } from './CivicTerm';
 
 interface DiscrepancyBadgeProps {
   candidate: Candidate;
@@ -8,6 +10,8 @@ interface DiscrepancyBadgeProps {
 }
 
 export const DiscrepancyBadge: React.FC<DiscrepancyBadgeProps> = ({ candidate, onVerify }) => {
+  const { isCitizenMode } = useViewMode();
+
   const formatINR = (val: number) => {
     if (val >= 10000000) return `₹${(val / 10000000).toFixed(2)} Cr`;
     if (val >= 100000) return `₹${(val / 100000).toFixed(2)} Lakh`;
@@ -22,11 +26,27 @@ export const DiscrepancyBadge: React.FC<DiscrepancyBadgeProps> = ({ candidate, o
           <div className="flex items-center gap-2 text-rose-900">
             <WarningCircle size={18} weight="duotone" className="text-rose-600 flex-shrink-0" />
             <div>
-              <span className="font-bold">Arithmetic Variance Flagged:</span>{' '}
-              Part A itemized total exceeds Part B abstract by{' '}
-              <span className="font-mono tabular-nums font-bold text-rose-800">
-                {formatINR(candidate.delta_movable || candidate.delta_immovable)}
-              </span>
+              {isCitizenMode ? (
+                <div>
+                  <span className="font-bold flex items-center gap-1">
+                    <span>Mismatched Affidavit Numbers:</span>
+                    <CivicTerm term="ARITHMETIC_CHECK" />
+                  </span>{' '}
+                  Itemized assets add up to{' '}
+                  <span className="font-mono tabular-nums font-bold text-rose-800">
+                    {formatINR(candidate.delta_movable || candidate.delta_immovable)}
+                  </span>{' '}
+                  more than the declared summary total.
+                </div>
+              ) : (
+                <div>
+                  <span className="font-bold">Arithmetic Variance Flagged:</span> Part A itemized
+                  total exceeds Part B abstract by{' '}
+                  <span className="font-mono tabular-nums font-bold text-rose-800">
+                    {formatINR(candidate.delta_movable || candidate.delta_immovable)}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
           <button
@@ -46,7 +66,19 @@ export const DiscrepancyBadge: React.FC<DiscrepancyBadgeProps> = ({ candidate, o
         <div className="flex items-center gap-2 p-2 bg-emerald-50/80 border border-emerald-200/80 rounded-xl text-xs text-emerald-900">
           <CheckCircle size={16} weight="duotone" className="text-emerald-600 flex-shrink-0" />
           <span>
-            <strong className="font-semibold text-emerald-800">Double-Entry Forensic Check:</strong> Part A itemized schedule reconciles with Part B abstract.
+            {isCitizenMode ? (
+              <>
+                <strong className="font-semibold text-emerald-800">Math Verified:</strong> All
+                declared assets match up without calculation discrepancies.
+              </>
+            ) : (
+              <>
+                <strong className="font-semibold text-emerald-800">
+                  Double-Entry Forensic Check:
+                </strong>{' '}
+                Part A itemized schedule reconciles with Part B abstract.
+              </>
+            )}
           </span>
         </div>
       )}
@@ -63,12 +95,28 @@ export const DiscrepancyBadge: React.FC<DiscrepancyBadgeProps> = ({ candidate, o
           <div className="flex items-center gap-2">
             <TrendUp size={16} weight="duotone" className="text-amber-600 flex-shrink-0" />
             <div>
-              <span className="font-bold">Wealth Discrepancy Ratio (WDR):</span>{' '}
-              Declared net worth is{' '}
-              <span className="font-mono tabular-nums font-bold text-slate-900">
-                {candidate.wealth_discrepancy_ratio}x
-              </span>{' '}
-              total 5-year declared taxable income.
+              {isCitizenMode ? (
+                <div>
+                  <span className="font-bold inline-flex items-center gap-1">
+                    <span>Wealth vs. Income Check:</span>
+                    <CivicTerm term="WDR" />
+                  </span>{' '}
+                  Declared wealth is{' '}
+                  <span className="font-mono tabular-nums font-bold text-slate-900">
+                    {candidate.wealth_discrepancy_ratio}x
+                  </span>{' '}
+                  higher than their 5-year declared taxable income.
+                </div>
+              ) : (
+                <div>
+                  <span className="font-bold">Wealth Discrepancy Ratio (WDR):</span> Declared net
+                  worth is{' '}
+                  <span className="font-mono tabular-nums font-bold text-slate-900">
+                    {candidate.wealth_discrepancy_ratio}x
+                  </span>{' '}
+                  total 5-year declared taxable income.
+                </div>
+              )}
             </div>
           </div>
           <button
@@ -88,4 +136,3 @@ export const DiscrepancyBadge: React.FC<DiscrepancyBadgeProps> = ({ candidate, o
     </div>
   );
 };
-

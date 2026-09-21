@@ -7,6 +7,8 @@ import { ComparisonModal } from './components/ComparisonModal';
 import { ReportCardModal } from './components/ReportCardModal';
 import { LeaderboardsView } from './components/LeaderboardsView';
 import { Candidate, BoundingBox } from './types/candidate';
+import { ViewModeProvider, useViewMode } from './context/ViewModeContext';
+import { CivicFaqDrawer } from './components/CivicFaqDrawer';
 import {
   Cpu,
   Database,
@@ -654,7 +656,9 @@ const PROMINENT_PARTY_MAP: Record<
   'e. t. mohammed basheer': { party: 'Indian Union Muslim League', state: 'Kerala', constituency: 'Malappuram', house: 'Lok Sabha' },
 };
 
-export const App: React.FC = () => {
+const AppContent: React.FC = () => {
+  const { isCitizenMode } = useViewMode();
+  const [isCivicGuideOpen, setIsCivicGuideOpen] = useState<boolean>(false);
   const [candidates, setCandidates] = useState<Candidate[]>(SAMPLE_CANDIDATES);
   const [totalDatabaseCount, setTotalDatabaseCount] = useState<number>(0);
   const [displayLimit, setDisplayLimit] = useState<number>(50);
@@ -1054,25 +1058,36 @@ export const App: React.FC = () => {
         onHouseChange={setSelectedHouse}
         activeView={activeView}
         onViewChange={setActiveView}
+        onOpenCivicGuide={() => setIsCivicGuideOpen(true)}
       />
 
       {/* Civic Pulse Masthead / Telemetry Overview */}
-      <section className="bg-white border-b border-slate-200/90 py-8 px-4 sm:px-6 lg:px-8 shadow-2xs">
-        <div className="max-w-7xl mx-auto">
+      <section className="bg-white border-b border-slate-200/90 py-8 shadow-2xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
               <div className="flex items-center gap-2 mb-1.5">
                 <span className="inline-flex items-center gap-1 text-[11px] font-mono font-semibold uppercase bg-emerald-50 text-emerald-800 border border-emerald-200/80 px-2 py-0.5 rounded-md">
                   <ShieldCheck size={14} weight="duotone" className="text-emerald-600" />
-                  Section 79 Evidentiary Safe Harbor
+                  {isCitizenMode
+                    ? 'Sovereign Citizen Transparency • संप्रभु नागरिक पारदर्शिता'
+                    : 'Section 79 Evidentiary Safe Harbor'}
                 </span>
-                <span className="text-xs text-slate-400 font-sans hidden sm:inline">• ECI Form 26 Sworn Disclosures</span>
+                <span className="text-xs text-slate-400 font-sans hidden sm:inline">
+                  {isCitizenMode
+                    ? '• Official Government Gazettes'
+                    : '• ECI Form 26 Sworn Disclosures'}
+                </span>
               </div>
               <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tight leading-tight">
-                Empirical Political Accountability & Forensic Audits
+                {isCitizenMode
+                  ? 'Apna Neta: Transparent Civic Records for Every Citizen'
+                  : 'Empirical Political Accountability & Forensic Audits'}
               </h1>
               <p className="text-slate-600 text-xs sm:text-sm mt-1.5 max-w-2xl font-sans leading-relaxed">
-                Automated civic intelligence cross-referencing ECI affidavits, Sansad parliamentary participation, and MoSPI public fund flows. Every metric is bound to cryptographic PDF coordinates.
+                {isCitizenMode
+                  ? 'Look up your Member of Parliament (MP), see how your local area development funds (सांसद निधि) were spent, track declared wealth growth, and review Parliament attendance in simple language.'
+                  : 'Automated civic intelligence cross-referencing ECI affidavits, Sansad parliamentary participation, and MoSPI public fund flows. Every metric is bound to cryptographic PDF coordinates.'}
               </p>
             </div>
 
@@ -1305,15 +1320,29 @@ export const App: React.FC = () => {
         candidate={proofModal.candidate}
       />
 
+      {/* Civic Guide FAQ Drawer */}
+      <CivicFaqDrawer
+        isOpen={isCivicGuideOpen}
+        onClose={() => setIsCivicGuideOpen(false)}
+      />
+
       {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 py-6 px-4 text-center text-xs text-slate-500 font-sans">
-        <p>
-          Apna Neta is an open-source non-partisan civic technology project. All declarations are reproduced
-          verbatim from sworn ECI Form 26 filings under Section 3(c)(ii) of the Digital Personal Data Protection Act, 2023.
-        </p>
+      <footer className="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500 font-sans">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <p>
+            Apna Neta is an open-source non-partisan civic technology project. All declarations are reproduced
+            verbatim from sworn ECI Form 26 filings under Section 3(c)(ii) of the Digital Personal Data Protection Act, 2023.
+          </p>
+        </div>
       </footer>
     </div>
   );
 };
+
+export const App: React.FC = () => (
+  <ViewModeProvider>
+    <AppContent />
+  </ViewModeProvider>
+);
 
 export default App;

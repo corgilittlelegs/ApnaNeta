@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import { Candidate } from '../types/candidate';
 import { exportCandidateDossierPdf } from '../utils/DossierPdfExport';
+import { useViewMode } from '../context/ViewModeContext';
+import { CivicTerm } from './CivicTerm';
 
 interface LeaderboardsViewProps {
   candidates: Candidate[];
@@ -41,6 +43,7 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
   const [sansadSubTab, setSansadSubTab] = useState<'high' | 'low'>('high');
   const [mpladsSubTab, setMpladsSubTab] = useState<'high_spend' | 'high_unspent'>('high_spend');
   const [averagesGrouping, setAveragesGrouping] = useState<'party' | 'state'>('party');
+  const { isCitizenMode } = useViewMode();
 
   const formatINR = (val: number) => {
     if (val >= 10000000) return `₹${(val / 10000000).toFixed(2)} Cr`;
@@ -197,11 +200,12 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
               <span className="text-xs text-slate-400">• Sworn Transparency Rankings</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
-              Political Transparency Leaderboards
+              {isCitizenMode ? 'Public Accountability Rankings' : 'Political Transparency Leaderboards'}
             </h1>
             <p className="text-sm text-slate-300 mt-1 max-w-2xl">
-              Real-time forensic aggregations identifying exponential wealth surges, affidavit arithmetic
-              discrepancies, legislative participation, and public fund velocities.
+              {isCitizenMode
+                ? 'Simple rankings showing which representatives are most active, how constituency funds are spent, and where wealth grew fastest.'
+                : 'Real-time forensic aggregations identifying exponential wealth surges, affidavit arithmetic discrepancies, legislative participation, and public fund velocities.'}
             </p>
           </div>
 
@@ -236,7 +240,9 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
             }`}
           >
             <TrendingUp className="w-3.5 h-3.5" />
-            <span>Wealth Growth (CAGR)</span>
+            <span>
+              {isCitizenMode ? 'Fastest Growing Wealth (तेज़ी से बढ़ती संपत्ति)' : 'Wealth Growth (CAGR)'}
+            </span>
           </button>
 
           <button
@@ -248,7 +254,9 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
             }`}
           >
             <AlertTriangle className="w-3.5 h-3.5" />
-            <span>Discrepancy Watchlist</span>
+            <span>
+              {isCitizenMode ? 'Affidavit Discrepancies (हलफ़नामा जांच)' : 'Discrepancy Watchlist'}
+            </span>
           </button>
 
           <button
@@ -260,7 +268,9 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
             }`}
           >
             <CalendarCheck className="w-3.5 h-3.5" />
-            <span>Sansad Attendance</span>
+            <span>
+              {isCitizenMode ? 'Parliament Activity (संसद में सक्रियता)' : 'Sansad Attendance'}
+            </span>
           </button>
 
           <button
@@ -272,7 +282,9 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
             }`}
           >
             <Landmark className="w-3.5 h-3.5" />
-            <span>MPLADS Fund Velocity</span>
+            <span>
+              {isCitizenMode ? 'Local Fund Spending (सांसद निधि खर्च)' : 'MPLADS Fund Velocity'}
+            </span>
           </button>
 
           <button
@@ -283,8 +295,10 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
-            <BarChart3 className="w-3.5 h-3.5" />
-            <span>Party & State Averages</span>
+            <Award className="w-3.5 h-3.5" />
+            <span>
+              {isCitizenMode ? 'Party & State Comparison (राज्य और दल)' : 'State & Party Averages'}
+            </span>
           </button>
         </div>
 
@@ -678,9 +692,18 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 className="font-bold text-slate-900 text-sm">MoSPI MPLADS Development Fund Flow</h3>
-              <p className="text-xs text-slate-500">
-                Official expenditure rate and unspent public development funds per constituency.
+              <div className="flex items-center gap-1.5">
+                <h3 className="font-bold text-slate-900 text-sm">
+                  {isCitizenMode
+                    ? 'Constituency Development Fund Flow (सांसद निधि)'
+                    : 'MoSPI MPLADS Development Fund Flow'}
+                </h3>
+                <CivicTerm term="MPLADS" />
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {isCitizenMode
+                  ? 'Official record of how much local area development money (₹5 Cr/year) was spent or left idle.'
+                  : 'Official expenditure rate and unspent public development funds per constituency.'}
               </p>
             </div>
 
