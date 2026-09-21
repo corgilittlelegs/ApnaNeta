@@ -4,7 +4,7 @@ import os
 import sys
 import logging
 import asyncio
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional, Tuple, Set
 from urllib.parse import quote, unquote
 try:
     import httpx  # type: ignore
@@ -621,6 +621,23 @@ class WikidataPhotoSynchronizer:
             logger.warning("No candidates found in Supabase database to match against.")
             return 0
 
+        # Fetch confirmed parliamentarian IDs from sansad_records and mplads_records
+        mp_candidate_ids: Set[str] = set()
+        if mp_only:
+            try:
+                sansad_records = await supabase.select("sansad_records", {"select": "candidate_id", "limit": "5000"})
+                for r in sansad_records:
+                    if r.get("candidate_id"):
+                        mp_candidate_ids.add(str(r["candidate_id"]))
+                mplads_records = await supabase.select("mplads_records", {"select": "candidate_id", "limit": "5000"})
+                for r in mplads_records:
+                    if r.get("candidate_id"):
+                        mp_candidate_ids.add(str(r["candidate_id"]))
+                if mp_candidate_ids:
+                    logger.info(f"Identified {len(mp_candidate_ids)} confirmed parliamentarians from Sansad & MPLADS records.")
+            except Exception as e:
+                logger.debug(f"Could not load sansad/mplads MP IDs: {e}")
+
         updated_count = 0
 
         async with httpx.AsyncClient(timeout=20.0, follow_redirects=True) as client:
@@ -678,21 +695,27 @@ class WikidataPhotoSynchronizer:
             candidates_without_photos = []
             seen_cand_ids = set()
             for cand in exact_index.values():
-                c_id = cand.get("id")
+                c_id = str(cand.get("id"))
                 if c_id not in seen_cand_ids and not cand.get("photo_url"):
-                    # If mp_only is True, restrict to parliamentarians (Lok Sabha / Rajya Sabha)
-                    if mp_only and not cand.get("house"):
-                        continue
+                    # If mp_only is True, restrict to confirmed parliamentarians
+                    if mp_only:
+                        if mp_candidate_ids and c_id not in mp_candidate_ids:
+                            continue
+                        elif not mp_candidate_ids and not cand.get("house"):
+                            continue
                     seen_cand_ids.add(c_id)
                     candidates_without_photos.append(cand)
 
             scope_desc = "parliamentarians" if mp_only else "total candidates"
             logger.info(f"Found {len(candidates_without_photos)} {scope_desc} without photos. Resolving dynamically...")
 
+            scanned_count = 0
             for cand in candidates_without_photos:
-                if limit and updated_count >= limit:
+                if limit and (scanned_count >= limit or updated_count >= limit):
+                    logger.info(f"Target limit of {limit} reached (scanned {scanned_count} candidates, updated {updated_count} photos).")
                     break
 
+                scanned_count += 1
                 name = cand.get("name", "")
                 resolved = await self.resolve_photo_dynamically(client, name, cand.get("state"))
                 if resolved:
