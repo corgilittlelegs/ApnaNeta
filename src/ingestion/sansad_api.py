@@ -109,6 +109,7 @@ class SansadScraper:
                     "candidates",
                     {
                         "select": "id,name,state,constituency,party,house",
+                        "order": "name.asc",
                         "limit": str(batch_size),
                         "offset": str(offset),
                     }
@@ -148,7 +149,7 @@ class SansadScraper:
         reader = csv.DictReader(io.StringIO(csv_text), delimiter=";")
         exact_index, token_index = await self.fetch_existing_candidates_index()
 
-        sansad_batch: List[Dict[str, Any]] = []
+        sansad_batch: Dict[str, Dict[str, Any]] = {}
         synced_count = 0
         updated_candidates = 0
 
@@ -252,19 +253,29 @@ class SansadScraper:
                 "tenure_end": end_date,
             }
 
-            sansad_batch.append(record)
+            sansad_batch[candidate_id] = record
 
             if len(sansad_batch) >= 100:
-                await supabase.insert("sansad_records", sansad_batch)
-                synced_count += len(sansad_batch)
-                logger.info(f"Inserted {synced_count} Sansad activity records...")
+                batch_records = list(sansad_batch.values())
+                try:
+                    await supabase.upsert("sansad_records", batch_records, on_conflict="candidate_id,house")
+                except Exception as e:
+                    logger.debug(f"Upsert fallback to insert for sansad_records: {e}")
+                    await supabase.insert("sansad_records", batch_records)
+                synced_count += len(batch_records)
+                logger.info(f"Synchronized {synced_count} Sansad activity records...")
                 sansad_batch.clear()
 
         if sansad_batch:
-            await supabase.insert("sansad_records", sansad_batch)
-            synced_count += len(sansad_batch)
+            batch_records = list(sansad_batch.values())
+            try:
+                await supabase.upsert("sansad_records", batch_records, on_conflict="candidate_id,house")
+            except Exception as e:
+                logger.debug(f"Upsert fallback to insert for sansad_records: {e}")
+                await supabase.insert("sansad_records", batch_records)
+            synced_count += len(batch_records)
 
-        logger.info(f"Sync finished: {synced_count} records inserted, {updated_candidates} candidates updated.")
+        logger.info(f"Sync finished: {synced_count} records synchronized, {updated_candidates} candidates updated.")
         return synced_count
 
     async def sync_division_votes(self, divisions_payload: List[Dict[str, Any]]) -> int:

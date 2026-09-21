@@ -126,12 +126,16 @@ async def seed_vidhan_sabha() -> int:
         try:
             existing = await supabase.select(
                 "candidates",
-                columns="id,name",
-                eq={"name": cand["name"], "house": "Vidhan Sabha"},
+                {
+                    "select": "id,name",
+                    "name": f"eq.{cand['name']}",
+                    "house": "eq.Vidhan Sabha",
+                    "limit": "1",
+                },
             )
             if existing:
                 cand_id = existing[0]["id"]
-                await supabase.update("candidates", cand, eq={"id": cand_id})
+                await supabase.update("candidates", cand, {"id": f"eq.{cand_id}"})
                 logger.info(f"✓ Updated existing Vidhan Sabha record: {cand['name']} ({cand['constituency']})")
             else:
                 res = await supabase.insert("candidates", [cand])

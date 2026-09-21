@@ -204,8 +204,8 @@ class ECIPlaywrightCrawler:
             r2_storage.upload_affidavit_pdf(r2_key, pdf_bytes)
 
             # Ensure candidate exists in Supabase
-            cand_name = nomination["name"]
-            matched = await supabase.select("candidates", {"name": f"eq.{cand_name}", "limit": "1"})
+            cand_name = nomination["name"].strip()
+            matched = await supabase.select("candidates", {"name": f"ilike.{cand_name}", "limit": "1"})
             if matched:
                 cand_id = matched[0]["id"]
             else:

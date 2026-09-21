@@ -41,6 +41,7 @@ ALTER TABLE candidates ADD COLUMN IF NOT EXISTS photo_license_url TEXT;
 CREATE INDEX IF NOT EXISTS idx_candidates_name ON candidates (name);
 CREATE INDEX IF NOT EXISTS idx_candidates_constituency ON candidates (state, constituency);
 CREATE INDEX IF NOT EXISTS idx_candidates_photo ON candidates (photo_url) WHERE photo_url IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_candidates_name_house_constituency ON candidates (name, house, constituency);
 
 -- 2. Affidavits Table (Form 26 Filings)
 CREATE TABLE IF NOT EXISTS affidavits (
@@ -136,6 +137,7 @@ ALTER TABLE sansad_records ADD COLUMN IF NOT EXISTS policy_topics JSONB DEFAULT 
 ALTER TABLE sansad_records ADD COLUMN IF NOT EXISTS local_vs_national_ratio NUMERIC(5, 2);
 
 CREATE INDEX IF NOT EXISTS idx_sansad_candidate ON sansad_records (candidate_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_sansad_candidate_house ON sansad_records (candidate_id, house);
 
 -- 6b. Parliamentary Division Voting Records
 CREATE TABLE IF NOT EXISTS parliamentary_divisions (

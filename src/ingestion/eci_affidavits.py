@@ -509,8 +509,12 @@ class ECIAffidavitScraper:
         candidate_id = None
         cand_records = await supabase.select(
             "candidates",
-            columns="id",
-            eq={"name": candidate_name, "constituency": constituency, "house": house},
+            {
+                "select": "id",
+                "name": f"ilike.{candidate_name.strip()}",
+                "house": f"eq.{house}",
+                "limit": "1",
+            },
         )
         if cand_records:
             candidate_id = cand_records[0]["id"]
@@ -541,8 +545,12 @@ class ECIAffidavitScraper:
             try:
                 aff_existing = await supabase.select(
                     "affidavits",
-                    columns="id",
-                    eq={"candidate_id": candidate_id, "filing_year": filing_year},
+                    {
+                        "select": "id",
+                        "candidate_id": f"eq.{candidate_id}",
+                        "filing_year": f"eq.{filing_year}",
+                        "limit": "1",
+                    },
                 )
                 if aff_existing:
                     affidavit_id = aff_existing[0]["id"]
@@ -553,7 +561,7 @@ class ECIAffidavitScraper:
                             "sha256_hash": sha256_hash,
                             "r2_storage_key": None,
                         },
-                        eq={"id": affidavit_id},
+                        {"id": f"eq.{affidavit_id}"},
                     )
                     logger.info(f"Updated existing candidate affidavit {affidavit_id} with verified ECI filing: {pdf_url}")
                 else:

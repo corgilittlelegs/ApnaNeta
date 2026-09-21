@@ -2,7 +2,10 @@ import csv
 import io
 import logging
 from typing import List, Dict, Any
-import httpx
+try:
+    import httpx
+except ImportError:
+    httpx = None
 from src.storage.supabase_client import supabase
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -12,11 +15,43 @@ logger = logging.getLogger(__name__)
 OPEN_SANSAD_CSV_URL = "https://data.opensanctions.org/datasets/latest/in_sansad/targets.simple.csv"
 
 
+async def fetch_existing_candidate_keys() -> set:
+    """Loads existing candidate normalized names from Supabase to prevent duplicate inserts."""
+    existing_keys = set()
+    offset = 0
+    batch_size = 1000
+    while True:
+        try:
+            records = await supabase.select(
+                "candidates",
+                {
+                    "select": "name",
+                    "order": "name.asc",
+                    "limit": str(batch_size),
+                    "offset": str(offset),
+                }
+            )
+            if not records:
+                break
+            for r in records:
+                name = (r.get("name") or "").strip().lower()
+                if name:
+                    existing_keys.add(name)
+            offset += len(records)
+            if len(records) < batch_size:
+                break
+        except Exception as e:
+            logger.warning(f"Error fetching existing candidates at offset {offset}: {e}")
+            break
+    logger.info(f"Loaded {len(existing_keys)} existing candidates from Supabase to prevent duplicate insertion.")
+    return existing_keys
+
+
 async def ingest_open_sansad(limit: int = 0) -> int:
     """
     Streams and loads Indian parliamentarians (Lok Sabha & Rajya Sabha)
     directly from OpenSanctions into Supabase in memory without saving
-    large files to disk.
+    large files to disk, avoiding duplicate entries.
     """
     logger.info(f"Streaming OpenSanctions data from: {OPEN_SANSAD_CSV_URL}")
     
@@ -28,6 +63,9 @@ async def ingest_open_sansad(limit: int = 0) -> int:
         response = await client.get(OPEN_SANSAD_CSV_URL)
         response.raise_for_status()
         csv_content = response.text
+
+    existing_names = await fetch_existing_candidate_keys()
+    seen_in_run: set = set()
 
     reader = csv.DictReader(io.StringIO(csv_content))
     candidates_batch: List[Dict[str, Any]] = []
@@ -43,6 +81,13 @@ async def ingest_open_sansad(limit: int = 0) -> int:
         if not name:
             continue
 
+        norm_name = name.lower()
+        # Skip if already exists in Supabase or already seen in this stream
+        if norm_name in existing_names or norm_name in seen_in_run:
+            continue
+
+        seen_in_run.add(norm_name)
+
         candidate_record = {
             "name": name,
             "alias": row.get("aliases"),
@@ -57,6 +102,7 @@ async def ingest_open_sansad(limit: int = 0) -> int:
         if len(candidates_batch) >= batch_size:
             await supabase.insert("candidates", candidates_batch)
             total_loaded += len(candidates_batch)
+            existing_names.update([c["name"].lower() for c in candidates_batch])
             logger.info(f"Loaded {total_loaded} parliamentarians into Supabase...")
             candidates_batch.clear()
 
@@ -66,8 +112,9 @@ async def ingest_open_sansad(limit: int = 0) -> int:
     if candidates_batch:
         await supabase.insert("candidates", candidates_batch)
         total_loaded += len(candidates_batch)
+        existing_names.update([c["name"].lower() for c in candidates_batch])
 
-    logger.info(f"Successfully ingested {total_loaded} parliamentarians!")
+    logger.info(f"Successfully ingested {total_loaded} parliamentarians (skipped {len(seen_in_run) - total_loaded} duplicates)!")
     return total_loaded
 
 

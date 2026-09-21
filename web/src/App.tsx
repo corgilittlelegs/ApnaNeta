@@ -911,7 +911,50 @@ const AppContent: React.FC = () => {
               };
             });
 
-          setCandidates([...SAMPLE_CANDIDATES, ...dbCandidates]);
+          // Deduplicate dbCandidates to ensure identical candidates are merged and unique
+          const candidateMap = new Map<string, Candidate>();
+          for (const cand of dbCandidates) {
+            const key = `${cand.name.toLowerCase().trim()}::${cand.house.toLowerCase()}`;
+            const existing = candidateMap.get(key);
+            if (!existing) {
+              candidateMap.set(key, cand);
+            } else {
+              // Merge records, prioritizing richer telemetry
+              const merged: Candidate = {
+                ...existing,
+                constituency:
+                  existing.constituency !== 'Parliament of India' && existing.constituency !== 'National'
+                    ? existing.constituency
+                    : cand.constituency,
+                state:
+                  existing.state !== 'India' && existing.state !== 'National'
+                    ? existing.state
+                    : cand.state,
+                party:
+                  existing.party !== 'Independent' && existing.party !== 'Parliamentarian'
+                    ? existing.party
+                    : cand.party,
+                attendance_rate: existing.attendance_rate ?? cand.attendance_rate,
+                debates_count: existing.debates_count ?? cand.debates_count,
+                questions_count: existing.questions_count ?? cand.questions_count,
+                mplads: existing.mplads ?? cand.mplads,
+                historical_wealth: existing.historical_wealth ?? cand.historical_wealth,
+                photo_url: existing.photo_url ?? cand.photo_url,
+                photo_source: existing.photo_source ?? cand.photo_source,
+                photo_attribution: existing.photo_attribution ?? cand.photo_attribution,
+                photo_license_url: existing.photo_license_url ?? cand.photo_license_url,
+                total_net_worth: existing.total_net_worth > 0 ? existing.total_net_worth : cand.total_net_worth,
+                total_movable_assets: existing.total_movable_assets > 0 ? existing.total_movable_assets : cand.total_movable_assets,
+                total_immovable_assets: existing.total_immovable_assets > 0 ? existing.total_immovable_assets : cand.total_immovable_assets,
+                criminal_cases_count: Math.max(existing.criminal_cases_count, cand.criminal_cases_count),
+                dockets: existing.dockets && existing.dockets.length > 0 ? existing.dockets : cand.dockets,
+              };
+              candidateMap.set(key, merged);
+            }
+          }
+
+          const uniqueDbCandidates = Array.from(candidateMap.values());
+          setCandidates([...SAMPLE_CANDIDATES, ...uniqueDbCandidates]);
           setIsLiveConnected(true);
         }
       } catch (err) {
