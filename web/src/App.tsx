@@ -92,7 +92,7 @@ const AppContent: React.FC = () => {
       setIsLoading(true);
       try {
         const res = await fetch(
-          `${cleanUrl}/rest/v1/candidates?select=*,sansad_records(attendance_rate,debates_count,questions_count),affidavits(id,filing_year,source_url,r2_storage_key,audit_discrepancies(*),criminal_cases(*)),mplads_records(*),historical_wealth_cagr(*),conflict_of_interest_audits(*),political_mobility_records(*),corporate_associations(*)&order=name.asc&limit=10000`,
+          `${cleanUrl}/rest/v1/candidates?select=*,sansad_records(attendance_rate,debates_count,questions_count),affidavits(id,filing_year,source_url,r2_storage_key,audit_discrepancies(*),criminal_cases(*)),mplads_records(*),mplads_works(*),historical_wealth_cagr(*),conflict_of_interest_audits(*),political_mobility_records(*),corporate_associations(*)&order=name.asc&limit=10000`,
           {
             headers: {
               apikey: rawKey,
@@ -240,6 +240,29 @@ const AppContent: React.FC = () => {
                 }
               }
 
+              // Parse MoSPI e-SAKSHI Granular Public Works if available
+              const worksRawList = Array.isArray(row.mplads_works) ? row.mplads_works : [];
+              const worksRecords =
+                worksRawList.length > 0
+                  ? worksRawList.map((w: any) => ({
+                      work_id: String(w.work_id || w.id),
+                      work_title: String(w.work_title || 'Community Development Work'),
+                      sector: w.sector || undefined,
+                      sanctioned_amount: Number(w.sanctioned_amount ?? 0),
+                      expenditure_amount: Number(w.expenditure_amount ?? 0),
+                      status: String(w.status || 'Sanctioned'),
+                      latitude: w.latitude != null ? Number(w.latitude) : null,
+                      longitude: w.longitude != null ? Number(w.longitude) : null,
+                      sc_st_category: w.sc_st_category || undefined,
+                      completion_date: w.completion_date || undefined,
+                      gis_verified: Boolean(w.gis_verified),
+                      constituency_boundary_valid: w.constituency_boundary_valid != null ? Boolean(w.constituency_boundary_valid) : undefined,
+                      duplicate_coordinate_flag: Boolean(w.duplicate_coordinate_flag),
+                      ghost_project_risk: w.ghost_project_risk || 'LOW',
+                      gis_audit_notes: w.gis_audit_notes || undefined,
+                    }))
+                  : undefined;
+
               return {
                 id: String(row.id),
                 name: row.name,
@@ -263,6 +286,7 @@ const AppContent: React.FC = () => {
                 debates_count: debates,
                 questions_count: questions,
                 mplads: mpladsRecord,
+                mplads_works: worksRecords,
                 historical_wealth: cagrRecords,
                 has_section_9a_conflict: hasConflict,
                 conflicts_of_interest: conflictList,
@@ -310,6 +334,7 @@ const AppContent: React.FC = () => {
                 debates_count: existing.debates_count ?? cand.debates_count,
                 questions_count: existing.questions_count ?? cand.questions_count,
                 mplads: existing.mplads ?? cand.mplads,
+                mplads_works: existing.mplads_works ?? cand.mplads_works,
                 historical_wealth: existing.historical_wealth ?? cand.historical_wealth,
                 photo_url: existing.photo_url ?? cand.photo_url,
                 photo_source: existing.photo_source ?? cand.photo_source,

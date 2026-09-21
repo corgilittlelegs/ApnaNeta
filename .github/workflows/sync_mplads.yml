@@ -22,10 +22,26 @@ jobs:
         run: |
           pip install httpx pydantic pydantic-settings
 
-      - name: Execute MPLADS Velocity Sync
+      - name: Execute MPLADS Macro Velocity Sync
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           PYTHONPATH: .
         run: |
           python -m src.ingestion.mospi_mplads
+
+      - name: Execute e-SAKSHI Granular Works Crawl
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          PYTHONPATH: .
+        run: |
+          python -m src.ingestion.esakshi_crawler
+
+      - name: Execute GIS Geolocation & Ghost Project Audit
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          PYTHONPATH: .
+        run: |
+          python -m src.verification.gis_verifier

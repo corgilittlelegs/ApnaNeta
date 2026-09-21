@@ -131,4 +131,37 @@ class ESAKSHISessionCrawler:
             return 0
 
 
+    async def run(self, limit: int = 50) -> int:
+        """
+        Polls candidates from Supabase and crawls granular e-SAKSHI work sanctions.
+        """
+        logger.info("==========================================================")
+        logger.info("Starting e-SAKSHI Granular Works Automated Ingestion")
+        logger.info("==========================================================")
+        candidates = await supabase.select("candidates", {"limit": str(limit)})
+        total_synced = 0
+
+        for cand in candidates:
+            cand_id = cand.get("id")
+            state = cand.get("state")
+            constituency = cand.get("constituency")
+            cand_name = cand.get("name")
+            if cand_id and state and constituency and constituency not in ("Parliament of India", "Constituency"):
+                count = await self.sync_works_for_candidate(
+                    candidate_id=cand_id,
+                    state_name=state,
+                    district_or_constituency=constituency,
+                    mp_name=cand_name,
+                )
+                total_synced += count
+
+        logger.info("==========================================================")
+        logger.info(f"e-SAKSHI Crawl Complete. Total works synced: {total_synced}")
+        logger.info("==========================================================")
+        return total_synced
+
+
 esakshi_crawler = ESAKSHISessionCrawler()
+
+if __name__ == "__main__":
+    asyncio.run(esakshi_crawler.run())
