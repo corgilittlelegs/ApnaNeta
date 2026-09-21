@@ -28,7 +28,7 @@ import { PROMINENT_PARTY_MAP } from './data/politicianLookup';
 import { CIVIC_IMPACT_BENCHMARKS } from './utils/civicConstants';
 
 const CANDIDATE_SELECT_QUERY =
-  'select=*,sansad_records(attendance_rate,debates_count,questions_count),affidavits(id,filing_year,source_url,r2_storage_key,audit_discrepancies(*),criminal_cases(id,case_type,is_heinous,is_convicted)),mplads_records(*),historical_wealth_cagr(*),conflict_of_interest_audits(id,nature_of_conflict,is_alleged_violation),political_mobility_records(id,from_party,to_party),corporate_associations(id,company_name,din)';
+  'select=*,sansad_records(attendance_rate,debates_count,questions_count),affidavits(id,filing_year,source_url,r2_storage_key,audit_discrepancies(*),criminal_cases(*)),mplads_records(*),historical_wealth_cagr(*),conflict_of_interest_audits(*),political_mobility_records(*),corporate_associations(*)';
 
 function parseCandidateRow(row: any): Candidate {
   const sansad = Array.isArray(row.sansad_records) && row.sansad_records.length > 0 ? row.sansad_records[0] : null;
