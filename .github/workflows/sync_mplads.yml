@@ -8,6 +8,7 @@ on:
 jobs:
   sync_mplads:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -20,7 +21,7 @@ jobs:
 
       - name: Install Ingestion Dependencies
         run: |
-          pip install httpx pydantic pydantic-settings
+          pip install httpx pydantic pydantic-settings beautifulsoup4
 
       - name: Execute MPLADS Macro Velocity Sync
         env:

@@ -51,7 +51,7 @@ class ESAKSHISessionCrawler:
 
         logger.info(f"Querying e-SAKSHI granular works: {url}")
         try:
-            async with httpx.AsyncClient(timeout=30.0, follow_redirects=True, headers=self.headers) as client:
+            async with httpx.AsyncClient(timeout=5.0, follow_redirects=True, headers=self.headers) as client:
                 resp = await client.get(url)
                 if resp.status_code == 200:
                     content_type = resp.headers.get("content-type", "").lower()
@@ -157,12 +157,14 @@ class ESAKSHISessionCrawler:
     async def run(self, limit: int = 50) -> int:
         """
         Polls candidates from Supabase and crawls granular e-SAKSHI work sanctions.
+        Includes circuit-breaker to abort quickly if the portal is redirecting or down.
         """
         logger.info("==========================================================")
         logger.info("Starting e-SAKSHI Granular Works Automated Ingestion")
         logger.info("==========================================================")
         candidates = await supabase.select("candidates", {"limit": str(limit)})
         total_synced = 0
+        consecutive_misses = 0
 
         for cand in candidates:
             cand_id = cand.get("id")
@@ -177,6 +179,14 @@ class ESAKSHISessionCrawler:
                     mp_name=cand_name,
                 )
                 total_synced += count
+                if count == 0:
+                    consecutive_misses += 1
+                else:
+                    consecutive_misses = 0
+
+                if consecutive_misses >= 5:
+                    logger.info("e-SAKSHI portal currently unreachable or redirecting for multiple queries. Halting crawl early.")
+                    break
 
         logger.info("==========================================================")
         logger.info(f"e-SAKSHI Crawl Complete. Total works synced: {total_synced}")
