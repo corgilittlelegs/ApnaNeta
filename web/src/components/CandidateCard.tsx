@@ -25,6 +25,7 @@ import {
   CIVIC_THRESHOLDS,
   WEALTH_TIERS,
 } from '../utils/civicConstants';
+import { useCandidatePhoto } from '../utils/wikidataPhoto';
 
 interface CandidateCardProps {
   candidate: Candidate;
@@ -38,16 +39,32 @@ interface CandidateCardProps {
   isSelectedForComparison?: boolean;
   onToggleComparison?: (candidate: Candidate) => void;
   onOpenShareCard?: (candidate: Candidate) => void;
+  onOpenAuditTrace?: (candidate: Candidate) => void;
 }
 
 export const CandidateCard: React.FC<CandidateCardProps> = ({
   candidate,
   onVerifyProof,
-  isSelectedForComparison,
+  isSelectedForComparison = false,
   onToggleComparison,
   onOpenShareCard,
+  onOpenAuditTrace,
 }) => {
   const { isCitizenMode } = useViewMode();
+  const { photoUrl: dynamicPhotoUrl, attribution: photoAttribution } = useCandidatePhoto(
+    candidate.name,
+    candidate.photo_url
+  );
+
+  const cleanInitials =
+    candidate.name
+      .replace(/\s*\(.*?\)/g, '')
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase() || candidate.name.slice(0, 2).toUpperCase();
 
   const formatINR = (val: number) => {
     if (val >= 10000000) return `₹${(val / 10000000).toFixed(2)} Cr`;
@@ -101,16 +118,16 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
   return (
     <article className="bg-white rounded-2xl border border-slate-200/90 shadow-sm hover:shadow-md hover:border-slate-300 transition-all overflow-hidden flex flex-col justify-between">
       {/* Top Banner & Candidate Identity */}
-      {/* Top Banner & Candidate Identity */}
       <div className="p-4 sm:p-5">
         <div className="flex items-start justify-between gap-2.5 sm:gap-3 mb-3">
           <div className="flex items-start gap-2.5 sm:gap-3 flex-1 min-w-0">
             {/* Candidate Avatar */}
             <div className="relative flex-shrink-0">
-              {candidate.photo_url ? (
+              {dynamicPhotoUrl ? (
                 <img
-                  src={candidate.photo_url}
+                  src={dynamicPhotoUrl}
                   alt={candidate.name}
+                  title={photoAttribution || `Photo of ${candidate.name}`}
                   loading="lazy"
                   referrerPolicy="no-referrer"
                   className="w-11 h-11 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-slate-200 shadow-2xs bg-slate-50"
@@ -124,16 +141,10 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
               ) : null}
               <div
                 className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full items-center justify-center font-bold text-xs text-slate-700 bg-slate-100 border-2 border-slate-200 shadow-2xs ${
-                  candidate.photo_url ? 'hidden' : 'flex'
+                  dynamicPhotoUrl ? 'hidden' : 'flex'
                 }`}
               >
-                {candidate.name
-                  .split(' ')
-                  .filter(Boolean)
-                  .slice(0, 2)
-                  .map((n) => n[0])
-                  .join('')
-                  .toUpperCase()}
+                {cleanInitials}
               </div>
             </div>
 

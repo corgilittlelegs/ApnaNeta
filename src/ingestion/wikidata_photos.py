@@ -7,7 +7,7 @@ import asyncio
 from typing import List, Dict, Any, Optional, Tuple
 from urllib.parse import quote, unquote
 try:
-    import httpx
+    import httpx  # type: ignore
 except ImportError:
     httpx = None
 from src.utils.rate_limiter import PoliteRateLimiter
@@ -18,16 +18,81 @@ logger = logging.getLogger("WikidataPhotoSync")
 
 WIKIDATA_SPARQL_ENDPOINT = "https://query.wikidata.org/sparql"
 WIKIDATA_FALLBACK_ENDPOINT = "https://query-main.wikidata.org/sparql"
+WIKIDATA_SEARCH_ENDPOINT = "https://www.wikidata.org/w/api.php"
 COMMONS_API_ENDPOINT = "https://commons.wikimedia.org/w/api.php"
 USER_AGENT = "ApnaNeta/1.0 (https://apnaneta.in; civic-tech electoral integrity; open-data audit)"
 
-
 HONORIFICS = {
-    "dr", "prof", "shri", "smt", "adv", "advocate", "ku", "km", "kumari",
-    "mr", "mrs", "ms", "chaudhary", "ch", "sardar", "thakur", "pandit",
-    "late", "alhaj", "begum", "syed", "capt", "captain", "colonel", "col",
-    "justice", "swami", "sant", "yogi"
+    "dr", "doctor", "prof", "professor", "shri", "sh", "smt", "shrimati",
+    "adv", "advocate", "ku", "km", "kumari", "mr", "mrs", "ms",
+    "chaudhary", "ch", "sardar", "thakur", "pandit", "pt",
+    "late", "alhaj", "al-haj", "haji", "begum", "syed", "capt", "captain",
+    "colonel", "col", "major", "gen", "general", "justice", "swami",
+    "sant", "yogi", "mahant", "acharya", "kunwar", "rao", "babu", "nawab",
+    "retd", "ips", "ias", "ifs", "ex-mp", "ex-mla", "mla", "mp"
 }
+
+HONORIFICS_REGEX = (
+    r"\b(dr|doctor|prof|professor|shri|sh|smt|shrimati|adv|advocate|ku|km|kumari|"
+    r"mr|mrs|ms|chaudhary|ch|sardar|thakur|pandit|pt|late|alhaj|al-haj|haji|begum|"
+    r"syed|capt|captain|colonel|col|major|gen|general|justice|swami|sant|yogi|"
+    r"mahant|acharya|kunwar|rao|babu|nawab|retd|ips|ias|ifs|ex-mp|ex-mla|mla|mp)\b\.?"
+)
+
+
+def generate_search_queries(raw_name: str) -> List[str]:
+    """
+    Generates dynamic search query variations for any Indian politician name to cover all cases:
+    1. Stripping parenthetical titles: '(Dr.) Ram Shankar Katheria' -> 'Ram Shankar Katheria'
+    2. Stripping prefix honorifics: 'Dr. Mahesh Sharma' -> 'Mahesh Sharma'
+    3. Retaining public names with honorifics: 'Yogi Adityanath' -> 'Yogi Adityanath'
+    4. Comma-inverted names: 'Katheria, Ram Shankar' -> 'Ram Shankar Katheria'
+    5. Aliases inside parentheses: 'Prakash (alias Bablu) Sharma' -> 'Prakash Sharma', 'Bablu Sharma'
+    6. Preserving initials: 'A. M. Ariff' -> 'A M Ariff'
+    """
+    queries: List[str] = []
+    seen = set()
+
+    def add(q: str):
+        q = " ".join(q.split()).strip(" ,.-/\"\'()")
+        if q and len(q) >= 3 and q.lower() not in seen:
+            seen.add(q.lower())
+            queries.append(q)
+
+    # 1. Comma inversion: 'Last, First Middle' -> 'First Middle Last'
+    if "," in raw_name:
+        parts = [p.strip() for p in raw_name.split(",", 1)]
+        add(f"{parts[1]} {parts[0]}")
+
+    # 2. Extract content inside parentheses (might be alias or title)
+    inside_parens = re.findall(r"\((.*?)\)", raw_name)
+
+    # 3. Strip parenthetical content completely
+    without_parens = re.sub(r"\s*\(.*?\)", "", raw_name)
+
+    # 4. Strip honorifics from without_parens
+    clean_no_honorifics = re.sub(HONORIFICS_REGEX, "", without_parens, flags=re.IGNORECASE)
+    clean_no_honorifics = re.sub(r"[\.,\'\"\-\/]", " ", clean_no_honorifics)
+    add(clean_no_honorifics)
+
+    # 5. Clean without_parens (preserving potential honorifics like Yogi)
+    clean_with_honorifics = re.sub(r"[\.,\'\"\-\/]", " ", without_parens)
+    add(clean_with_honorifics)
+
+    # 6. Check aliases inside parentheses
+    for p in inside_parens:
+        p_clean = re.sub(r"\b(alias|aka|urff?)\b", "", p, flags=re.IGNORECASE)
+        p_clean = re.sub(HONORIFICS_REGEX, "", p_clean, flags=re.IGNORECASE)
+        p_clean = re.sub(r"[\.,\'\"\-\/]", " ", p_clean)
+        tokens_base = clean_no_honorifics.split()
+        if len(tokens_base) >= 2 and p_clean.strip():
+            add(f"{p_clean.strip()} {tokens_base[-1]}")
+        add(p_clean)
+
+    # 7. Add raw cleaned name as fallback
+    add(re.sub(r"[\(\)\.,\'\"\-\/]", " ", raw_name))
+
+    return queries
 
 
 def clean_name_tokens(name: str) -> List[str]:
@@ -45,9 +110,9 @@ def normalize_name(name: str) -> str:
 
 
 def name_tokens_key(name: str) -> str:
-    """Returns sorted tokens of the name to match inverted or honorific name formats."""
-    tokens = sorted(normalize_name(name).split())
-    return " ".join(tokens)
+    """Returns sorted clean tokens of the name to match inverted or honorific name formats."""
+    tokens = clean_name_tokens(name)
+    return " ".join(sorted(tokens))
 
 
 def strip_html_tags(text: str) -> str:
@@ -61,7 +126,8 @@ def strip_html_tags(text: str) -> str:
 class WikidataPhotoSynchronizer:
     """
     Synchronizes high-resolution portrait photos and verified Creative Commons
-    legal attribution metadata for Indian Parliamentarians from Wikidata & Wikimedia Commons.
+    legal attribution metadata for Indian Parliamentarians and candidates
+    from Wikidata & Wikimedia Commons using both SPARQL batch and dynamic entity search.
     """
 
     def __init__(self, rate_limiter: Optional[PoliteRateLimiter] = None):
@@ -108,6 +174,15 @@ class WikidataPhotoSynchronizer:
                             fl_pair = (c_toks[0], c_toks[-1])
                             first_last_index.setdefault(fl_pair, []).append(row)
 
+                    # Also index all generated dynamic search variations
+                    for q in generate_search_queries(raw_name):
+                        q_norm = normalize_name(q)
+                        if q_norm:
+                            exact_index.setdefault(q_norm, row)
+                        q_key = name_tokens_key(q)
+                        if q_key:
+                            token_index.setdefault(q_key, row)
+
                 offset += len(records)
                 if len(records) < batch_size:
                     break
@@ -142,6 +217,15 @@ class WikidataPhotoSynchronizer:
         if c_key in token_index:
             return token_index[c_key]
 
+        # Check generated query variations of wiki_name
+        for q in generate_search_queries(wiki_name):
+            q_norm = normalize_name(q)
+            if q_norm in exact_index:
+                return exact_index[q_norm]
+            q_key = name_tokens_key(q)
+            if q_key in token_index:
+                return token_index[q_key]
+
         if len(w_toks) >= 2 and hasattr(self, "first_last_index"):
             fl_pair = (w_toks[0], w_toks[-1])
             candidates = self.first_last_index.get(fl_pair, [])
@@ -157,7 +241,7 @@ class WikidataPhotoSynchronizer:
 
         return None
 
-    async def _execute_sparql(self, client: httpx.AsyncClient, query: str) -> List[Dict[str, Any]]:
+    async def _execute_sparql(self, client: Any, query: str) -> List[Dict[str, Any]]:
         """Executes a SPARQL query via POST with exponential backoff and multi-endpoint failover."""
         endpoints = [
             WIKIDATA_SPARQL_ENDPOINT,
@@ -239,7 +323,6 @@ class WikidataPhotoSynchronizer:
         async with httpx.AsyncClient(timeout=45.0, follow_redirects=True) as client:
             ls_bindings = await self._execute_sparql(client, lok_sabha_query)
             if not ls_bindings:
-                # Fallback to direct rdfs:label if label service times out
                 logger.info("Retrying Lok Sabha query with direct rdfs:label...")
                 ls_alt = """
                 SELECT ?politician ?politicianLabel ?image WHERE {
@@ -296,13 +379,13 @@ class WikidataPhotoSynchronizer:
 
             name = item.get("politicianLabel", {}).get("value", "").strip()
             image_url = item.get("image", {}).get("value", "").strip()
-            if name and image_url and not name.startswith("Q"):  # filter out unresolved QIDs
+            if name and image_url and not name.startswith("Q"):
                 parsed.append({"name": name, "image_url": image_url})
 
         logger.info(f"Parsed {len(parsed)} unique parliamentarians with portraits.")
         return parsed
 
-    async def fetch_wikimedia_file_metadata(self, client: httpx.AsyncClient, file_name: str) -> Dict[str, Any]:
+    async def fetch_wikimedia_file_metadata(self, client: Any, file_name: str) -> Dict[str, Any]:
         """
         Fetches license, author, and 300px thumbnail URL for a Wikimedia Commons file
         using the official MediaWiki Action API for full TASL compliance.
@@ -346,83 +429,261 @@ class WikidataPhotoSynchronizer:
 
         return {}
 
-    async def sync_photos(self, limit: Optional[int] = None) -> int:
-        """Main synchronizer loop: queries Wikidata, resolves metadata, and updates Supabase."""
+    async def resolve_photo_dynamically(
+        self,
+        client: Any,
+        name: str,
+        state: Optional[str] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Dynamically searches Wikidata using entity search for a candidate's name,
+        inspecting claims for P18 (image) and fetching full Wikimedia Commons attribution.
+        """
+        queries = generate_search_queries(name)
+        headers = {"User-Agent": USER_AGENT}
+
+        for q in queries:
+            search_params = {
+                "action": "wbsearchentities",
+                "search": q,
+                "language": "en",
+                "type": "item",
+                "format": "json",
+                "limit": "5",
+            }
+            try:
+                resp = await client.get(WIKIDATA_SEARCH_ENDPOINT, params=search_params, headers=headers)
+                if resp.status_code != 200:
+                    continue
+                data = resp.json()
+                results = data.get("search", [])
+            except Exception as e:
+                logger.debug(f"Wikidata entity search error for '{q}': {e}")
+                continue
+
+            for r in results:
+                desc = (r.get("description") or "").lower()
+                # Check for Indian political relevance
+                is_relevant = any(
+                    k in desc
+                    for k in [
+                        "politician", "minister", "parliament", "assembly", "india",
+                        "mp", "mla", "leader", "activist", "governor", "chief minister",
+                        "lok sabha", "rajya sabha"
+                    ]
+                )
+                if not is_relevant and "india" not in desc:
+                    continue
+
+                entity_id = r["id"]
+                # Fetch entity claims to extract P18 (image)
+                claim_params = {
+                    "action": "wbgetentities",
+                    "ids": entity_id,
+                    "props": "claims",
+                    "format": "json",
+                }
+                try:
+                    c_resp = await client.get(WIKIDATA_SEARCH_ENDPOINT, params=claim_params, headers=headers)
+                    if c_resp.status_code != 200:
+                        continue
+                    c_data = c_resp.json()
+                    claims = c_data.get("entities", {}).get(entity_id, {}).get("claims", {})
+                    p18 = claims.get("P18", [])
+                    if not p18:
+                        continue
+
+                    raw_image_filename = p18[0].get("mainsnak", {}).get("datavalue", {}).get("value")
+                    if not raw_image_filename:
+                        continue
+
+                    # Fetch Commons thumbnail and attribution
+                    meta = await self.fetch_wikimedia_file_metadata(client, raw_image_filename)
+                    fallback_url = f"https://commons.wikimedia.org/wiki/Special:FilePath/{quote(raw_image_filename)}?width=300"
+                    photo_url = meta.get("thumb_url") or fallback_url
+                    if photo_url.startswith("http://"):
+                        photo_url = "https://" + photo_url[7:]
+                    attribution = meta.get("attribution") or "Photo via Wikimedia Commons (CC BY-SA)"
+                    license_url = meta.get("license_url") or "https://creativecommons.org"
+
+                    return {
+                        "entity_id": entity_id,
+                        "matched_name": r.get("label"),
+                        "photo_url": photo_url,
+                        "photo_source": "wikimedia",
+                        "photo_attribution": attribution,
+                        "photo_license_url": license_url,
+                    }
+                except Exception as e:
+                    logger.debug(f"Error fetching claims for {entity_id}: {e}")
+                    continue
+
+        return None
+
+    async def sync_photos(self, limit: Optional[int] = None, dynamic_only: bool = False) -> int:
+        """
+        Main synchronizer loop:
+        1. (Unless dynamic_only) Queries Wikidata SPARQL batch for MPs.
+        2. Dynamically resolves photos for candidates still missing photos in Supabase.
+        """
+        if httpx is None:
+            logger.warning("httpx is not installed. Please install httpx to run photo sync.")
+            return 0
+
         exact_index, token_index = await self.fetch_existing_candidates()
         if not exact_index:
             logger.warning("No candidates found in Supabase database to match against.")
             return 0
 
-        wiki_items = await self.fetch_wikidata_mp_photos()
-        if not wiki_items:
-            logger.info("No Wikidata items returned.")
-            return 0
-
         updated_count = 0
-        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
-            for item in wiki_items:
+
+        async with httpx.AsyncClient(timeout=20.0, follow_redirects=True) as client:
+            # Stage 1: SPARQL Batch Ingestion
+            if not dynamic_only:
+                wiki_items = await self.fetch_wikidata_mp_photos()
+                for item in wiki_items:
+                    if limit and updated_count >= limit:
+                        logger.info(f"Target update limit of {limit} reached.")
+                        break
+
+                    raw_name = item["name"]
+                    raw_image_url = item["image_url"]
+
+                    matched_cand = self.match_candidate(raw_name, exact_index, token_index)
+                    if not matched_cand:
+                        continue
+
+                    candidate_id = matched_cand.get("id")
+                    if matched_cand.get("photo_source") == "wikimedia" and matched_cand.get("photo_url"):
+                        continue
+
+                    file_name = unquote(raw_image_url.split("/")[-1])
+                    meta = await self.fetch_wikimedia_file_metadata(client, file_name)
+
+                    fallback_url = f"https://commons.wikimedia.org/wiki/Special:FilePath/{quote(file_name)}?width=300"
+                    photo_url = meta.get("thumb_url") or fallback_url
+                    if photo_url.startswith("http://"):
+                        photo_url = "https://" + photo_url[7:]
+                    attribution = meta.get("attribution") or "Photo via Wikimedia Commons (CC BY-SA)"
+                    license_url = meta.get("license_url") or "https://creativecommons.org"
+
+                    try:
+                        await supabase.update(
+                            "candidates",
+                            {
+                                "photo_url": photo_url,
+                                "photo_source": "wikimedia",
+                                "photo_attribution": attribution,
+                                "photo_license_url": license_url,
+                            },
+                            {"id": f"eq.{candidate_id}"},
+                        )
+                        matched_cand["photo_url"] = photo_url
+                        matched_cand["photo_source"] = "wikimedia"
+                        updated_count += 1
+                        logger.info(f"✅ [SPARQL] Synced photo for {raw_name} -> {photo_url}")
+                    except Exception as e:
+                        logger.warning(f"Failed to update candidate photo for {raw_name}: {e}")
+
+                    await self.rate_limiter.wait()
+
+            # Stage 2: Dynamic Entity Search for Candidates Missing Photos
+            logger.info("Starting Stage 2: Dynamic search for candidates missing photos...")
+            # Collect unique candidates without photos
+            candidates_without_photos = []
+            seen_cand_ids = set()
+            for cand in exact_index.values():
+                c_id = cand.get("id")
+                if c_id not in seen_cand_ids and not cand.get("photo_url"):
+                    seen_cand_ids.add(c_id)
+                    candidates_without_photos.append(cand)
+
+            logger.info(f"Found {len(candidates_without_photos)} candidates without photos. Resolving dynamically...")
+
+            for cand in candidates_without_photos:
                 if limit and updated_count >= limit:
-                    logger.info(f"Target update limit of {limit} reached. Stopping sync.")
                     break
 
-                raw_name = item["name"]
-                raw_image_url = item["image_url"]
-
-                matched_cand = self.match_candidate(raw_name, exact_index, token_index)
-                if not matched_cand:
-                    continue
-
-                candidate_id = matched_cand.get("id")
-                # Don't re-update if already has a wikimedia photo
-                if matched_cand.get("photo_source") == "wikimedia" and matched_cand.get("photo_url"):
-                    continue
-
-                # Extract File: name from URL
-                file_name = unquote(raw_image_url.split("/")[-1])
-                meta = await self.fetch_wikimedia_file_metadata(client, file_name)
-
-                fallback_url = f"https://commons.wikimedia.org/wiki/Special:FilePath/{quote(file_name)}?width=300"
-                photo_url = meta.get("thumb_url") or fallback_url
-                if photo_url.startswith("http://"):
-                    photo_url = "https://" + photo_url[7:]
-                attribution = meta.get("attribution") or "Photo via Wikimedia Commons (CC BY-SA)"
-                license_url = meta.get("license_url") or "https://creativecommons.org"
-
-                try:
-                    await supabase.update(
-                        "candidates",
-                        {
-                            "photo_url": photo_url,
-                            "photo_source": "wikimedia",
-                            "photo_attribution": attribution,
-                            "photo_license_url": license_url,
-                        },
-                        {"id": f"eq.{candidate_id}"},
-                    )
-                    updated_count += 1
-                    logger.info(f"✅ Synced Wikimedia photo for {raw_name} -> {photo_url}")
-                except Exception as e:
-                    logger.warning(f"Failed to update candidate photo for {raw_name}: {e}")
+                name = cand.get("name", "")
+                resolved = await self.resolve_photo_dynamically(client, name, cand.get("state"))
+                if resolved:
+                    candidate_id = cand.get("id")
+                    try:
+                        await supabase.update(
+                            "candidates",
+                            {
+                                "photo_url": resolved["photo_url"],
+                                "photo_source": resolved["photo_source"],
+                                "photo_attribution": resolved["photo_attribution"],
+                                "photo_license_url": resolved["photo_license_url"],
+                            },
+                            {"id": f"eq.{candidate_id}"},
+                        )
+                        cand["photo_url"] = resolved["photo_url"]
+                        cand["photo_source"] = "wikimedia"
+                        updated_count += 1
+                        logger.info(f"✅ [Dynamic] Synced photo for '{name}' (matched '{resolved['matched_name']}') -> {resolved['photo_url']}")
+                    except Exception as e:
+                        logger.warning(f"Failed to update candidate {name}: {e}")
 
                 await self.rate_limiter.wait()
 
         logger.info(f"🎉 Photo sync complete! Updated {updated_count} candidate profiles with Creative Commons photos.")
         return updated_count
 
+    async def sync_single_candidate(self, candidate_name: str) -> bool:
+        """Resolves and updates a single candidate by name."""
+        if httpx is None:
+            logger.warning("httpx is not installed. Please install httpx to run photo sync.")
+            return False
+
+        logger.info(f"Resolving photo dynamically for single candidate: '{candidate_name}'...")
+        async with httpx.AsyncClient(timeout=20.0, follow_redirects=True) as client:
+            resolved = await self.resolve_photo_dynamically(client, candidate_name)
+            if not resolved:
+                logger.warning(f"No Wikimedia photo found on Wikidata for '{candidate_name}'.")
+                return False
+
+            logger.info(f"Found photo for '{candidate_name}': {resolved['photo_url']}")
+            # Update Supabase if candidate exists
+            try:
+                exact_index, token_index = await self.fetch_existing_candidates()
+                matched = self.match_candidate(candidate_name, exact_index, token_index)
+                if matched:
+                    await supabase.update(
+                        "candidates",
+                        {
+                            "photo_url": resolved["photo_url"],
+                            "photo_source": resolved["photo_source"],
+                            "photo_attribution": resolved["photo_attribution"],
+                            "photo_license_url": resolved["photo_license_url"],
+                        },
+                        {"id": f"eq.{matched['id']}"},
+                    )
+                    logger.info(f"✅ Successfully updated database for '{candidate_name}'.")
+                else:
+                    logger.info(f"Candidate '{candidate_name}' not found in Supabase (or Supabase unconfigured). Photo URL: {resolved['photo_url']}")
+                return True
+            except Exception as e:
+                logger.warning(f"Database update failed for '{candidate_name}': {e}")
+                return False
+
 
 synchronizer = WikidataPhotoSynchronizer()
 
 if __name__ == "__main__":
-    raw_limit = (os.getenv("LIMIT") or (sys.argv[1] if len(sys.argv) > 1 else "all")).strip().lower()
-    if raw_limit in ("all", "0", "none", "", "unlimited"):
-        limit_val = None
-        logger.info("Running photo sync with limit=ALL (querying all available parliamentarians with photos)")
-    else:
-        try:
-            limit_val = int(raw_limit)
-            logger.info(f"Running photo sync with limit={limit_val}")
-        except ValueError:
-            limit_val = None
-            logger.info("Running photo sync with limit=ALL (fallback)")
+    import argparse
 
-    asyncio.run(synchronizer.sync_photos(limit=limit_val))
+    parser = argparse.ArgumentParser(description="Sync authentic portrait photos from Wikidata & Wikimedia Commons.")
+    parser.add_argument("--limit", type=str, default="all", help="Maximum candidates to update (number or 'all')")
+    parser.add_argument("--candidate", type=str, default=None, help="Sync a specific candidate by name")
+    parser.add_argument("--dynamic-only", action="store_true", help="Skip SPARQL batch and run only dynamic entity search")
+    args = parser.parse_args()
+
+    if args.candidate:
+        asyncio.run(synchronizer.sync_single_candidate(args.candidate))
+    else:
+        raw_limit = (os.getenv("LIMIT") or args.limit).strip().lower()
+        limit_val = None if raw_limit in ("all", "0", "none", "", "unlimited") else int(raw_limit)
+        asyncio.run(synchronizer.sync_photos(limit=limit_val, dynamic_only=args.dynamic_only))
+
