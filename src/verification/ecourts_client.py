@@ -123,7 +123,8 @@ class ECourtsVerificationClient:
         logger.info("Starting eCourts Services Judicial Docket Verification Engine")
         logger.info("==========================================================")
 
-        cases = await supabase.select("criminal_cases", {"limit": "500"})
+        cases = await supabase.select_all("criminal_cases")
+        logger.info(f"Loaded {len(cases)} judicial cases for verification.")
         results = []
 
         for c in cases:
@@ -133,7 +134,7 @@ class ECourtsVerificationClient:
                 results.append(res)
 
         logger.info("==========================================================")
-        logger.info(f"✅ eCourts Verification Complete! Audited {len(results)} judicial dockets.")
+        logger.info(f"✅ eCourts Verification Complete! Audited {len(results)} of {len(cases)} judicial dockets.")
         logger.info("==========================================================")
         return results
 

@@ -245,7 +245,8 @@ if __name__ == "__main__":
 
     async def main():
         logger.info("Starting MPLADS Satellite & GIS Geolocation Ghost Project Audit...")
-        candidates = await supabase.select("candidates", {"limit": "50"})
+        candidates = await supabase.select_all("candidates")
+        logger.info(f"Loaded {len(candidates)} candidates for GIS geolocation audit.")
         for cand in candidates:
             c_id = cand.get("id")
             c_const = cand.get("constituency", "")
@@ -253,7 +254,7 @@ if __name__ == "__main__":
                 res = await gis_verifier.audit_candidate_works(c_id, c_const)
                 if res.get("total_works", 0) > 0:
                     logger.info(f"Audited {cand.get('name')} ({c_const}): {res}")
-        logger.info("GIS Geolocation Audit Complete.")
+        logger.info(f"GIS Geolocation Audit Complete for {len(candidates)} candidates.")
 
     try:
         asyncio.run(main())

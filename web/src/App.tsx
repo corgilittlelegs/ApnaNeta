@@ -6,7 +6,7 @@ import { ConstituencyFilter, FilterState } from './components/ConstituencyFilter
 import { ComparisonModal } from './components/ComparisonModal';
 import { ReportCardModal } from './components/ReportCardModal';
 import { LeaderboardsView } from './components/LeaderboardsView';
-import { Candidate, BoundingBox } from './types/candidate';
+import { Candidate, BoundingBox, MPLADSRecord, HistoricalWealthRecord } from './types/candidate';
 import { ViewModeProvider, useViewMode } from './context/ViewModeContext';
 import { CivicFaqDrawer } from './components/CivicFaqDrawer';
 import {
@@ -28,7 +28,7 @@ import { PROMINENT_PARTY_MAP } from './data/politicianLookup';
 import { CIVIC_IMPACT_BENCHMARKS } from './utils/civicConstants';
 
 const CANDIDATE_SELECT_QUERY =
-  'select=*,sansad_records(attendance_rate,debates_count,questions_count),affidavits(id,filing_year,source_url,r2_storage_key,audit_discrepancies(*),criminal_cases(*)),mplads_records(*),mplads_works(*),historical_wealth_cagr(*),conflict_of_interest_audits(*),political_mobility_records(*),corporate_associations(*)';
+  'select=*,sansad_records(attendance_rate,debates_count,questions_count),affidavits(id,filing_year,source_url,r2_storage_key,audit_discrepancies(*),criminal_cases(id,case_type,is_heinous,is_convicted)),mplads_records(*),historical_wealth_cagr(*),conflict_of_interest_audits(id,nature_of_conflict,is_alleged_violation),political_mobility_records(id,from_party,to_party),corporate_associations(id,company_name,din)';
 
 function parseCandidateRow(row: any): Candidate {
   const sansad = Array.isArray(row.sansad_records) && row.sansad_records.length > 0 ? row.sansad_records[0] : null;
@@ -58,18 +58,22 @@ function parseCandidateRow(row: any): Candidate {
   const parsedDockets = cases.map((c: any) => ({
     id: c.id,
     case_type: c.case_type,
-    fir_or_case_number: c.fir_or_case_number || 'Case',
+    fir_or_case_number: c.fir_or_case_number || c.case_number || 'Case',
     police_station: c.police_station,
     court_name: c.court_name,
-    statutory_charges: c.statutory_charges,
-    charges_framed: c.charges_framed,
+    statutory_charges: Array.isArray(c.statutory_charges)
+      ? c.statutory_charges
+      : Array.isArray(c.ipc_sections)
+      ? c.ipc_sections
+      : [],
+    charges_framed: Boolean(c.charges_framed),
     charges_framed_date: c.charges_framed_date,
-    is_serious_category: c.is_serious_category,
+    is_serious_category: Boolean(c.is_serious_category ?? c.is_heinous),
     category_justification: c.category_justification,
     cnr_number: c.cnr_number,
     ecourts_verified: Boolean(c.ecourts_verified),
     ecourts_stage: c.ecourts_stage,
-    is_rpa_section_8_disqualified: Boolean(c.is_rpa_section_8_disqualified),
+    is_rpa_section_8_disqualified: Boolean(c.is_rpa_section_8_disqualified ?? c.rpa_section_8_applicable),
   }));
 
   const crimCount = parsedDockets.length > 0 ? parsedDockets.length : Number(row.criminal_cases_count ?? 0);
@@ -87,31 +91,31 @@ function parseCandidateRow(row: any): Candidate {
 
   const corpList = Array.isArray(row.corporate_associations) ? row.corporate_associations : [];
 
-  const pdfSourceUrl = aff?.source_url || row.pdf_source_url || 'https://affidavit.eci.gov.in';
-  const r2Key = aff?.r2_storage_key || row.r2_storage_key || undefined;
+  const pdfSourceUrl = aff?.source_url || row.pdf_source_url || '';
+  const r2Key = aff?.r2_storage_key || row.r2_storage_key || '';
 
-  // Parse MoSPI MPLADS Record if available
+  // Parse MPLADS Summary Record
   const mpladsRaw = Array.isArray(row.mplads_records) && row.mplads_records.length > 0 ? row.mplads_records[0] : null;
-  const mpladsRecord = mpladsRaw
+  const mpladsRecord: MPLADSRecord | undefined = mpladsRaw
     ? {
-        entitled_amount: Number(mpladsRaw.entitled_amount ?? CIVIC_IMPACT_BENCHMARKS.DEFAULT_5YR_MPLADS_ENTITLEMENT),
-        released_amount: Number(mpladsRaw.released_amount ?? 0.0),
+        entitled_amount: Number(mpladsRaw.entitled_amount ?? mpladsRaw.allocated_amount ?? CIVIC_IMPACT_BENCHMARKS.DEFAULT_5YR_MPLADS_ENTITLEMENT),
+        released_amount: Number(mpladsRaw.released_amount ?? mpladsRaw.sanctioned_amount ?? 0.0),
         expenditure_amount: Number(mpladsRaw.expenditure_amount ?? 0.0),
         unspent_balance: Number(mpladsRaw.unspent_balance ?? 0.0),
         utilization_rate: Number(mpladsRaw.utilization_rate ?? 0.0),
-        works_recommended: Number(mpladsRaw.works_recommended ?? 0),
-        works_completed: Number(mpladsRaw.works_completed ?? 0),
+        works_recommended: Number(mpladsRaw.works_recommended ?? mpladsRaw.num_recommended_works ?? 0),
+        works_completed: Number(mpladsRaw.works_completed ?? mpladsRaw.num_completed_works ?? 0),
         term_years: mpladsRaw.term_years || '2019-2024',
       }
     : undefined;
 
-  // Parse Historical Wealth CAGR if available
+  // Parse Historical Wealth CAGR Longitudinal Records
   const cagrRawList = Array.isArray(row.historical_wealth_cagr) ? row.historical_wealth_cagr : [];
-  const cagrRecords =
+  const cagrRecords: HistoricalWealthRecord[] | undefined =
     cagrRawList.length > 0
       ? cagrRawList.map((c: any) => ({
-          from_year: Number(c.from_year),
-          to_year: Number(c.to_year),
+          from_year: Number(c.from_year ?? c.filing_year_start ?? 2019),
+          to_year: Number(c.to_year ?? c.filing_year_end ?? 2024),
           initial_assets: Number(c.initial_assets),
           final_assets: Number(c.final_assets),
           absolute_increase: Number(c.absolute_increase),
@@ -121,33 +125,27 @@ function parseCandidateRow(row: any): Candidate {
         }))
       : undefined;
 
-  const known = PROMINENT_PARTY_MAP[row.name ? row.name.toLowerCase().trim() : ''];
   const resolvedParty =
-    known?.party ||
-    (row.party && row.party !== 'Parliamentarian' && row.party !== 'None' && row.party !== 'null' && row.party !== 'Unknown'
+    row.party && row.party !== 'Parliamentarian' && row.party !== 'None' && row.party !== 'null' && row.party !== 'Unknown'
       ? row.party
-      : 'Independent');
+      : 'Independent';
   const resolvedState =
-    known?.state ||
-    (row.state && row.state !== 'India' && row.state !== 'National'
+    row.state && row.state !== 'India' && row.state !== 'National'
       ? row.state
-      : (row.state || 'India'));
+      : (row.state || 'India');
   const resolvedConstituency =
-    known?.constituency ||
-    (row.constituency && row.constituency !== 'Parliament of India' && row.constituency !== 'National'
+    row.constituency && row.constituency !== 'Parliament of India' && row.constituency !== 'National'
       ? row.constituency
-      : (row.constituency || 'National'));
+      : (row.constituency || 'National');
 
   const rawHouse = row.house ? String(row.house).trim() : '';
-  let resolvedHouse: 'Lok Sabha' | 'Rajya Sabha' | 'Vidhan Sabha' = known?.house || 'Lok Sabha';
-  if (!known?.house) {
-    if (rawHouse === 'Rajya Sabha') {
-      resolvedHouse = 'Rajya Sabha';
-    } else if (rawHouse.includes('Vidhan')) {
-      resolvedHouse = 'Vidhan Sabha';
-    } else {
-      resolvedHouse = 'Lok Sabha';
-    }
+  let resolvedHouse: 'Lok Sabha' | 'Rajya Sabha' | 'Vidhan Sabha' = 'Lok Sabha';
+  if (rawHouse === 'Rajya Sabha') {
+    resolvedHouse = 'Rajya Sabha';
+  } else if (rawHouse.includes('Vidhan')) {
+    resolvedHouse = 'Vidhan Sabha';
+  } else {
+    resolvedHouse = 'Lok Sabha';
   }
 
   // Parse MoSPI e-SAKSHI Granular Public Works if available
@@ -217,9 +215,14 @@ function parseCandidateRow(row: any): Candidate {
   };
 }
 
+function getCandidateIdentityKey(cand: { id?: string; name: string; state?: string; constituency?: string; house: string }): string {
+  if (cand.id) return cand.id;
+  return `${cand.name.toLowerCase().trim()}::${(cand.state || '').toLowerCase().trim()}::${(cand.constituency || '').toLowerCase().trim()}::${cand.house.toLowerCase().trim()}`;
+}
+
 function mergeCandidatesIntoMap(map: Map<string, Candidate>, newCandidates: Candidate[]) {
   for (const cand of newCandidates) {
-    const key = `${cand.name.toLowerCase().trim()}::${cand.house.toLowerCase()}`;
+    const key = getCandidateIdentityKey(cand);
     const existing = map.get(key);
     if (!existing) {
       map.set(key, cand);
@@ -325,7 +328,7 @@ const AppContent: React.FC = () => {
       setIsLoading(true);
       try {
         const res = await fetch(
-          `${cleanUrl}/rest/v1/candidates?${CANDIDATE_SELECT_QUERY}&order=name.asc&limit=1000`,
+          `${cleanUrl}/rest/v1/candidates?${CANDIDATE_SELECT_QUERY}&order=name.asc&limit=100`,
           {
             headers: {
               apikey: rawKey,
@@ -355,6 +358,7 @@ const AppContent: React.FC = () => {
 
           const uniqueDbCandidates = Array.from(candidateMap.values());
           setCandidates(uniqueDbCandidates);
+          setDirectoryOffset(data.length);
           setIsLiveConnected(true);
         }
       } catch (err) {
@@ -367,65 +371,56 @@ const AppContent: React.FC = () => {
     fetchLiveCandidates();
   }, []);
 
-  // Progressive Background Pagination to load all candidates up to totalDatabaseCount
-  useEffect(() => {
-    if (!isLiveConnected || totalDatabaseCount <= 1000) return;
+  // On-demand server pagination state
+  const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
+  const [directoryOffset, setDirectoryOffset] = useState<number>(0);
 
-    let isCancelled = false;
+  const loadMoreCandidates = async () => {
+    if (isLoadingMore || directoryOffset >= totalDatabaseCount) return;
     const metaEnv = (import.meta as any).env || {};
     const rawUrl = String(metaEnv.VITE_SUPABASE_URL || '').trim();
     const rawKey = String(metaEnv.VITE_SUPABASE_ANON_KEY || '').trim();
     if (!rawUrl || !rawKey) return;
 
     const cleanUrl = rawUrl.replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
-    const BATCH_SIZE = 1000;
+    const BATCH_SIZE = 100;
+    setIsLoadingMore(true);
 
-    const loadRemainingPages = async () => {
-      for (let offset = 1000; offset < totalDatabaseCount; offset += BATCH_SIZE) {
-        if (isCancelled) break;
-        try {
-          const res = await fetch(
-            `${cleanUrl}/rest/v1/candidates?${CANDIDATE_SELECT_QUERY}&order=name.asc&offset=${offset}&limit=${BATCH_SIZE}`,
-            {
-              headers: {
-                apikey: rawKey,
-                Authorization: `Bearer ${rawKey}`,
-              },
-            }
-          );
+    try {
+      const res = await fetch(
+        `${cleanUrl}/rest/v1/candidates?${CANDIDATE_SELECT_QUERY}&order=name.asc&offset=${directoryOffset}&limit=${BATCH_SIZE}`,
+        {
+          headers: {
+            apikey: rawKey,
+            Authorization: `Bearer ${rawKey}`,
+          },
+        }
+      );
 
-          if (!res.ok) break;
-
-          const data = await res.json();
-          if (!Array.isArray(data) || data.length === 0) break;
-
-          if (isCancelled) break;
-
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
           const parsedBatch = data.map(parseCandidateRow);
           setCandidates((prev) => {
             const map = new Map<string, Candidate>();
             for (const c of prev) {
-              map.set(`${c.name.toLowerCase().trim()}::${c.house.toLowerCase()}`, c);
+              map.set(getCandidateIdentityKey(c), c);
             }
             mergeCandidatesIntoMap(map, parsedBatch);
             return Array.from(map.values());
           });
-
-          // Polite pacing between batches to prevent hammering network/Supabase
-          await new Promise((r) => setTimeout(r, 150));
-        } catch (err) {
-          console.warn(`Error streaming candidate batch at offset ${offset}:`, err);
-          break;
+          setDirectoryOffset((prev) => prev + data.length);
+          setDisplayLimit((prev) => prev + BATCH_SIZE);
+        } else if (Array.isArray(data) && data.length === 0) {
+          setDirectoryOffset(totalDatabaseCount);
         }
       }
-    };
-
-    loadRemainingPages();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [isLiveConnected, totalDatabaseCount]);
+    } catch (err) {
+      console.warn('Error loading more candidates:', err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   // Debounced Remote Search across the full database
   useEffect(() => {
@@ -484,7 +479,7 @@ const AppContent: React.FC = () => {
             setCandidates((prev) => {
               const map = new Map<string, Candidate>();
               for (const c of prev) {
-                map.set(`${c.name.toLowerCase().trim()}::${c.house.toLowerCase()}`, c);
+                map.set(getCandidateIdentityKey(c), c);
               }
               mergeCandidatesIntoMap(map, newCands);
               return Array.from(map.values());
@@ -518,21 +513,64 @@ const AppContent: React.FC = () => {
     pdfUrl: '',
   });
 
-  const handleOpenProof = (
+  const handleOpenProof = async (
     candidateName: string,
     fieldLabel: string,
     value: string,
     pdfUrl: string,
     candidate?: Candidate
   ) => {
+    let activeCand = candidate;
+    if (candidate?.id && candidate.mplads_works === undefined) {
+      try {
+        const metaEnv = (import.meta as any).env || {};
+        const rawUrl = String(metaEnv.VITE_SUPABASE_URL || '').trim();
+        const rawKey = String(metaEnv.VITE_SUPABASE_ANON_KEY || '').trim();
+        if (rawUrl && rawKey) {
+          const cleanUrl = rawUrl.replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
+          const res = await fetch(
+            `${cleanUrl}/rest/v1/candidates?id=eq.${candidate.id}&select=*,mplads_works(*)`,
+            {
+              headers: {
+                apikey: rawKey,
+                Authorization: `Bearer ${rawKey}`,
+              },
+            }
+          );
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data) && data.length > 0 && Array.isArray(data[0].mplads_works)) {
+              const fullWorks = data[0].mplads_works.map((w: any) => ({
+                work_id: String(w.work_id || w.id),
+                work_title: String(w.work_title || 'Community Development Work'),
+                sector: w.sector || undefined,
+                cost_inr: Number(w.cost_inr || w.sanctioned_amount || 0),
+                status: w.status || 'Completed',
+                latitude: w.latitude != null ? Number(w.latitude) : undefined,
+                longitude: w.longitude != null ? Number(w.longitude) : undefined,
+                contractor_name: w.contractor_name || undefined,
+                gis_audit_notes: w.gis_audit_notes || undefined,
+              }));
+              activeCand = {
+                ...candidate,
+                mplads_works: fullWorks,
+              };
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Could not fetch on-demand candidate dossier:', e);
+      }
+    }
+
     setProofModal({
       isOpen: true,
       candidateName,
       fieldLabel,
       value,
       pdfUrl,
-      bbox: candidate?.proof_bbox,
-      candidate,
+      bbox: activeCand?.proof_bbox,
+      candidate: activeCand,
     });
   };
 
@@ -570,7 +608,9 @@ const AppContent: React.FC = () => {
       const q = searchQuery.toLowerCase().trim();
       if (q) {
         const tokens = q.split(/\s+/).filter(Boolean);
-        const searchable = `${c.name} ${c.alias || ''} ${c.constituency} ${c.state} ${c.party || ''}`.toLowerCase();
+        const knownAliases = PROMINENT_PARTY_MAP[c.name.toLowerCase().trim()];
+        const aliasString = knownAliases ? `${knownAliases.party} ${knownAliases.constituency || ''} ${knownAliases.state || ''}` : '';
+        const searchable = `${c.name} ${c.alias || ''} ${aliasString} ${c.constituency} ${c.state} ${c.party || ''}`.toLowerCase();
         const matchesQuery = tokens.every((token) => searchable.includes(token));
         if (!matchesQuery) return false;
       }
@@ -768,13 +808,29 @@ const AppContent: React.FC = () => {
                   ))}
                 </div>
 
-                {filteredCandidates.length > displayLimit && (
+                {(filteredCandidates.length > displayLimit || directoryOffset < totalDatabaseCount) && (
                   <div className="mt-10 text-center">
                     <button
-                      onClick={() => setDisplayLimit((prev) => prev + 50)}
-                      className="px-8 py-3.5 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 text-slate-800 text-sm font-semibold rounded-2xl shadow-sm hover:shadow transition-all duration-200 cursor-pointer active:scale-95"
+                      onClick={() => {
+                        if (filteredCandidates.length > displayLimit) {
+                          setDisplayLimit((prev) => prev + 50);
+                        } else {
+                          loadMoreCandidates();
+                        }
+                      }}
+                      disabled={isLoadingMore}
+                      className="px-8 py-3.5 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 text-slate-800 text-sm font-semibold rounded-2xl shadow-sm hover:shadow transition-all duration-200 cursor-pointer active:scale-95 disabled:opacity-50"
                     >
-                      Load More Parliamentarians ({filteredCandidates.length - displayLimit} remaining)
+                      {isLoadingMore ? (
+                        <span className="flex items-center gap-2 justify-center">
+                          <SpinnerGap size={16} className="animate-spin text-blue-600" />
+                          Loading more parliamentarians...
+                        </span>
+                      ) : filteredCandidates.length > displayLimit ? (
+                        `Load More Parliamentarians (${filteredCandidates.length - displayLimit} remaining in view)`
+                      ) : (
+                        `Load More from Database (Showing ${candidates.length} of ${totalDatabaseCount})`
+                      )}
                     </button>
                   </div>
                 )}

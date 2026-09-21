@@ -80,7 +80,8 @@ class PoliticalMobilityTracker:
         logger.info("Starting Political Mobility & Defection Dynamics Engine")
         logger.info("==========================================================")
 
-        candidates = await supabase.select("candidates", {"limit": "200"})
+        candidates = await supabase.select_all("candidates")
+        logger.info(f"Loaded {len(candidates)} candidates for political mobility analysis.")
         all_detected = []
 
         for cand in candidates:
@@ -90,7 +91,7 @@ class PoliticalMobilityTracker:
                 all_detected.extend(res)
 
         logger.info("==========================================================")
-        logger.info(f"✅ Mobility Analysis Complete! Detected {len(all_detected)} party transitions.")
+        logger.info(f"✅ Mobility Analysis Complete! Audited {len(candidates)} candidate(s), detected {len(all_detected)} party transitions.")
         logger.info("==========================================================")
         return all_detected
 

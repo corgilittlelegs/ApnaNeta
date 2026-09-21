@@ -6,8 +6,71 @@ export interface ResolvedWikidataPhoto {
   licenseUrl: string;
 }
 
+const HONORIFICS = new Set([
+  'dr', 'doctor', 'prof', 'professor', 'shri', 'sh', 'smt', 'shrimati',
+  'adv', 'advocate', 'ku', 'km', 'kumari', 'mr', 'mrs', 'ms',
+  'chaudhary', 'ch', 'sardar', 'thakur', 'pandit', 'pt',
+  'late', 'alhaj', 'al-haj', 'haji', 'begum', 'syed', 'capt', 'captain',
+  'colonel', 'col', 'major', 'gen', 'general', 'justice', 'swami',
+  'sant', 'yogi', 'mahant', 'acharya', 'kunwar', 'rao', 'babu', 'nawab',
+  'retd', 'ips', 'ias', 'ifs', 'ex-mp', 'ex-mla', 'mla', 'mp'
+]);
+
 const HONORIFICS_REGEX =
   /\b(dr|doctor|prof|professor|shri|sh|smt|shrimati|adv|advocate|ku|km|kumari|mr|mrs|ms|chaudhary|ch|sardar|thakur|pandit|pt|late|alhaj|al-haj|haji|begum|syed|capt|captain|colonel|col|major|gen|general|justice|swami|sant|yogi|mahant|acharya|kunwar|rao|babu|nawab|retd|ips|ias|ifs|ex-mp|ex-mla|mla|mp)\b\.?/gi;
+
+export function cleanNameTokens(name: string): string[] {
+  const withoutParens = name.replace(/\(.*?\)/g, '');
+  const cleaned = withoutParens.toLowerCase().replace(/[^a-z0-9\s]/g, ' ');
+  return cleaned
+    .split(/\s+/)
+    .filter((t) => t.length > 0 && !HONORIFICS.has(t));
+}
+
+export function isStrictNameMatch(candName: string, entityLabel: string): boolean {
+  const cToks = cleanNameTokens(candName);
+  const eToks = cleanNameTokens(entityLabel);
+
+  if (!cToks.length || !eToks.length) return false;
+
+  // Single-token candidate must match exact single-token entity
+  if (cToks.length === 1) {
+    return eToks.length === 1 && cToks[0] === eToks[0];
+  }
+
+  const cSet = new Set(cToks);
+  const eSet = new Set(eToks);
+
+  // Surnames must match if both have 2+ tokens
+  if (cToks.length >= 2 && eToks.length >= 2) {
+    const cLast = cToks[cToks.length - 1];
+    const eLast = eToks[eToks.length - 1];
+    if (cLast !== eLast && !eSet.has(cLast) && !cSet.has(eLast)) {
+      return false;
+    }
+  }
+
+  let intersectionCount = 0;
+  for (const t of cToks) {
+    if (eSet.has(t)) intersectionCount++;
+  }
+  const overlap = intersectionCount / Math.max(cSet.size, eSet.size);
+  const isSubset = cToks.every((t) => eSet.has(t)) || eToks.every((t) => cSet.has(t));
+  return overlap >= 0.6 || isSubset;
+}
+
+const NON_POLITICAL_EXCLUSIONS = new Set([
+  'actress', 'actor', 'singer', 'playback singer', 'musician', 'violinist',
+  'mathematician', 'cricketer', 'footballer', 'film', 'director', 'poet',
+  'writer', 'neurosurgeon', 'doctor', 'physician', 'river', 'building',
+  'temple', 'monument', 'model', 'painter', 'sculptor', 'astronomer'
+]);
+
+const POLITICAL_TERMS = new Set([
+  'politician', 'minister', 'parliament', 'assembly', 'mp', 'mla',
+  'chief minister', 'political leader', 'governor', 'senator',
+  'lok sabha', 'rajya sabha', 'prime minister', 'president', 'political activist'
+]);
 
 /**
  * Generates dynamic search queries covering Indian election name variations:
@@ -21,9 +84,15 @@ const HONORIFICS_REGEX =
 export function generateCandidateSearchQueries(rawName: string): string[] {
   const queries: string[] = [];
   const seen = new Set<string>();
+  const rawTokens = cleanNameTokens(rawName);
 
   const add = (q: string) => {
     const clean = q.trim().replace(/^[\s,.\-/"'()]+|[\s,.\-/"'()]+$/g, '').replace(/\s+/g, ' ');
+    const qTokens = cleanNameTokens(clean);
+    // Prevent emitting single-word queries if the candidate name has 2+ tokens
+    if (rawTokens.length >= 2 && qTokens.length < 2) {
+      return;
+    }
     if (clean.length >= 3 && !seen.has(clean.toLowerCase())) {
       seen.add(clean.toLowerCase());
       queries.push(clean);
@@ -121,13 +190,16 @@ export async function fetchWikidataPhoto(rawName: string): Promise<ResolvedWikid
       const results: Array<{ id: string; label?: string; description?: string }> = searchData.search || [];
 
       for (const r of results) {
-        const desc = (r.description || '').toLowerCase();
-        const isRelevant =
-          ['politician', 'minister', 'parliament', 'assembly', 'india', 'mp', 'mla', 'leader', 'activist', 'chief minister'].some(
-            (k) => desc.includes(k)
-          ) || desc.includes('india');
+        const label = r.label || '';
+        // Guard 1: Strict name similarity check (rejects mismatched surnames like Harish Rawat vs Harish Chandra Singh)
+        if (!isStrictNameMatch(rawName, label)) continue;
 
-        if (!isRelevant) continue;
+        const desc = (r.description || '').toLowerCase();
+
+        // Guard 2: Reject non-political professions unless political terms are also present
+        const hasPolTerm = Array.from(POLITICAL_TERMS).some((t) => desc.includes(t));
+        const hasNonPolTerm = Array.from(NON_POLITICAL_EXCLUSIONS).some((t) => desc.includes(t));
+        if (hasNonPolTerm && !hasPolTerm) continue;
 
         const entityId = r.id;
         const claimUrl = `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${entityId}&props=claims&format=json&origin=*`;
@@ -136,6 +208,23 @@ export async function fetchWikidataPhoto(rawName: string): Promise<ResolvedWikid
 
         const claimData = await claimResp.json();
         const claims = claimData.entities?.[entityId]?.claims || {};
+
+        // Guard 3: Enforce P31: instance of human (Q5)
+        const p31Claims = claims.P31 || [];
+        const isHuman = p31Claims.some(
+          (c: any) => c?.mainsnak?.datavalue?.value?.id === 'Q5'
+        );
+        if (!isHuman) continue;
+
+        // Guard 4: Enforce political qualification: P39 (position held), P106 (politician Q82955, etc.), or political term in description
+        const p106Claims = claims.P106 || [];
+        const isPoliticianOcc = p106Claims.some((c: any) => {
+          const id = c?.mainsnak?.datavalue?.value?.id;
+          return ['Q82955', 'Q486839', 'Q14211', 'Q30461', 'Q193391', 'Q2285706'].includes(id);
+        });
+        const hasPoliticalOffice = Array.isArray(claims.P39) && claims.P39.length > 0;
+        if (!isPoliticianOcc && !hasPoliticalOffice && !hasPolTerm) continue;
+
         const p18 = claims.P18;
         if (!p18 || !p18.length) continue;
 

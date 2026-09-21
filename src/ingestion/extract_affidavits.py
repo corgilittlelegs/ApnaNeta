@@ -6,6 +6,7 @@ import json
 import logging
 import argparse
 import asyncio
+from urllib.parse import urljoin
 from typing import List, Dict, Any, Optional
 
 from config.settings import settings
@@ -169,34 +170,55 @@ class AffidavitExtractionWorker:
                 logger.warning(f"Rejected disallowed or potentially malicious PDF download URL (SSRF Protection): {source_url}")
             else:
                 logger.info(f"Attempting live ephemeral download from official source: {source_url}")
-                try:
-                    # Try curl_cffi with browser TLS impersonation first
+                current_url = source_url
+                max_hops = 5
+                for hop in range(max_hops):
+                    if not is_allowed_pdf_url(current_url):
+                        logger.warning(f"SSRF Protection blocked redirect hop #{hop+1} to disallowed URL: {current_url}")
+                        break
                     try:
-                        from curl_cffi import requests as curl_requests
-                        session = curl_requests.Session(impersonate="chrome120")
-                        resp = session.get(
-                            source_url,
-                            timeout=30,
-                            headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"},
-                        )
-                        if resp.status_code == 200 and resp.content.startswith(b"%PDF"):
-                            logger.info(f"Downloaded {len(resp.content):,} bytes via browser TLS session.")
-                            return resp.content
-                    except ImportError:
-                        pass
+                        # Try curl_cffi with browser TLS impersonation first
+                        try:
+                            from curl_cffi import requests as curl_requests
+                            session = curl_requests.Session(impersonate="chrome120")
+                            resp = session.get(
+                                current_url,
+                                timeout=30,
+                                allow_redirects=False,
+                                headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"},
+                            )
+                            if resp.status_code in (301, 302, 303, 307, 308):
+                                loc = resp.headers.get("Location") or resp.headers.get("location")
+                                if not loc:
+                                    break
+                                current_url = urljoin(current_url, loc)
+                                continue
+                            if resp.status_code == 200 and resp.content.startswith(b"%PDF"):
+                                logger.info(f"Downloaded {len(resp.content):,} bytes via browser TLS session.")
+                                return resp.content
+                        except ImportError:
+                            pass
 
-                    # Fallback to httpx
-                    import httpx
-                    async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
-                        resp = await client.get(
-                            source_url,
-                            headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ApnaNeta/1.0"},
-                        )
-                        if resp.status_code == 200 and resp.content.startswith(b"%PDF"):
-                            logger.info(f"Downloaded {len(resp.content):,} bytes from live source URL.")
-                            return resp.content
-                except Exception as e:
-                    logger.warning(f"Live download failed: {e}")
+                        # Fallback to httpx
+                        import httpx
+                        async with httpx.AsyncClient(timeout=30.0, follow_redirects=False) as client:
+                            resp = await client.get(
+                                current_url,
+                                headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ApnaNeta/1.0"},
+                            )
+                            if resp.status_code in (301, 302, 303, 307, 308):
+                                loc = resp.headers.get("Location")
+                                if not loc:
+                                    break
+                                current_url = urljoin(current_url, loc)
+                                continue
+                            if resp.status_code == 200 and resp.content.startswith(b"%PDF"):
+                                logger.info(f"Downloaded {len(resp.content):,} bytes from live source URL.")
+                                return resp.content
+                            break
+                    except Exception as e:
+                        logger.warning(f"Live download failed: {e}")
+                        break
 
         raise FileNotFoundError(
             f"Primary Form 26 PDF document could not be retrieved from Cloudflare R2 ({r2_key}) "

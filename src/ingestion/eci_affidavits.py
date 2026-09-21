@@ -5,7 +5,8 @@ import hashlib
 import logging
 import re
 import ipaddress
-from urllib.parse import urlparse
+import asyncio
+from urllib.parse import urlparse, urljoin
 from typing import List, Dict, Any, Optional
 from src.utils.rate_limiter import PoliteRateLimiter
 from src.storage.r2_client import r2_storage
@@ -356,7 +357,7 @@ class ECIAffidavitScraper:
             )
 
     async def fetch_pdf(self, pdf_url: str) -> Optional[bytes]:
-        """Downloads a Form 26 affidavit PDF with polite pacing and error handling."""
+        """Downloads a Form 26 affidavit PDF with polite pacing, event loop offloading, and multi-hop SSRF validation."""
         if not is_allowed_pdf_url(pdf_url):
             logger.warning(f"Rejected disallowed or potentially malicious PDF download URL (SSRF Protection): {pdf_url}")
             return None
@@ -364,17 +365,61 @@ class ECIAffidavitScraper:
         await self.rate_limiter.wait()
         logger.info(f"Attempting live fetch of affidavit: {pdf_url}")
 
-        try:
-            session = self._get_client()
-            response = session.get(pdf_url, timeout=25)
-            if response.status_code == 200 and len(response.content) > 1000 and response.content.startswith(b"%PDF"):
-                logger.info(f"Successfully downloaded live affidavit PDF ({len(response.content):,} bytes)")
-                return response.content
-            logger.warning(f"Live fetch returned status {response.status_code} (non-PDF or portal protected)")
-            return None
-        except Exception as e:
-            logger.warning(f"Live fetch could not reach ECI portal directly ({e})")
-            return None
+        current_url = pdf_url
+        max_hops = 5
+        for hop in range(max_hops):
+            if not is_allowed_pdf_url(current_url):
+                logger.warning(f"SSRF Protection blocked redirect hop #{hop+1} to disallowed URL: {current_url}")
+                return None
+            try:
+                # First try curl_cffi via asyncio.to_thread to avoid blocking event loop
+                try:
+                    from curl_cffi import requests as curl_requests
+                    def _do_curl_get(target_url: str):
+                        session = curl_requests.Session(impersonate="chrome120")
+                        return session.get(
+                            target_url,
+                            timeout=25,
+                            allow_redirects=False,
+                            headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"},
+                        )
+                    response = await asyncio.to_thread(_do_curl_get, current_url)
+                    if response.status_code in (301, 302, 303, 307, 308):
+                        loc = response.headers.get("Location") or response.headers.get("location")
+                        if not loc:
+                            return None
+                        current_url = urljoin(current_url, loc)
+                        continue
+                    if response.status_code == 200 and len(response.content) > 1000 and response.content.startswith(b"%PDF"):
+                        logger.info(f"Successfully downloaded live affidavit PDF ({len(response.content):,} bytes)")
+                        return response.content
+                    logger.warning(f"Live fetch returned status {response.status_code} (non-PDF or portal protected)")
+                    return None
+                except ImportError:
+                    pass
+
+                # Fallback to httpx
+                import httpx
+                async with httpx.AsyncClient(timeout=30.0, follow_redirects=False) as client:
+                    response = await client.get(
+                        current_url,
+                        headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ApnaNeta/1.0"},
+                    )
+                    if response.status_code in (301, 302, 303, 307, 308):
+                        loc = response.headers.get("Location")
+                        if not loc:
+                            return None
+                        current_url = urljoin(current_url, loc)
+                        continue
+                    if response.status_code == 200 and len(response.content) > 1000 and response.content.startswith(b"%PDF"):
+                        logger.info(f"Successfully downloaded live affidavit PDF ({len(response.content):,} bytes)")
+                        return response.content
+                    logger.warning(f"Live fetch returned status {response.status_code}")
+                    return None
+            except Exception as e:
+                logger.warning(f"Live fetch could not reach ECI portal directly ({e})")
+                return None
+        return None
 
     async def discover_constituency_candidates(
         self,
@@ -485,8 +530,7 @@ class ECIAffidavitScraper:
         # Step 3: Check Deduplication in Supabase
         existing = await supabase.select(
             "affidavits",
-            columns="id, r2_storage_key",
-            eq={"sha256_hash": sha256_hash},
+            params={"select": "id,r2_storage_key", "sha256_hash": f"eq.{sha256_hash}", "limit": "1"},
         )
         if existing:
             logger.info(f"Affidavit already indexed in Supabase (Deduplicated): {sha256_hash}")

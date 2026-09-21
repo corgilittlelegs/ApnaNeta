@@ -40,6 +40,38 @@ HONORIFICS_REGEX = (
 )
 
 
+def is_strict_name_match(cand_name: str, entity_label: str) -> bool:
+    """
+    Validates that a candidate's registered name strictly matches the Wikidata entity label:
+    1. Rejects single-token matches against multi-token candidates (e.g. 'Godavari' vs 'Godavari River').
+    2. Enforces surname consistency (e.g. 'Harish Chandra Singh' vs 'Harish Rawat' -> REJECTED).
+    3. Requires at least 60% token overlap or subset match.
+    """
+    c_toks = clean_name_tokens(cand_name)
+    e_toks = clean_name_tokens(entity_label)
+
+    if not c_toks or not e_toks:
+        return False
+
+    # Single-token candidate must match exact single-token entity
+    if len(c_toks) == 1:
+        return len(e_toks) == 1 and c_toks[0] == e_toks[0]
+
+    c_set = set(c_toks)
+    e_set = set(e_toks)
+
+    # Surnames must match if both have 2+ tokens
+    if len(c_toks) >= 2 and len(e_toks) >= 2:
+        c_last = c_toks[-1]
+        e_last = e_toks[-1]
+        if c_last != e_last and c_last not in e_set and e_last not in c_set:
+            return False
+
+    intersection = c_set.intersection(e_set)
+    overlap = len(intersection) / max(len(c_set), len(e_set))
+    return overlap >= 0.6 or c_set.issubset(e_set) or e_set.issubset(c_set)
+
+
 def generate_search_queries(raw_name: str) -> List[str]:
     """
     Generates dynamic search query variations for any Indian politician name to cover all cases:
@@ -49,12 +81,18 @@ def generate_search_queries(raw_name: str) -> List[str]:
     4. Comma-inverted names: 'Katheria, Ram Shankar' -> 'Ram Shankar Katheria'
     5. Aliases inside parentheses: 'Prakash (alias Bablu) Sharma' -> 'Prakash Sharma', 'Bablu Sharma'
     6. Preserving initials: 'A. M. Ariff' -> 'A M Ariff'
+    NOTE: Never emits broad single-word queries for multi-token names to avoid false positives.
     """
     queries: List[str] = []
     seen = set()
+    raw_tokens = clean_name_tokens(raw_name)
 
     def add(q: str):
         q = " ".join(q.split()).strip(" ,.-/\"\'()")
+        q_tokens = clean_name_tokens(q)
+        # Prevent emitting single-word queries if the candidate name has 2+ tokens
+        if len(raw_tokens) >= 2 and len(q_tokens) < 2:
+            return
         if q and len(q) >= 3 and q.lower() not in seen:
             seen.add(q.lower())
             queries.append(q)
@@ -123,6 +161,21 @@ def strip_html_tags(text: str) -> str:
     return " ".join(clean.split()).strip()
 
 
+# Non-political occupations to reject (actors, singers, sports, scientists, objects)
+NON_POLITICAL_EXCLUSIONS = {
+    "actress", "actor", "singer", "playback singer", "musician", "violinist",
+    "mathematician", "cricketer", "footballer", "film", "director", "poet",
+    "writer", "neurosurgeon", "doctor", "physician", "river", "building",
+    "temple", "monument", "model", "painter", "sculptor", "astronomer"
+}
+
+POLITICAL_TERMS = {
+    "politician", "minister", "parliament", "assembly", "mp", "mla",
+    "chief minister", "political leader", "governor", "senator",
+    "lok sabha", "rajya sabha", "prime minister", "president", "political activist"
+}
+
+
 class WikidataPhotoSynchronizer:
     """
     Synchronizes high-resolution portrait photos and verified Creative Commons
@@ -148,7 +201,7 @@ class WikidataPhotoSynchronizer:
                 records = await supabase.select(
                     "candidates",
                     {
-                        "select": "id,name,state,constituency,party,photo_url,photo_source",
+                        "select": "id,name,state,constituency,party,photo_url,photo_source,house",
                         "limit": str(batch_size),
                         "offset": str(offset),
                     },
@@ -436,8 +489,11 @@ class WikidataPhotoSynchronizer:
         state: Optional[str] = None,
     ) -> Optional[Dict[str, Any]]:
         """
-        Dynamically searches Wikidata using entity search for a candidate's name,
-        inspecting claims for P18 (image) and fetching full Wikimedia Commons attribution.
+        Dynamically searches Wikidata using entity search for a candidate's name.
+        Applies strict verification guards:
+        1. Name match: candidate and entity must have matching surnames and token overlap.
+        2. Human check: entity must be an instance of human (Q5), rejecting rivers/buildings/objects.
+        3. Occupation check: entity must be a politician/minister/MP/MLA and not an actor/singer/scientist.
         """
         queries = generate_search_queries(name)
         headers = {"User-Agent": USER_AGENT}
@@ -462,21 +518,22 @@ class WikidataPhotoSynchronizer:
                 continue
 
             for r in results:
+                label = r.get("label", "")
+                # Guard 1: Strict name similarity check (rejects mismatched surnames like Harish Rawat vs Harish Chandra Singh)
+                if not is_strict_name_match(name, label):
+                    continue
+
                 desc = (r.get("description") or "").lower()
-                # Check for Indian political relevance
-                is_relevant = any(
-                    k in desc
-                    for k in [
-                        "politician", "minister", "parliament", "assembly", "india",
-                        "mp", "mla", "leader", "activist", "governor", "chief minister",
-                        "lok sabha", "rajya sabha"
-                    ]
-                )
-                if not is_relevant and "india" not in desc:
+
+                # Guard 2: Reject non-political professions unless political terms are also present
+                has_pol_term = any(t in desc for t in POLITICAL_TERMS)
+                has_non_pol_term = any(t in desc for t in NON_POLITICAL_EXCLUSIONS)
+                if has_non_pol_term and not has_pol_term:
                     continue
 
                 entity_id = r["id"]
-                # Fetch entity claims to extract P18 (image)
+
+                # Guard 3: Fetch entity claims to verify human (Q5), political office/occupation, and extract P18 (image)
                 claim_params = {
                     "action": "wbgetentities",
                     "ids": entity_id,
@@ -489,6 +546,29 @@ class WikidataPhotoSynchronizer:
                         continue
                     c_data = c_resp.json()
                     claims = c_data.get("entities", {}).get(entity_id, {}).get("claims", {})
+
+                    # Enforce P31: instance of human (Q5)
+                    p31_claims = claims.get("P31", [])
+                    is_human = any(
+                        c.get("mainsnak", {}).get("datavalue", {}).get("value", {}).get("id") == "Q5"
+                        for c in p31_claims
+                    )
+                    if not is_human:
+                        continue
+
+                    # Enforce political office/occupation: either P39 (position held) or P106 (politician Q82955/MP Q486839) or political desc
+                    p106_claims = claims.get("P106", [])
+                    is_politician_occ = any(
+                        c.get("mainsnak", {}).get("datavalue", {}).get("value", {}).get("id") in [
+                            "Q82955", "Q486839", "Q14211", "Q30461", "Q193391", "Q2285706"
+                        ]
+                        for c in p106_claims
+                    )
+                    has_political_office = len(claims.get("P39", [])) > 0
+                    if not (is_politician_occ or has_political_office or has_pol_term):
+                        continue
+
+                    # Extract P18 (image)
                     p18 = claims.get("P18", [])
                     if not p18:
                         continue
@@ -508,7 +588,7 @@ class WikidataPhotoSynchronizer:
 
                     return {
                         "entity_id": entity_id,
-                        "matched_name": r.get("label"),
+                        "matched_name": label,
                         "photo_url": photo_url,
                         "photo_source": "wikimedia",
                         "photo_attribution": attribution,
@@ -520,11 +600,17 @@ class WikidataPhotoSynchronizer:
 
         return None
 
-    async def sync_photos(self, limit: Optional[int] = None, dynamic_only: bool = False) -> int:
+    async def sync_photos(
+        self,
+        limit: Optional[int] = None,
+        dynamic_only: bool = False,
+        mp_only: bool = True,
+    ) -> int:
         """
         Main synchronizer loop:
         1. (Unless dynamic_only) Queries Wikidata SPARQL batch for MPs.
-        2. Dynamically resolves photos for candidates still missing photos in Supabase.
+        2. Dynamically resolves photos for parliamentarians still missing photos in Supabase.
+           By default (mp_only=True), restricts dynamic scan to candidates associated with a legislative house.
         """
         if httpx is None:
             logger.warning("httpx is not installed. Please install httpx to run photo sync.")
@@ -589,16 +675,19 @@ class WikidataPhotoSynchronizer:
 
             # Stage 2: Dynamic Entity Search for Candidates Missing Photos
             logger.info("Starting Stage 2: Dynamic search for candidates missing photos...")
-            # Collect unique candidates without photos
             candidates_without_photos = []
             seen_cand_ids = set()
             for cand in exact_index.values():
                 c_id = cand.get("id")
                 if c_id not in seen_cand_ids and not cand.get("photo_url"):
+                    # If mp_only is True, restrict to parliamentarians (Lok Sabha / Rajya Sabha)
+                    if mp_only and not cand.get("house"):
+                        continue
                     seen_cand_ids.add(c_id)
                     candidates_without_photos.append(cand)
 
-            logger.info(f"Found {len(candidates_without_photos)} candidates without photos. Resolving dynamically...")
+            scope_desc = "parliamentarians" if mp_only else "total candidates"
+            logger.info(f"Found {len(candidates_without_photos)} {scope_desc} without photos. Resolving dynamically...")
 
             for cand in candidates_without_photos:
                 if limit and updated_count >= limit:

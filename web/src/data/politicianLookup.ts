@@ -1,6 +1,8 @@
 /**
- * Canonical lookup for prominent political figures to enrich unindexed rows
- * when official gazettes are still being indexed.
+ * Canonical search alias dictionary for prominent political figures.
+ * Used exclusively for search assistance and keyword matching in the search bar.
+ * In accordance with the project's zero-placeholder invariant, this dictionary
+ * MUST NEVER override verified database records.
  */
 export const PROMINENT_PARTY_MAP: Record<
   string,

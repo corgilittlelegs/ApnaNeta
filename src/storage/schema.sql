@@ -407,6 +407,61 @@ REVOKE ALL ON ALL ROUTINES IN SCHEMA public FROM anon;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon, authenticated;
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
 
+-- PRIVACY HARDENING: Revoke full table SELECT on affidavits from anon and authenticated to protect raw_payload
+REVOKE SELECT ON affidavits FROM anon, authenticated;
+
+-- Grant column-level SELECT on affidavits excluding raw_payload
+GRANT SELECT (id, candidate_id, filing_year, source_url, sha256_hash, r2_storage_key, created_at)
+ON affidavits TO anon, authenticated;
+
+-- Create public projection view omitting raw_payload
+CREATE OR REPLACE VIEW public_affidavits AS
+SELECT
+    id,
+    candidate_id,
+    filing_year,
+    source_url,
+    sha256_hash,
+    r2_storage_key,
+    created_at
+FROM affidavits;
+
+GRANT SELECT ON public_affidavits TO anon, authenticated;
+
+-- 17. Automatic updated_at Timestamp Trigger
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_candidates_updated_at ON candidates;
+CREATE TRIGGER trg_candidates_updated_at
+BEFORE UPDATE ON candidates
+FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS trg_mplads_records_updated_at ON mplads_records;
+CREATE TRIGGER trg_mplads_records_updated_at
+BEFORE UPDATE ON mplads_records
+FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS trg_historical_wealth_updated_at ON historical_wealth_cagr;
+CREATE TRIGGER trg_historical_wealth_updated_at
+BEFORE UPDATE ON historical_wealth_cagr
+FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS trg_corporate_associations_updated_at ON corporate_associations;
+CREATE TRIGGER trg_corporate_associations_updated_at
+BEFORE UPDATE ON corporate_associations
+FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS trg_conflict_of_interest_updated_at ON conflict_of_interest_audits;
+CREATE TRIGGER trg_conflict_of_interest_updated_at
+BEFORE UPDATE ON conflict_of_interest_audits
+FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 -- Service role and admin maintain write and administrative authority
 GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, service_role;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, service_role;

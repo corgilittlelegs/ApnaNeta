@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   WarningOctagon,
   Scales,
@@ -55,6 +55,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
     candidate.name,
     candidate.photo_url
   );
+  const [showImpactMethodology, setShowImpactMethodology] = useState(false);
 
   const cleanInitials =
     candidate.name
@@ -452,15 +453,39 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
 
               {/* CITIZEN MODE: "What This Means For You" Real-World Impact Callout */}
               {isCitizenMode && candidate.mplads.unspent_balance >= CIVIC_IMPACT_BENCHMARKS.MIN_UNSPENT_BALANCE_FOR_CALLOUT && (
-                <div className="mt-2 pt-2 border-t border-slate-100 text-[11px] text-slate-600 flex items-start gap-1.5">
-                  <Lightbulb size={14} weight="fill" className="text-amber-500 flex-shrink-0 mt-0.5" />
-                  <p>
-                    <strong className="text-slate-800">What this unspent fund means:</strong>{' '}
-                    {formatINR(candidate.mplads.unspent_balance)} could have funded ~
-                    {Math.floor(candidate.mplads.unspent_balance / CIVIC_IMPACT_BENCHMARKS.COST_PER_PRIMARY_CLINIC)} local health clinics or ~
-                    {Math.floor(candidate.mplads.unspent_balance / CIVIC_IMPACT_BENCHMARKS.COST_PER_KM_COMMUNITY_INFRA)} km of community solar
-                    street lighting.
-                  </p>
+                <div className="mt-2 pt-2 border-t border-slate-100 text-[11px] text-slate-600">
+                  <div className="flex items-start gap-1.5">
+                    <Lightbulb size={14} weight="fill" className="text-amber-500 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p>
+                        <strong className="text-slate-800">Illustrative Civic Benchmark:</strong>{' '}
+                        {formatINR(candidate.mplads.unspent_balance)} unspent balance could hypothetically fund ~
+                        {Math.floor(candidate.mplads.unspent_balance / CIVIC_IMPACT_BENCHMARKS.COST_PER_PRIMARY_CLINIC)} local health clinics or ~
+                        {Math.floor(candidate.mplads.unspent_balance / CIVIC_IMPACT_BENCHMARKS.COST_PER_KM_COMMUNITY_INFRA)} km of community solar
+                        street lighting.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowImpactMethodology(!showImpactMethodology);
+                        }}
+                        className="text-[10px] text-indigo-600 hover:text-indigo-800 underline font-medium mt-1 cursor-pointer block"
+                      >
+                        {showImpactMethodology ? 'Hide methodology' : 'How is this calculated? (Methodology & Sources)'}
+                      </button>
+                      {showImpactMethodology && (
+                        <div className="mt-1.5 p-2 bg-slate-50 border border-slate-200 rounded-lg text-[10px] text-slate-500 leading-relaxed">
+                          <p className="font-semibold text-slate-700 mb-0.5">Methodology & Civic Disclaimer:</p>
+                          <ul className="list-disc list-inside space-y-0.5">
+                            <li>Estimates based on national capital expenditure benchmarks: ₹25 Lakh per Primary Health Centre / Ayushman Arogya Mandir (National Health Mission norms) and ₹15 Lakh per km of solar street lighting / rural connectivity.</li>
+                            <li>Unspent balances may represent funds already committed in district administrative pipeline or awaiting utilization certificates (UCs).</li>
+                            <li>Primary Source: MoSPI e-SAKSHI Portal (Official MPLADS ledger).</li>
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

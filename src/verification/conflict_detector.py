@@ -57,7 +57,9 @@ class ConflictDetector:
             return "HIGH"
         return "MEDIUM"
 
-    async def audit_candidate_conflicts(self, candidate_id: str) -> List[Dict[str, Any]]:
+    async def audit_candidate_conflicts(
+        self, candidate_id: str, all_tenders: Optional[List[Dict[str, Any]]] = None
+    ) -> List[Dict[str, Any]]:
         """
         Scans a candidate's MCA21 corporate associations against all CPPP procurement contracts.
         """
@@ -74,8 +76,9 @@ class ConflictDetector:
         if not corp_records:
             return []
 
-        # 3. Fetch all CPPP tenders
-        all_tenders = await supabase.select("procurement_tenders", {"limit": "500"})
+        # 3. Fetch all CPPP tenders (or reuse cached from run)
+        if all_tenders is None:
+            all_tenders = await supabase.select_all("procurement_tenders")
         if not all_tenders:
             return []
 
@@ -150,17 +153,23 @@ class ConflictDetector:
         logger.info("Starting Section 9A RPA Commercial Conflict of Interest Engine")
         logger.info("==========================================================")
 
-        candidates = await supabase.select("candidates", {"limit": "500"})
+        candidates = await supabase.select_all("candidates")
+        all_tenders = await supabase.select_all("procurement_tenders")
+        logger.info(f"Loaded {len(candidates)} candidates and {len(all_tenders)} procurement tenders for comprehensive audit.")
+
         all_conflicts = []
 
         for c in candidates:
             c_id = c.get("id")
             if c_id:
-                res = await self.audit_candidate_conflicts(c_id)
+                res = await self.audit_candidate_conflicts(c_id, all_tenders=all_tenders)
                 all_conflicts.extend(res)
 
         logger.info("==========================================================")
-        logger.info(f"✅ Conflict Audit Complete! Detected {len(all_conflicts)} commercial conflict(s).")
+        logger.info(
+            f"✅ Conflict Audit Complete! Audited {len(candidates)} candidate(s) against "
+            f"{len(all_tenders)} tender(s). Detected {len(all_conflicts)} commercial conflict(s)."
+        )
         logger.info("==========================================================")
         return all_conflicts
 

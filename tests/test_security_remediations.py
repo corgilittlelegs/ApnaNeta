@@ -59,10 +59,16 @@ class TestSecurityRemediations(unittest.TestCase):
 
         # Ensure REVOKE ALL FROM anon exists
         self.assertIn("REVOKE ALL ON ALL TABLES IN SCHEMA public FROM anon;", content)
-        # Ensure GRANT SELECT TO anon exists
-        self.assertIn("GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon", content)
+        # Ensure raw_payload is protected from anonymous read access
+        self.assertIn("REVOKE SELECT ON affidavits FROM anon, authenticated;", content)
+        self.assertIn("GRANT SELECT (id, candidate_id, filing_year, source_url, sha256_hash, r2_storage_key, created_at)", content)
+        self.assertIn("CREATE OR REPLACE VIEW public_affidavits AS", content)
+        self.assertNotIn("GRANT SELECT (raw_payload)", content)
         # Ensure service_role has ALL
         self.assertIn("GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, service_role;", content)
+        # Ensure updated_at trigger exists
+        self.assertIn("CREATE OR REPLACE FUNCTION update_updated_at_column()", content)
+        self.assertIn("CREATE TRIGGER trg_candidates_updated_at", content)
 
     def test_sec_08_hsts_header_configured(self):
         headers_path = os.path.join(os.path.dirname(__file__), "..", "web", "public", "_headers")
@@ -90,7 +96,26 @@ class TestSecurityRemediations(unittest.TestCase):
         with open(extractor_path, "r", encoding="utf-8") as f:
             extractor_code = f.read()
         self.assertIn("from src.ingestion.eci_affidavits import is_allowed_pdf_url", extractor_code)
-        self.assertIn("if not is_allowed_pdf_url(source_url):", extractor_code)
+        self.assertIn("if not is_allowed_pdf_url(current_url):", extractor_code)
+
+    def test_sec_11_ssrf_multi_hop_redirect_prevention(self):
+        from urllib.parse import urljoin
+        initial_url = "https://affidavit.eci.gov.in/show-file/123.pdf"
+        self.assertTrue(is_allowed_pdf_url(initial_url))
+
+        # Malicious redirect locations
+        redirect_to_metadata = urljoin(initial_url, "http://169.254.169.254/latest/meta-data/")
+        self.assertFalse(is_allowed_pdf_url(redirect_to_metadata))
+
+        redirect_to_localhost = urljoin(initial_url, "http://127.0.0.1:8000/dump")
+        self.assertFalse(is_allowed_pdf_url(redirect_to_localhost))
+
+        redirect_to_external = urljoin(initial_url, "https://attacker-controlled.site/payload.pdf")
+        self.assertFalse(is_allowed_pdf_url(redirect_to_external))
+
+        # Valid redirect within official ECI domain
+        valid_redirect = urljoin(initial_url, "/files/affidavit_clean.pdf")
+        self.assertTrue(is_allowed_pdf_url(valid_redirect))
 
 
 if __name__ == "__main__":

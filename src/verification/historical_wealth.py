@@ -118,7 +118,8 @@ class HistoricalWealthEngine:
         logger.info("Starting Multi-Term Historical Wealth Growth Engine (CAGR)")
         logger.info("==========================================================")
 
-        candidates = await supabase.select("candidates", {"limit": "200"})
+        candidates = await supabase.select_all("candidates")
+        logger.info(f"Loaded {len(candidates)} candidates for longitudinal wealth analysis.")
         all_results = []
 
         for cand in candidates:
@@ -128,7 +129,7 @@ class HistoricalWealthEngine:
                 all_results.extend(res)
 
         logger.info("==========================================================")
-        logger.info(f"🎉 Analysis Complete! Processed {len(all_results)} multi-term wealth intervals.")
+        logger.info(f"🎉 Analysis Complete! Audited {len(candidates)} candidate(s), generated {len(all_results)} multi-term wealth intervals.")
         logger.info("==========================================================")
         return all_results
 
