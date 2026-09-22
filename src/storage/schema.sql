@@ -201,6 +201,44 @@ CREATE TABLE IF NOT EXISTS identity_resolution_links (
 
 CREATE INDEX IF NOT EXISTS idx_identity_links_status ON identity_resolution_links (status, confidence_score DESC);
 
+-- 6aa. Candidate election-expenditure compliance. These records are distinct
+-- from party finance: they track a candidate's statutory Section 77/78 account.
+CREATE TABLE IF NOT EXISTS election_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    election_code TEXT NOT NULL UNIQUE,
+    election_name TEXT NOT NULL,
+    house TEXT NOT NULL,
+    state TEXT,
+    result_declared_on DATE NOT NULL,
+    source_url TEXT NOT NULL,
+    source_document_id UUID REFERENCES source_documents(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS candidate_expense_reports (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    candidate_id UUID NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
+    election_id UUID NOT NULL REFERENCES election_events(id) ON DELETE CASCADE,
+    expenditure_ceiling NUMERIC(15, 2),
+    ceiling_source_url TEXT,
+    filing_due_on DATE NOT NULL,
+    filed_on DATE,
+    declared_expenditure NUMERIC(15, 2),
+    filing_status TEXT NOT NULL DEFAULT 'unknown', -- pending, on_time, late, missing, unknown
+    ceiling_status TEXT NOT NULL DEFAULT 'unknown', -- within_limit, over_limit, unknown
+    source_url TEXT,
+    source_document_id UUID REFERENCES source_documents(id) ON DELETE SET NULL,
+    scrutiny_status TEXT NOT NULL DEFAULT 'not_available',
+    notes TEXT,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_candidate_expense_election UNIQUE (candidate_id, election_id),
+    CONSTRAINT ck_expense_nonnegative CHECK (declared_expenditure IS NULL OR declared_expenditure >= 0),
+    CONSTRAINT ck_ceiling_nonnegative CHECK (expenditure_ceiling IS NULL OR expenditure_ceiling >= 0)
+);
+
+CREATE INDEX IF NOT EXISTS idx_expense_reports_candidate ON candidate_expense_reports (candidate_id, filing_status);
+CREATE INDEX IF NOT EXISTS idx_expense_reports_election ON candidate_expense_reports (election_id, filing_status);
+
 -- 6b. Parliamentary Division Voting Records
 CREATE TABLE IF NOT EXISTS parliamentary_divisions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -431,6 +469,8 @@ ALTER TABLE sansad_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE source_documents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ingestion_runs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE identity_resolution_links ENABLE ROW LEVEL SECURITY;
+ALTER TABLE election_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE candidate_expense_reports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE mplads_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE historical_wealth_cagr ENABLE ROW LEVEL SECURITY;
 ALTER TABLE corporate_associations ENABLE ROW LEVEL SECURITY;
@@ -463,6 +503,10 @@ DROP POLICY IF EXISTS "Public Read Access" ON source_documents;
 CREATE POLICY "Public Read Access" ON source_documents FOR SELECT USING (true);
 DROP POLICY IF EXISTS "Public Read Access" ON identity_resolution_links;
 CREATE POLICY "Public Read Access" ON identity_resolution_links FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Public Read Access" ON election_events;
+CREATE POLICY "Public Read Access" ON election_events FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Public Read Access" ON candidate_expense_reports;
+CREATE POLICY "Public Read Access" ON candidate_expense_reports FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Public Read Access" ON mplads_records;
 CREATE POLICY "Public Read Access" ON mplads_records FOR SELECT USING (true);

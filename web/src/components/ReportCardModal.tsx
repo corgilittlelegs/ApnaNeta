@@ -20,6 +20,8 @@ import {
   getTwitterShareUrl,
 } from '../utils/ReportCardExport';
 
+import { CivicEmblem } from './CivicEmblem';
+
 interface ReportCardModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -116,21 +118,22 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
 
         {/* Header */}
         <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-sovereign-800 bg-sovereign-950 text-white flex items-center justify-between gap-3 sm:gap-4">
-          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-kesariya-500/20 border border-kesariya-500/30 flex items-center justify-center text-kesariya-400 flex-shrink-0">
-              <Sparkles className="w-4 h-4" />
-            </div>
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <CivicEmblem size={32} />
             <div className="min-w-0">
               <h2 className="text-sm sm:text-base font-serif font-bold text-white truncate">
                 Citizen Report Card Graphic • नागरिक रिपोर्ट कार्ड
               </h2>
-              <p className="text-[11px] sm:text-xs text-dholpur-300 truncate">1080x1080 PNG • Ready for WhatsApp & Social</p>
+              <p className="text-[11px] sm:text-xs text-dholpur-300 truncate">
+                1080×1080 HD • Sworn ECI Form 26 Disclosures • WhatsApp & Social
+              </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
             className="p-1.5 rounded-lg text-dholpur-400 hover:text-white hover:bg-sovereign-800 transition-colors flex-shrink-0 cursor-pointer"
+            title="Close"
           >
             <X className="w-5 h-5" />
           </button>
@@ -141,10 +144,15 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
           {isGenerating ? (
             <div className="flex flex-col items-center gap-3 text-dholpur-200">
               <Loader2 className="w-8 h-8 animate-spin text-kesariya-400" />
-              <p className="text-xs font-mono">Generating high-contrast audit graphic...</p>
+              <p className="text-xs font-serif font-medium tracking-wide">
+                Generating high-contrast audit graphic...
+              </p>
+              <p className="text-[11px] text-dholpur-400 font-devanagari">
+                नागरिक रिपोर्ट कार्ड तैयार हो रहा है...
+              </p>
             </div>
           ) : dataUrl ? (
-            <div className="relative group max-w-xs sm:max-w-md w-full shadow-2xl rounded-2xl overflow-hidden border border-kesariya-600/30 max-h-[45vh] sm:max-h-[55vh] flex items-center justify-center">
+            <div className="relative group max-w-xs sm:max-w-md w-full shadow-2xl rounded-2xl overflow-hidden border border-kesariya-600/30 max-h-[45vh] sm:max-h-[55vh] flex items-center justify-center bg-sovereign-950">
               <img
                 src={dataUrl}
                 alt={`${candidate.name} Civic Report Card`}
@@ -162,7 +170,7 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
             {/* Download */}
             <button
               onClick={handleDownload}
-              className="flex items-center justify-center gap-1.5 px-2.5 py-2.5 bg-kesariya-600 hover:bg-kesariya-700 text-sovereign-950 text-xs font-bold rounded-xl shadow-sm transition-all cursor-pointer"
+              className="flex items-center justify-center gap-1.5 px-2.5 py-2.5 bg-kesariya-600 hover:bg-kesariya-500 active:bg-kesariya-700 text-sovereign-950 text-xs font-bold rounded-xl shadow-sm border border-kesariya-500/50 transition-all cursor-pointer"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Download</span>
@@ -171,7 +179,7 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
             {/* WhatsApp */}
             <button
               onClick={handleShareWhatsApp}
-              className="flex items-center justify-center gap-1.5 px-2.5 py-2.5 bg-harit-600 hover:bg-harit-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all cursor-pointer"
+              className="flex items-center justify-center gap-1.5 px-2.5 py-2.5 bg-harit-600 hover:bg-harit-500 active:bg-harit-700 text-white text-xs font-bold rounded-xl shadow-sm border border-harit-500/50 transition-all cursor-pointer"
             >
               <Share2 className="w-3.5 h-3.5" />
               <span>WhatsApp</span>
@@ -180,7 +188,7 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
             {/* Post to X */}
             <button
               onClick={handleShareTwitter}
-              className="flex items-center justify-center gap-1.5 px-2.5 py-2.5 bg-sovereign-900 hover:bg-sovereign-800 text-dholpur-50 text-xs font-semibold rounded-xl shadow-sm transition-all cursor-pointer"
+              className="flex items-center justify-center gap-1.5 px-2.5 py-2.5 bg-sovereign-950 hover:bg-sovereign-900 active:bg-sovereign-950 text-dholpur-100 text-xs font-semibold rounded-xl shadow-sm border border-sovereign-700 transition-all cursor-pointer"
               title="Share Report Card on X (Twitter)"
             >
               <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
@@ -192,7 +200,7 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
             {/* Copy Image */}
             <button
               onClick={handleCopyImage}
-              className="flex items-center justify-center gap-1.5 px-2.5 py-2.5 bg-dholpur-200 hover:bg-dholpur-300 text-sovereign-900 text-xs font-semibold rounded-xl border border-dholpur-300 transition-all cursor-pointer"
+              className="flex items-center justify-center gap-1.5 px-2.5 py-2.5 bg-white hover:bg-dholpur-50 active:bg-dholpur-100 text-sovereign-900 text-xs font-semibold rounded-xl border border-dholpur-300 transition-all cursor-pointer shadow-2xs"
             >
               {copiedImage ? (
                 <>
@@ -210,7 +218,7 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
             {/* Copy Fact Sheet */}
             <button
               onClick={handleCopyFactSheet}
-              className="flex items-center justify-center gap-1.5 px-2.5 py-2.5 bg-dholpur-200 hover:bg-dholpur-300 text-sovereign-900 text-xs font-semibold rounded-xl border border-dholpur-300 transition-all cursor-pointer col-span-2 sm:col-span-1"
+              className="flex items-center justify-center gap-1.5 px-2.5 py-2.5 bg-white hover:bg-dholpur-50 active:bg-dholpur-100 text-sovereign-900 text-xs font-semibold rounded-xl border border-dholpur-300 transition-all cursor-pointer shadow-2xs col-span-2 sm:col-span-1"
             >
               {copiedText ? (
                 <>
@@ -220,14 +228,14 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
               ) : (
                 <>
                   <FileText className="w-3.5 h-3.5" />
-                  <span>Copy Text</span>
+                  <span>Fact Sheet</span>
                 </>
               )}
             </button>
           </div>
 
           <p className="text-[11px] text-sovereign-600 text-center font-sans">
-            Zero server computation. Rendered directly in your browser with official ECI Form 26 disclosures.
+            Zero server computation ($0 cost). Rendered directly in your browser with official ECI Form 26 disclosures.
           </p>
         </div>
       </div>

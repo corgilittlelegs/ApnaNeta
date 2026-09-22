@@ -6,7 +6,7 @@ import { ConstituencyFilter, FilterState } from './components/ConstituencyFilter
 import { ComparisonModal } from './components/ComparisonModal';
 import { ReportCardModal } from './components/ReportCardModal';
 import { LeaderboardsView } from './components/LeaderboardsView';
-import { Candidate, BoundingBox, MPLADSRecord, HistoricalWealthRecord } from './types/candidate';
+import { Candidate, BoundingBox, MPLADSRecord, HistoricalWealthRecord, ElectionExpenseReport } from './types/candidate';
 import { ViewModeProvider, useViewMode } from './context/ViewModeContext';
 import { CivicFaqDrawer } from './components/CivicFaqDrawer';
 import {
@@ -28,7 +28,7 @@ import { PROMINENT_PARTY_MAP } from './data/politicianLookup';
 import { CIVIC_IMPACT_BENCHMARKS } from './utils/civicConstants';
 
 const CANDIDATE_SELECT_QUERY =
-  'select=*,sansad_records(attendance_rate,debates_count,questions_count),affidavits(id,filing_year,source_url,r2_storage_key,audit_discrepancies(*),criminal_cases(*)),mplads_records(*),historical_wealth_cagr(*),conflict_of_interest_audits(*),political_mobility_records(*),corporate_associations(*)';
+  'select=*,sansad_records(attendance_rate,debates_count,questions_count),affidavits(id,filing_year,source_url,r2_storage_key,audit_discrepancies(*),criminal_cases(*)),mplads_records(*),historical_wealth_cagr(*),conflict_of_interest_audits(*),political_mobility_records(*),corporate_associations(*),candidate_expense_reports(*,election_events(election_name,result_declared_on))';
 
 function parseCandidateRow(row: any): Candidate {
   const sansad = Array.isArray(row.sansad_records) && row.sansad_records.length > 0 ? row.sansad_records[0] : null;
@@ -92,6 +92,23 @@ function parseCandidateRow(row: any): Candidate {
   const defectionCount = mobilityList.length;
 
   const corpList = Array.isArray(row.corporate_associations) ? row.corporate_associations : [];
+
+  const expenseRaw = Array.isArray(row.candidate_expense_reports) && row.candidate_expense_reports.length > 0
+    ? row.candidate_expense_reports[0]
+    : null;
+  const electionExpenseReport: ElectionExpenseReport | undefined = expenseRaw
+    ? {
+        election_name: expenseRaw.election_events?.election_name,
+        result_declared_on: expenseRaw.election_events?.result_declared_on,
+        filing_due_on: String(expenseRaw.filing_due_on),
+        filed_on: expenseRaw.filed_on || undefined,
+        declared_expenditure: expenseRaw.declared_expenditure != null ? Number(expenseRaw.declared_expenditure) : undefined,
+        expenditure_ceiling: expenseRaw.expenditure_ceiling != null ? Number(expenseRaw.expenditure_ceiling) : undefined,
+        filing_status: expenseRaw.filing_status,
+        ceiling_status: expenseRaw.ceiling_status,
+        source_url: expenseRaw.source_url || undefined,
+      }
+    : undefined;
 
   const pdfSourceUrl = aff?.source_url || row.pdf_source_url || '';
   const r2Key = aff?.r2_storage_key || row.r2_storage_key || '';
@@ -173,9 +190,15 @@ function parseCandidateRow(row: any): Candidate {
         }))
       : undefined;
 
+  const rawName = String(row.name || '');
+  const cleanName = rawName
+    .replace(/^[\s.·•\-_]+/, '')
+    .replace(/\s+/g, ' ')
+    .trim() || rawName;
+
   return {
     id: String(row.id),
-    name: row.name,
+    name: cleanName,
     alias: row.alias || undefined,
     constituency: resolvedConstituency,
     state: resolvedState,
@@ -195,6 +218,7 @@ function parseCandidateRow(row: any): Candidate {
     attendance_rate: attendance,
     debates_count: debates,
     questions_count: questions,
+    election_expense_report: electionExpenseReport,
     mplads: mpladsRecord,
     mplads_works: worksRecords,
     historical_wealth: cagrRecords,

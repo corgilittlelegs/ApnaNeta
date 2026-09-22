@@ -104,6 +104,18 @@ export interface StatutorySuballocationAudit {
   has_statutory_shortfall?: boolean | null;
 }
 
+export interface ElectionExpenseReport {
+  election_name?: string;
+  result_declared_on?: string;
+  filing_due_on: string;
+  filed_on?: string;
+  declared_expenditure?: number;
+  expenditure_ceiling?: number;
+  filing_status: 'pending' | 'on_time' | 'late' | 'missing' | 'unknown';
+  ceiling_status: 'within_limit' | 'over_limit' | 'unknown';
+  source_url?: string;
+}
+
 export interface ParliamentaryDivisionVote {
   division_id?: string;
   bill_title: string;
@@ -186,6 +198,7 @@ export interface Candidate {
   policy_topics?: Record<string, number>;
   local_vs_national_ratio?: number;
   division_votes?: ParliamentaryDivisionVote[];
+  election_expense_report?: ElectionExpenseReport;
   
   // MoSPI MPLADS Fund Tracking & GIS Audits
   mplads?: MPLADSRecord;
@@ -219,4 +232,3 @@ export interface Candidate {
   proof_bbox?: BoundingBox;
   variance_proof_bbox?: BoundingBox;
 }
-

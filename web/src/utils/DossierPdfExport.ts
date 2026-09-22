@@ -25,6 +25,11 @@ export function exportCandidateDossierPdf(candidate: Candidate): void {
     return `₹${val.toLocaleString('en-IN')}`;
   };
 
+  const cleanName = (candidate.name || '')
+    .replace(/^[\s.·•\-_]+/, '')
+    .replace(/\s+/g, ' ')
+    .trim() || candidate.name;
+
   const generatedDate = new Date().toLocaleDateString('en-IN', {
     day: 'numeric',
     month: 'short',
@@ -45,11 +50,11 @@ export function exportCandidateDossierPdf(candidate: Candidate): void {
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Apna Neta Forensic Audit Dossier - ${escapeHtml(candidate.name)}</title>
-  <!-- Google Fonts: Newsreader, Plus Jakarta Sans, JetBrains Mono -->
+  <title>Apna Neta Forensic Audit Dossier - ${escapeHtml(cleanName)}</title>
+  <!-- Google Fonts: Newsreader, Plus Jakarta Sans, JetBrains Mono, Noto Serif Devanagari -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Newsreader:ital,opsz,wght@0,6..72,600;0,6..72,700;1,6..72,500&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Newsreader:ital,opsz,wght@0,6..72,600;0,6..72,700;1,6..72,500&family=Noto+Serif+Devanagari:wght@600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <style>
     @page {
       size: A4 portrait;
@@ -62,8 +67,8 @@ export function exportCandidateDossierPdf(candidate: Candidate): void {
     }
     body {
       font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-      color: #0f172a;
-      background: #ffffff;
+      color: #0A192F;
+      background: #FAF7F2;
       margin: 0;
       padding: 0;
       font-size: 10.5px;
@@ -73,9 +78,23 @@ export function exportCandidateDossierPdf(candidate: Candidate): void {
       max-width: 800px;
       margin: 0 auto;
       background: white;
+      padding: 14px 18px;
+      border: 1px solid #E2D9CC;
+      border-radius: 4px;
     }
+    .tiranga-line {
+      height: 4px;
+      display: flex;
+      width: 100%;
+      margin-bottom: 8px;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .tiranga-saffron { flex: 1; background: #FF9933; }
+    .tiranga-white { flex: 1; background: #FFFFFF; border-top: 0.5px solid #E2D9CC; border-bottom: 0.5px solid #E2D9CC; }
+    .tiranga-green { flex: 1; background: #138808; }
     .header-bar {
-      border-bottom: 2.5px solid #0A192F;
+      border-bottom: 2px solid #0A192F;
       padding-bottom: 10px;
       margin-bottom: 12px;
       display: flex;
@@ -122,8 +141,8 @@ export function exportCandidateDossierPdf(candidate: Candidate): void {
 
     /* Candidate Identity Banner */
     .identity-card {
-      background: #F8FAFC;
-      border: 1px solid #CBD5E1;
+      background: #FAF7F2;
+      border: 1px solid #E2D9CC;
       border-left: 4px solid #0A192F;
       border-radius: 8px;
       padding: 10px 14px;
@@ -163,8 +182,8 @@ export function exportCandidateDossierPdf(candidate: Candidate): void {
       font-weight: 700;
       letter-spacing: 0.5px;
       color: #0A192F;
-      background: #F1F5F9;
-      border: 1px solid #CBD5E1;
+      background: #FAF7F2;
+      border: 1px solid #E2D9CC;
       border-left: 3.5px solid #0A192F;
       padding: 4px 8px;
       border-radius: 4px;
@@ -241,7 +260,7 @@ export function exportCandidateDossierPdf(candidate: Candidate): void {
 
     /* Metric Boxes */
     .metric-box {
-      border: 1px solid #E2E8F0;
+      border: 1px solid #E2D9CC;
       border-radius: 6px;
       padding: 6px 10px;
       background: #ffffff;
@@ -308,23 +327,23 @@ export function exportCandidateDossierPdf(candidate: Candidate): void {
       margin-bottom: 8px;
     }
     table.dossier-table th {
-      background: #F1F5F9;
+      background: #FAF7F2;
       color: #0A192F;
       text-align: left;
       padding: 5px 8px;
       font-weight: 700;
-      border: 1px solid #CBD5E1;
+      border: 1px solid #E2D9CC;
       font-size: 8.5px;
       text-transform: uppercase;
       letter-spacing: 0.3px;
     }
     table.dossier-table td {
       padding: 5px 8px;
-      border: 1px solid #E2E8F0;
+      border: 1px solid #E2D9CC;
       color: #1E293B;
     }
     table.dossier-table tr:nth-child(even) {
-      background: #F8FAFC;
+      background: #FAF7F2;
     }
     .mono {
       font-family: 'JetBrains Mono', monospace;
@@ -336,7 +355,7 @@ export function exportCandidateDossierPdf(candidate: Candidate): void {
 
     /* Progress bar */
     .progress-track {
-      background: #E2E8F0;
+      background: #E2D9CC;
       height: 5px;
       border-radius: 3px;
       overflow: hidden;
@@ -372,29 +391,36 @@ export function exportCandidateDossierPdf(candidate: Candidate): void {
 </head>
 <body>
   <div class="dossier-page">
+    <!-- Top Tiranga Line -->
+    <div class="tiranga-line">
+      <div class="tiranga-saffron"></div>
+      <div class="tiranga-white"></div>
+      <div class="tiranga-green"></div>
+    </div>
+
     <!-- Header -->
     <div class="header-bar">
       <div class="emblem-title">
-        <!-- Dharma Aperture Vector Emblem -->
+        <!-- 24-Spoke Ashoka Chakra Vector Emblem with Gold & Tiranga Rings -->
         <svg class="emblem-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="50" cy="50" r="47" fill="#0A192F" stroke="#1E293B" stroke-width="2" />
-          <circle cx="50" cy="50" r="40" fill="none" stroke="#3B82F6" stroke-width="2" stroke-dasharray="4 2" />
-          <circle cx="50" cy="50" r="28" fill="none" stroke="#D97706" stroke-width="1.5" />
-          <circle cx="50" cy="50" r="10" fill="#059669" />
-          <g stroke="#FFFFFF" stroke-width="1.2">
-            <line x1="50" y1="14" x2="50" y2="86" />
-            <line x1="14" y1="50" x2="86" y2="50" />
-            <line x1="24.5" y1="24.5" x2="75.5" y2="75.5" />
-            <line x1="24.5" y1="75.5" x2="75.5" y2="24.5" />
-            <line x1="32" y1="18.8" x2="68" y2="81.2" />
-            <line x1="68" y1="18.8" x2="32" y2="81.2" />
-            <line x1="18.8" y1="32" x2="81.2" y2="68" />
-            <line x1="18.8" y1="68" x2="81.2" y2="32" />
+          <circle cx="50" cy="50" r="47" fill="#0A192F" stroke="#D4AF37" stroke-width="2.5" />
+          <circle cx="50" cy="50" r="41" fill="none" stroke="#FF9933" stroke-width="1.8" />
+          <circle cx="50" cy="50" r="28" fill="none" stroke="#000080" stroke-width="1.5" />
+          <circle cx="50" cy="50" r="10" fill="#138808" />
+          <g stroke="#D4AF37" stroke-width="1.2">
+            <line x1="50" y1="12" x2="50" y2="88" />
+            <line x1="12" y1="50" x2="88" y2="50" />
+            <line x1="23" y1="23" x2="77" y2="77" />
+            <line x1="23" y1="77" x2="77" y2="23" />
+            <line x1="32" y1="17" x2="68" y2="83" />
+            <line x1="68" y1="17" x2="32" y2="83" />
+            <line x1="17" y1="32" x2="83" y2="68" />
+            <line x1="17" y1="68" x2="83" y2="32" />
           </g>
           <circle cx="50" cy="50" r="3.5" fill="#FFFFFF" />
         </svg>
         <div class="title-group">
-          <h1>National Forensic Audit Dossier</h1>
+          <h1>National Forensic Audit Dossier • राष्ट्रीय लेखापरीक्षा</h1>
           <p>The Sovereign Civic Ledger of India • Form 26 Sworn Verification</p>
         </div>
       </div>
@@ -409,10 +435,10 @@ export function exportCandidateDossierPdf(candidate: Candidate): void {
     <div class="identity-card">
       <div style="display: flex; align-items: center; gap: 14px;">
         ${candidate.photo_url && (candidate.photo_url.startsWith('https://') || candidate.photo_url.startsWith('http://')) ? `
-          <img src="${escapeHtml(candidate.photo_url)}" alt="${escapeHtml(candidate.name)}" style="width: 52px; height: 52px; border-radius: 50%; object-fit: cover; border: 2px solid #C89D3C;" />
+          <img src="${escapeHtml(candidate.photo_url)}" alt="${escapeHtml(cleanName)}" style="width: 52px; height: 52px; border-radius: 50%; object-fit: cover; border: 2px solid #D4AF37;" />
         ` : ''}
         <div>
-          <h2 class="cand-name">${escapeHtml(candidate.name)} ${candidate.alias ? `("${escapeHtml(candidate.alias)}")` : ''}</h2>
+          <h2 class="cand-name">${escapeHtml(cleanName)} ${candidate.alias ? `("${escapeHtml(candidate.alias)}")` : ''}</h2>
           <div class="cand-sub">
             <strong>${escapeHtml(candidate.house)}</strong> • ${escapeHtml(candidate.constituency)} Constituency, ${escapeHtml(candidate.state)} • Election Year: <strong>${escapeHtml(candidate.filing_year)}</strong>
           </div>

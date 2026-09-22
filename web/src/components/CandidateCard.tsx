@@ -5,6 +5,7 @@ import {
   CalendarCheck,
   FilePdf,
   Bank,
+  CurrencyInr,
   TrendUp,
   ShareNetwork,
   Plus,
@@ -57,15 +58,21 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
   );
   const [showImpactMethodology, setShowImpactMethodology] = useState(false);
 
-  const cleanInitials =
+  const cleanName =
     candidate.name
+      .replace(/^[\s.·•\-_]+/, '')
+      .replace(/\s+/g, ' ')
+      .trim() || candidate.name;
+
+  const cleanInitials =
+    cleanName
       .replace(/\s*\(.*?\)/g, '')
       .split(' ')
       .filter(Boolean)
       .slice(0, 2)
       .map((n) => n[0])
       .join('')
-      .toUpperCase() || candidate.name.slice(0, 2).toUpperCase();
+      .toUpperCase() || cleanName.slice(0, 2).toUpperCase();
 
   const formatINR = (val: number) => {
     if (val >= 10000000) return `₹${(val / 10000000).toFixed(2)} Cr`;
@@ -152,7 +159,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <h3 className="font-serif font-bold text-sovereign-950 text-base sm:text-lg hover:text-kesariya-800 transition-colors cursor-pointer leading-tight truncate">
-                  {candidate.name}
+                  {cleanName}
                 </h3>
                 {candidate.alias && (
                   <span className="text-[10px] sm:text-[11px] px-1.5 py-0.5 bg-dholpur-100 text-sovereign-700 rounded-full font-medium">
@@ -336,6 +343,39 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                   </span>
                   <span className="text-[10px] text-sovereign-600 block mt-0.5">
                     {candidate.questions_count !== undefined ? `${candidate.questions_count} सवाल पूछे (Questions)` : 'सत्र भागीदारी'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Card 4: चुनाव खर्च / Election Expense Compliance */}
+              <div className={`p-2.5 rounded-xl border flex flex-col justify-between transition-all ${
+                !candidate.election_expense_report || candidate.election_expense_report.filing_status === 'unknown'
+                  ? 'bg-dholpur-50 border-dholpur-200 text-sovereign-700'
+                  : candidate.election_expense_report.filing_status === 'missing' || candidate.election_expense_report.ceiling_status === 'over_limit'
+                  ? 'bg-rose-50/80 border-rose-200 text-rose-900'
+                  : candidate.election_expense_report.filing_status === 'late'
+                  ? 'bg-kesariya-50/80 border-kesariya-200 text-kesariya-900'
+                  : 'bg-harit-50/80 border-harit-200 text-harit-900'
+              }`}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-bold text-[11px] flex items-center gap-1">
+                    <CurrencyInr size={14} weight="duotone" />
+                    <span>चुनावी खर्च • Expense</span>
+                  </span>
+                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-white/70">
+                    {!candidate.election_expense_report ? 'N/A' : candidate.election_expense_report.filing_status.replace('_', ' ')}
+                  </span>
+                </div>
+                <div className="my-0.5">
+                  <span className="font-bold text-sm block font-mono">
+                    {candidate.election_expense_report?.declared_expenditure == null ? 'Not disclosed' : formatINR(candidate.election_expense_report.declared_expenditure)}
+                  </span>
+                  <span className="text-[10px] text-sovereign-600 block mt-0.5 truncate">
+                    {!candidate.election_expense_report
+                      ? 'No official account on record'
+                      : candidate.election_expense_report.ceiling_status === 'over_limit'
+                      ? 'Declared amount exceeds recorded ceiling'
+                      : `Due: ${candidate.election_expense_report.filing_due_on}`}
                   </span>
                 </div>
               </div>

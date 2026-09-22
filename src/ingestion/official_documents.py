@@ -29,7 +29,7 @@ class OfficialDocumentDiscovery:
     def __init__(self, allowed_domains: Set[str]):
         self.allowed_domains = {domain.lower() for domain in allowed_domains}
 
-    async def discover_pdf_links(self, index_url: str) -> List[str]:
+    async def discover_pdf_links(self, index_url: str, required_text: str = "") -> List[str]:
         if httpx is None:
             raise ImportError("httpx is required for official document discovery")
         if not is_allowed_public_source(index_url, self.allowed_domains):
@@ -46,6 +46,8 @@ class OfficialDocumentDiscovery:
             href = urljoin(index_url, anchor["href"])
             label = anchor.get_text(" ", strip=True).lower()
             if not is_allowed_public_source(href, self.allowed_domains):
+                continue
+            if required_text and required_text.lower() not in f"{label} {href.lower()}":
                 continue
             if ".pdf" in href.lower() or "download" in href.lower() or "pdf" in label:
                 links.append(href)

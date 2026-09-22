@@ -72,62 +72,85 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
 
+  // Clean candidate name (strip leading dots, dashes, bullets or honorific artifacts)
+  const cleanName = (candidate.name || '')
+    .replace(/^[\s.·•\-_]+/, '')
+    .replace(/\s+/g, ' ')
+    .trim() || candidate.name;
+
   // 1. Background Fill: Sovereign Navy Deep Gradient
   const bgGrad = ctx.createLinearGradient(0, 0, 1080, 1080);
   bgGrad.addColorStop(0, '#06101E');
   bgGrad.addColorStop(0.5, '#0A192F');
-  bgGrad.addColorStop(1, '#050D1A');
+  bgGrad.addColorStop(1, '#050D18');
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, size, size);
 
-  // Subtle decorative background grid pattern
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
-  ctx.lineWidth = 1;
-  for (let x = 40; x < size; x += 40) {
+  // Subtle Ashoka Chakra Watermark in Background
+  ctx.save();
+  ctx.translate(size / 2, size / 2);
+  ctx.strokeStyle = 'rgba(212, 175, 55, 0.035)';
+  ctx.lineWidth = 2;
+  const wmR = 340;
+  ctx.beginPath();
+  ctx.arc(0, 0, wmR, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(0, 0, wmR * 0.7, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(0, 0, wmR * 0.25, 0, Math.PI * 2);
+  ctx.stroke();
+  for (let i = 0; i < 24; i++) {
+    const ang = (i * Math.PI) / 12;
     ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, size);
+    ctx.moveTo(Math.cos(ang) * (wmR * 0.25), Math.sin(ang) * (wmR * 0.25));
+    ctx.lineTo(Math.cos(ang) * wmR, Math.sin(ang) * wmR);
     ctx.stroke();
   }
-  for (let y = 40; y < size; y += 40) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(size, y);
-    ctx.stroke();
-  }
+  ctx.restore();
 
-  // 2. Top Indian National Tricolor Accent Bar
+  // 2. Top Indian National Tricolor Accent Bar (12px height)
   ctx.fillStyle = '#FF9933'; // Saffron
-  ctx.fillRect(0, 0, 360, 10);
+  ctx.fillRect(0, 0, 360, 12);
   ctx.fillStyle = '#FFFFFF'; // White
-  ctx.fillRect(360, 0, 360, 10);
+  ctx.fillRect(360, 0, 360, 12);
   ctx.fillStyle = '#138808'; // Green
-  ctx.fillRect(720, 0, 360, 10);
+  ctx.fillRect(720, 0, 360, 12);
 
   const pad = 60;
 
-  // 3. Header: Dharma Aperture & Brand
-  const cx = pad + 30;
-  const cy = 68;
+  // 3. Header: Sovereign Emblem & Brand (Y: 34 to 105)
+  const cx = pad + 32;
+  const cy = 72;
 
-  // Draw Gold Ashoka Chakra / Dharma Aperture Emblem
+  // Draw Authentic 24-Spoke Ashoka Chakra Emblem with Gold Rim & Concentric Rings
   ctx.beginPath();
-  ctx.arc(cx, cy, 28, 0, Math.PI * 2);
+  ctx.arc(cx, cy, 30, 0, Math.PI * 2);
   ctx.fillStyle = '#0A192F';
   ctx.fill();
-  ctx.strokeStyle = '#D4AF37'; // Gold
+  ctx.strokeStyle = '#D4AF37'; // Royal Gold
   ctx.lineWidth = 2.5;
   ctx.stroke();
 
+  // Outer Saffron Ring
+  ctx.beginPath();
+  ctx.arc(cx, cy, 26, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255, 153, 51, 0.6)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Inner Navy Ring
   ctx.beginPath();
   ctx.arc(cx, cy, 18, 0, Math.PI * 2);
-  ctx.strokeStyle = '#D4AF37';
+  ctx.strokeStyle = 'rgba(212, 175, 55, 0.8)';
   ctx.lineWidth = 1.2;
   ctx.stroke();
 
+  // Center Harit Green Hub
   ctx.beginPath();
   ctx.arc(cx, cy, 6, 0, Math.PI * 2);
-  ctx.fillStyle = '#059669'; // Jade
+  ctx.fillStyle = '#138808';
   ctx.fill();
 
   // 24 Spokes in Gold
@@ -137,53 +160,63 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
     const angle = (i * Math.PI) / 12;
     ctx.beginPath();
     ctx.moveTo(cx + Math.cos(angle) * 6, cy + Math.sin(angle) * 6);
-    ctx.lineTo(cx + Math.cos(angle) * 27, cy + Math.sin(angle) * 27);
+    ctx.lineTo(cx + Math.cos(angle) * 25, cy + Math.sin(angle) * 25);
     ctx.stroke();
   }
 
-  // Title text: APNA NETA | THE CIVIC LEDGER
-  ctx.font = 'bold 36px "Plus Jakarta Sans", sans-serif';
-  ctx.fillStyle = '#D4AF37'; // Gold
-  ctx.fillText('APNA NETA', pad + 76, 78);
+  // Title text: APNA NETA • अपना नेता
+  ctx.font = 'bold 34px "Cinzel", "Newsreader", Georgia, serif';
+  ctx.fillStyle = '#D4AF37'; // Royal Gold
+  ctx.fillText('APNA NETA', pad + 78, 68);
 
-  ctx.font = '300 36px "Plus Jakarta Sans", sans-serif';
-  ctx.fillStyle = '#D4AF37';
-  ctx.fillText('|', pad + 300, 77);
+  ctx.font = 'bold 22px "Noto Serif Devanagari", "Tiro Devanagari Hindi", serif';
+  ctx.fillStyle = '#FEF08A';
+  ctx.fillText('• अपना नेता', pad + 275, 68);
 
-  ctx.font = 'bold 36px "Plus Jakarta Sans", sans-serif';
-  ctx.fillStyle = '#FFFFFF';
-  ctx.fillText('THE CIVIC LEDGER', pad + 322, 78);
+  // Subtitle
+  ctx.font = '600 13px "Plus Jakarta Sans", sans-serif';
+  ctx.fillStyle = '#94A3B8';
+  ctx.fillText('THE SOVEREIGN CIVIC LEDGER OF BHARAT • संप्रभु नागरिक बहीखाता', pad + 80, 92);
 
-  // Green VERIFIED Pill Badge on Right
-  const badgeW = 160;
-  const badgeH = 44;
+  // Indelible Voter-Ink Purple Seal on Right
+  const badgeW = 210;
+  const badgeH = 46;
   const badgeX = size - pad - badgeW;
-  const badgeY = 46;
-  roundRect(ctx, badgeX, badgeY, badgeW, badgeH, 22);
-  ctx.fillStyle = '#059669';
+  const badgeY = 48;
+  roundRect(ctx, badgeX, badgeY, badgeW, badgeH, 23);
+  ctx.fillStyle = '#3B0764'; // Deep Voter-Ink Purple
+  ctx.fill();
+  ctx.strokeStyle = '#C084FC';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Small indelible ink dot
+  ctx.beginPath();
+  ctx.arc(badgeX + 24, badgeY + badgeH / 2, 5, 0, Math.PI * 2);
+  ctx.fillStyle = '#A855F7';
   ctx.fill();
 
-  ctx.font = 'bold 18px "Plus Jakarta Sans", sans-serif';
-  ctx.fillStyle = '#FFFFFF';
+  ctx.font = 'bold 15px "Noto Serif Devanagari", "Plus Jakarta Sans", sans-serif';
+  ctx.fillStyle = '#FAF5FF';
   ctx.textAlign = 'center';
-  ctx.fillText('✓ VERIFIED', badgeX + badgeW / 2, badgeY + 28);
+  ctx.fillText('सत्यापित • ECI Form 26', badgeX + badgeW / 2 + 8, badgeY + 29);
   ctx.textAlign = 'left';
 
-  // 4. Candidate Identity Hero Card
-  let curY = 135;
+  // 4. Candidate Identity Hero Card (Y: 125, H: 155, W: 960)
+  let curY = 125;
   const candCardW = size - pad * 2;
-  const candCardH = 145;
-  roundRect(ctx, pad, curY, candCardW, candCardH, 20);
-  ctx.fillStyle = 'rgba(13, 32, 61, 0.9)';
+  const candCardH = 155;
+  roundRect(ctx, pad, curY, candCardW, candCardH, 22);
+  ctx.fillStyle = 'rgba(13, 31, 58, 0.85)';
   ctx.fill();
-  ctx.strokeStyle = '#C89D3C'; // Gold Border
+  ctx.strokeStyle = 'rgba(212, 175, 55, 0.5)'; // Subtle Gold Border
   ctx.lineWidth = 2;
   ctx.stroke();
 
   // Circular Avatar Container on Left
-  const avX = pad + 65;
+  const avX = pad + 72;
   const avY = curY + candCardH / 2;
-  const avR = 48;
+  const avR = 52;
 
   if (photoImg) {
     ctx.save();
@@ -196,137 +229,164 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
     ctx.beginPath();
     ctx.arc(avX, avY, avR, 0, Math.PI * 2);
     ctx.strokeStyle = '#D4AF37';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2.5;
     ctx.stroke();
   } else {
     ctx.beginPath();
     ctx.arc(avX, avY, avR, 0, Math.PI * 2);
-    ctx.fillStyle = '#1E3A5F';
+    ctx.fillStyle = '#172E4C';
     ctx.fill();
     ctx.strokeStyle = '#D4AF37';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2.5;
     ctx.stroke();
 
-    // Silhouette inside Avatar
-    ctx.beginPath();
-    ctx.arc(avX, avY - 10, 18, 0, Math.PI * 2);
+    // Monogram Initials
+    const initials = cleanName
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0])
+      .join('')
+      .toUpperCase() || cleanName.slice(0, 2).toUpperCase();
+
+    ctx.font = 'bold 36px "Newsreader", Georgia, serif';
     ctx.fillStyle = '#D4AF37';
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(avX, avY + 36, 32, Math.PI, Math.PI * 2);
-    ctx.fillStyle = '#D4AF37';
-    ctx.fill();
+    ctx.textAlign = 'center';
+    ctx.fillText(initials, avX, avY + 12);
+    ctx.textAlign = 'left';
   }
 
   // Candidate Details
-  const candTextX = pad + 135;
-  ctx.font = 'bold 36px "Newsreader", Georgia, serif';
+  const candTextX = pad + 145;
+  ctx.font = 'bold 36px "Newsreader", "Noto Serif Devanagari", Georgia, serif';
   ctx.fillStyle = '#FFFFFF';
-  let nameText = candidate.name;
+  let nameText = cleanName;
   if (nameText.length > 28) nameText = nameText.substring(0, 26) + '...';
-  ctx.fillText(nameText, candTextX, curY + 54);
+  ctx.fillText(nameText, candTextX, curY + 50);
 
-  // Constituency Subtitle in Gold/Ochre
-  ctx.font = '500 20px "Newsreader", Georgia, serif';
+  // Designation & Constituency Subtitle in Warm Kesariya Gold
+  ctx.font = '600 18px "Newsreader", "Noto Serif Devanagari", Georgia, serif';
   ctx.fillStyle = '#E5B842';
-  const subTitle = `Member of Parliament, ${candidate.constituency} Constituency (${candidate.state})`;
-  ctx.fillText(subTitle, candTextX, curY + 88);
+  const houseLabel = candidate.house || 'Lok Sabha';
+  const subTitle = `${houseLabel} (${candidate.constituency || 'Seat'}, ${candidate.state || 'India'}) • संसद सदस्य`;
+  ctx.fillText(subTitle, candTextX, curY + 82);
 
-  // Party Tag & Filing Year Tag
+  // Party Tag & Sworn Filing Pill
   ctx.font = 'bold 13px "Plus Jakarta Sans", sans-serif';
   ctx.fillStyle = '#94A3B8';
   ctx.fillText(
-    `${(candidate.party || 'Independent').toUpperCase()} • FORM 26 SWORN FILING (${candidate.filing_year})`,
+    `${(candidate.party || 'Independent').toUpperCase()} • SWORN ECI FORM 26 DISCLOSURES (${candidate.filing_year})`,
     candTextX,
-    curY + 118
+    curY + 116
   );
 
-  // 5. Four High-Impact Metric Cards (2x2 Grid) with Gold Header Caps
-  curY += candCardH + 30;
+  // 5. Four High-Impact Metric Cards (2x2 Grid) with Refined Color Accents (Y: 305 to 815)
+  curY += candCardH + 24;
   const tileW = (candCardW - 24) / 2;
   const tileH = 240;
-  const capH = 48;
 
   function drawMetricCard(
     x: number,
     y: number,
-    title: string,
+    titleBilingual: string,
+    accentColor: string,
     valueText: string,
     valueColor: string,
     subText: string,
-    subColor?: string
+    subColor?: string,
+    badgeText?: string
   ) {
-    // Outer card
-    roundRect(ctx!, x, y, tileW, tileH, 18);
-    ctx!.fillStyle = '#081426';
+    // Outer card body with glassmorphism
+    roundRect(ctx!, x, y, tileW, tileH, 20);
+    ctx!.fillStyle = 'rgba(10, 25, 47, 0.92)';
     ctx!.fill();
-    ctx!.strokeStyle = '#C89D3C'; // Gold Border
-    ctx!.lineWidth = 2;
+    ctx!.strokeStyle = 'rgba(212, 175, 55, 0.35)'; // Refined Gold Border
+    ctx!.lineWidth = 1.8;
     ctx!.stroke();
 
-    // Gold Header Cap
+    // Top Accent Border Line
     ctx!.save();
     ctx!.beginPath();
-    roundRect(ctx!, x, y, tileW, tileH, 18);
+    roundRect(ctx!, x, y, tileW, tileH, 20);
     ctx!.clip();
+    ctx!.fillStyle = accentColor;
+    ctx!.fillRect(x, y, tileW, 5);
 
-    ctx!.fillStyle = '#C89D3C'; // Solid Gold Header
-    ctx!.fillRect(x, y, tileW, capH);
+    // Header Background Strip
+    ctx!.fillStyle = 'rgba(255, 255, 255, 0.04)';
+    ctx!.fillRect(x, y + 5, tileW, 46);
 
-    ctx!.font = 'bold 20px "Plus Jakarta Sans", sans-serif';
-    ctx!.fillStyle = '#0A192F'; // Dark Sovereign text on Gold
-    ctx!.fillText(title, x + 24, y + 32);
+    // Bilingual Header Label
+    ctx!.font = 'bold 18px "Noto Serif Devanagari", "Plus Jakarta Sans", sans-serif';
+    ctx!.fillStyle = '#FAF7F2';
+    ctx!.fillText(titleBilingual, x + 22, y + 36);
+
+    // Optional Badge in Header
+    if (badgeText) {
+      ctx!.font = 'bold 12px "Plus Jakarta Sans", sans-serif';
+      ctx!.fillStyle = accentColor;
+      ctx!.textAlign = 'right';
+      ctx!.fillText(badgeText, x + tileW - 22, y + 36);
+      ctx!.textAlign = 'left';
+    }
     ctx!.restore();
 
     // Value text
-    ctx!.font = 'bold 44px "Plus Jakarta Sans", sans-serif';
+    ctx!.font = 'bold 42px "JetBrains Mono", "Plus Jakarta Sans", monospace';
     ctx!.fillStyle = valueColor;
-    ctx!.fillText(valueText, x + 24, y + capH + 75);
+    ctx!.fillText(valueText, x + 22, y + 124);
 
     // Subtext
-    ctx!.font = '500 17px "Plus Jakarta Sans", sans-serif';
-    ctx!.fillStyle = subColor || '#94A3B8';
-    ctx!.fillText(subText, x + 24, y + capH + 125);
+    ctx!.font = '500 16.5px "Plus Jakarta Sans", sans-serif';
+    ctx!.fillStyle = subColor || '#CBD5E1';
+    ctx!.fillText(subText, x + 22, y + 172);
+
+    // Subtle bottom rule and audit stamp
+    ctx!.fillStyle = 'rgba(255, 255, 255, 0.06)';
+    ctx!.fillRect(x + 22, y + 196, tileW - 44, 1);
   }
 
   // Card 1: Declared Net Worth (Top-Left)
   drawMetricCard(
     pad,
     curY,
-    'Declared Net Worth',
+    'कुल संपत्ति • Declared Net Worth',
+    '#FF9933', // Kesariya Accent
     formatINR(candidate.total_net_worth),
-    '#FEF08A', // Warm Cream/Gold
-    `Movable: ${formatINR(candidate.total_movable_assets)} | Immovable: ${formatINR(candidate.total_immovable_assets)}`,
-    '#93C5FD'
+    '#FEF08A', // Warm Gold
+    `चल (Movable): ${formatINR(candidate.total_movable_assets)} | अचल: ${formatINR(candidate.total_immovable_assets)}`,
+    '#93C5FD',
+    `देयता: ${formatINR(candidate.total_liabilities)}`
   );
 
   // Card 2: Criminal Proceedings (Top-Right)
   const m2X = pad + tileW + 24;
-  const crimText =
-    candidate.serious_criminal_cases_count > 0
-      ? `${candidate.serious_criminal_cases_count} Serious Charges`
-      : candidate.criminal_cases_count > 0
-      ? `${candidate.criminal_cases_count} Protest Cases`
-      : '0 Charges Declared';
-  const crimColor =
-    candidate.serious_criminal_cases_count > 0
-      ? '#F87171'
-      : candidate.criminal_cases_count > 0
-      ? '#FBBF24'
-      : '#34D399';
-  const crimSub =
-    candidate.serious_criminal_cases_count > 0
-      ? 'Includes heinous IPC non-bailable charges'
-      : 'Clean Form 26 Sworn Affidavit on ECI Record';
+  const hasSerious = candidate.serious_criminal_cases_count > 0;
+  const hasProtest = candidate.criminal_cases_count > 0 && !hasSerious;
+  const crimTitle = 'आपराधिक मामले • Crime Record';
+  const crimText = hasSerious
+    ? `${candidate.serious_criminal_cases_count} Serious Charges`
+    : hasProtest
+    ? `${candidate.criminal_cases_count} Protest Cases`
+    : '0 Charges Declared';
+  const crimColor = hasSerious ? '#F87171' : hasProtest ? '#FBBF24' : '#34D399';
+  const crimAccent = hasSerious ? '#DC2626' : hasProtest ? '#D97706' : '#138808';
+  const crimSub = hasSerious
+    ? '⚠️ गंभीर गैर-जमानती मामले • Heinous IPC charges filed'
+    : hasProtest
+    ? 'राजनीतिक प्रदर्शन मामले • Protest/Agitation charges'
+    : '✓ स्वच्छ छवि • Clean Form 26 Sworn Affidavit on Record';
 
   drawMetricCard(
     m2X,
     curY,
-    'Criminal Proceedings',
+    crimTitle,
+    crimAccent,
     crimText,
     crimColor,
     crimSub,
-    crimColor === '#34D399' ? '#A7F3D0' : '#FECDD3'
+    hasSerious ? '#FECDD3' : hasProtest ? '#FEF08A' : '#A7F3D0',
+    candidate.is_rpa_section_8_disqualified ? 'DISQUALIFIED' : hasSerious ? 'HEINOUS' : 'CLEAN'
   );
 
   // Row 2
@@ -336,79 +396,112 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
   const attVal = candidate.attendance_rate !== undefined ? `${candidate.attendance_rate}%` : 'N/A';
   const attSub =
     candidate.attendance_rate !== undefined
-      ? `${candidate.debates_count ?? 0} Debates • ${candidate.questions_count ?? 0} Questions in Sansad`
+      ? `${candidate.debates_count ?? 0} Debates • ${candidate.questions_count ?? 0} Questions in Parliament`
       : 'Non-sitting candidate in current Lok Sabha';
   drawMetricCard(
     pad,
     row2Y,
-    'Parliamentary Attendance',
+    'संसद हाजिरी • Sansad Attendance',
+    '#3B82F6', // Ashoka Blue Accent
     attVal,
-    '#34D399',
+    '#60A5FA',
     attSub,
-    '#CBD5E1'
+    '#CBD5E1',
+    candidate.attendance_rate !== undefined ? `${candidate.attendance_rate >= 75 ? 'ACTIVE' : 'BELOW AVG'}` : 'CANDIDATE'
   );
 
   // Card 4: Local Development Funds (Bottom-Right)
   const mpladsVal = candidate.mplads ? `${candidate.mplads.utilization_rate.toFixed(1)}% Spent` : 'N/A';
   const mpladsSub = candidate.mplads
-    ? `Unspent Balance: ${formatINR(candidate.mplads.unspent_balance)}`
+    ? `बकाया (Unspent): ${formatINR(candidate.mplads.unspent_balance)}`
     : 'Central MoSPI quota not applicable';
+  const mpladsColor = candidate.mplads
+    ? candidate.mplads.utilization_rate < 60
+      ? '#F87171'
+      : '#34D399'
+    : '#94A3B8';
   drawMetricCard(
     m2X,
     row2Y,
-    'Local Development Funds',
+    'सांसद निधि • MPLADS Funds',
+    '#138808', // Harit Green Accent
     mpladsVal,
-    '#34D399',
+    mpladsColor,
     mpladsSub,
-    '#CBD5E1'
+    '#CBD5E1',
+    candidate.mplads ? `${candidate.mplads.works_completed ?? 0} WORKS` : 'NO QUOTA'
   );
 
-  // 6. Bottom Reconciler Banner
-  const bannerY = row2Y + tileH + 28;
-  const bannerH = 68;
-  roundRect(ctx, pad, bannerY, candCardW, bannerH, 16);
+  // 6. Bottom Reconciler Banner (Y: 825, H: 70, W: 960)
+  const bannerY = row2Y + tileH + 26;
+  const bannerH = 70;
+  roundRect(ctx, pad, bannerY, candCardW, bannerH, 18);
 
   if (candidate.is_rpa_section_8_disqualified) {
-    ctx.fillStyle = '#E11D48'; // Crimson
+    ctx.fillStyle = '#991B1B'; // Terracotta Red
     ctx.fill();
-    ctx.font = 'bold 22px "Plus Jakarta Sans", sans-serif';
+    ctx.strokeStyle = '#F87171';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.font = 'bold 22px "Noto Serif Devanagari", "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = '#FFFFFF';
     ctx.textAlign = 'center';
-    ctx.fillText('⚠️ DISQUALIFIED CANDIDATE UNDER SECTION 8 RPA 1951', size / 2, bannerY + 42);
+    ctx.fillText('⚠️ अयोग्य घोषित • DISQUALIFIED CANDIDATE UNDER SECTION 8 RPA 1951', size / 2, bannerY + 43);
   } else if (candidate.has_section_9a_conflict) {
-    ctx.fillStyle = '#BE123C'; // Rose-700
+    ctx.fillStyle = '#991B1B'; // Terracotta Red
     ctx.fill();
-    ctx.font = 'bold 22px "Plus Jakarta Sans", sans-serif';
+    ctx.strokeStyle = '#F87171';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.font = 'bold 22px "Noto Serif Devanagari", "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = '#FFFFFF';
     ctx.textAlign = 'center';
-    ctx.fillText('⚠️ SECTION 9A RPA COMMERCIAL CONFLICT OF INTEREST DETECTED', size / 2, bannerY + 42);
+    ctx.fillText('⚠️ सरकारी अनुबंध विवाद • SECTION 9A RPA COMMERCIAL CONFLICT OF INTEREST DETECTED', size / 2, bannerY + 43);
   } else if (candidate.has_arithmetic_discrepancy) {
-    ctx.fillStyle = '#E11D48'; // Crimson
+    ctx.fillStyle = '#991B1B'; // Terracotta Red
     ctx.fill();
-    ctx.font = 'bold 22px "Plus Jakarta Sans", sans-serif';
+    ctx.strokeStyle = '#F87171';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.font = 'bold 22px "Noto Serif Devanagari", "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = '#FFFFFF';
     ctx.textAlign = 'center';
-    ctx.fillText('⚠️ ARITHMETIC DISCREPANCY DETECTED IN SWORN FORM 26', size / 2, bannerY + 42);
+    ctx.fillText('⚠️ अंकगणितीय विसंगति • ARITHMETIC DISCREPANCY DETECTED IN SWORN FORM 26', size / 2, bannerY + 43);
   } else {
-    ctx.fillStyle = '#D4AF37'; // Solid Gold
+    // Clean Reconciled Audit: Deep Harit Green with Royal Gold Border
+    const greenGrad = ctx.createLinearGradient(pad, bannerY, pad + candCardW, bannerY);
+    greenGrad.addColorStop(0, '#064E3B');
+    greenGrad.addColorStop(0.5, '#0A5C36');
+    greenGrad.addColorStop(1, '#064E3B');
+    ctx.fillStyle = greenGrad;
     ctx.fill();
-    ctx.font = 'bold 22px "Plus Jakarta Sans", sans-serif';
-    ctx.fillStyle = '#0A192F'; // Dark Navy text on Gold
+    ctx.strokeStyle = '#D4AF37'; // Royal Gold Border
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.font = 'bold 21px "Noto Serif Devanagari", "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = '#FFFFFF';
     ctx.textAlign = 'center';
-    ctx.fillText('DOUBLE-ENTRY AUDIT: SWORN DISCLOSURES RECONCILED', size / 2, bannerY + 42);
+    ctx.fillText('✓ द्वि-प्रविष्टि सत्यापन: शपथपत्र सत्यापित • DOUBLE-ENTRY AUDIT RECONCILED', size / 2, bannerY + 43);
   }
   ctx.textAlign = 'left';
 
-  // 7. Safe Harbor Footer & Legal Attribution
+  // 7. Safe Harbor Footer & Legal Attribution (Y: 960 to 1050)
   const footY = size - 30;
-  ctx.font = '600 12px "Plus Jakarta Sans", sans-serif';
+  ctx.font = '600 13px "Plus Jakarta Sans", sans-serif';
   ctx.fillStyle = '#64748B';
   const photoNote = candidate.photo_attribution ? ` • Photo: ${candidate.photo_attribution}` : '';
   ctx.fillText(
-    `CITIZEN VERIFICATION PORTAL • apnaneta.in • SEC 79 IT ACT & DPDPA 2023${photoNote}`,
+    `CITIZEN CIVIC PORTAL • apnaneta.in • SEC 79 IT ACT & DPDPA 2023 COMPLIANT${photoNote}`,
     pad,
     footY
   );
+
+  ctx.font = '600 13px "Noto Serif Devanagari", "Plus Jakarta Sans", sans-serif';
+  ctx.fillStyle = '#D4AF37';
+  ctx.textAlign = 'right';
+  ctx.fillText('भारत का संप्रभु नागरिक बहीखाता • Verified Government Open Records', size - pad, footY);
+  ctx.textAlign = 'left';
 
   return canvas;
 }
@@ -431,7 +524,11 @@ export async function generateReportCardBlob(candidate: Candidate): Promise<Blob
 export async function downloadReportCard(candidate: Candidate, existingDataUrl?: string): Promise<void> {
   const dataUrl = existingDataUrl || (await generateReportCardDataUrl(candidate));
   const a = document.createElement('a');
-  const safeName = candidate.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+  const cleanName = (candidate.name || '')
+    .replace(/^[\s.·•\-_]+/, '')
+    .replace(/\s+/g, ' ')
+    .trim() || candidate.name;
+  const safeName = cleanName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
   a.download = `apna_neta_report_card_${safeName}_${candidate.filing_year}.png`;
   a.href = dataUrl;
   document.body.appendChild(a);
@@ -462,13 +559,17 @@ export async function shareReportCardViaNative(candidate: Candidate): Promise<Na
   }
 
   try {
+    const cleanName = (candidate.name || '')
+      .replace(/^[\s.·•\-_]+/, '')
+      .replace(/\s+/g, ' ')
+      .trim() || candidate.name;
     const blob = await generateReportCardBlob(candidate);
-    const safeName = candidate.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+    const safeName = cleanName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
     const file = new File([blob], `apnaneta_${safeName}.png`, { type: 'image/png' });
 
     const shareData = {
-      title: `${candidate.name} Civic Report Card`,
-      text: `Audit Report Card for ${candidate.name} (${candidate.party || 'IND'}, ${candidate.constituency}). Verified from official sworn ECI Form 26 affidavit on Apna Neta.`,
+      title: `${cleanName} Civic Report Card • नागरिक रिपोर्ट कार्ड`,
+      text: `🇮🇳 Apna Neta Audit Report Card for ${cleanName} (${candidate.party || 'IND'}, ${candidate.constituency}). Verified against sworn ECI Form 26 disclosures under RPA 1951.`,
       url: getAppBaseUrl(),
       files: [file],
     };
@@ -514,6 +615,11 @@ export async function copyReportCardImageToClipboard(candidate: Candidate): Prom
  * Plain-text fact-sheet summary for WhatsApp or text copying.
  */
 export function getReportCardFactSheet(candidate: Candidate): string {
+  const cleanName = (candidate.name || '')
+    .replace(/^[\s.·•\-_]+/, '')
+    .replace(/\s+/g, ' ')
+    .trim() || candidate.name;
+
   const formatVal = (val: number) => {
     const num = Number(val || 0);
     if (num >= 10000000) return `₹${(num / 10000000).toFixed(2)} Cr`;
@@ -522,35 +628,35 @@ export function getReportCardFactSheet(candidate: Candidate): string {
   };
 
   const lines = [
-    `🇮🇳 *APNA NETA CITIZEN REPORT CARD* 🇮🇳`,
-    `━━━━━━━━━━━━━━━━━━━━━`,
-    `👤 *Name:* ${candidate.name}`,
-    `🏛️ *Seat:* ${candidate.constituency}, ${candidate.state} (${candidate.house})`,
-    `🗳️ *Party:* ${candidate.party || 'Independent'}`,
-    `📅 *Filing Year:* ${candidate.filing_year}`,
+    `🇮🇳 *APNA NETA • अपना नेता नागरिक रिपोर्ट कार्ड* 🇮🇳`,
+    `━━━━━━━━━━━━━━━━━━━━━━━━━`,
+    `👤 *Name / नाम:* ${cleanName}`,
+    `🏛️ *Seat / निर्वाचन क्षेत्र:* ${candidate.constituency}, ${candidate.state} (${candidate.house})`,
+    `🗳️ *Party / राजनीतिक दल:* ${candidate.party || 'Independent'}`,
+    `📅 *Filing Year / शपथपत्र वर्ष:* ${candidate.filing_year}`,
     ``,
-    `💰 *Declared Net Worth:* ${formatVal(candidate.total_net_worth)}`,
-    `   • Movable Assets: ${formatVal(candidate.total_movable_assets)}`,
-    `   • Immovable Assets: ${formatVal(candidate.total_immovable_assets)}`,
-    `   • Liabilities: ${formatVal(candidate.total_liabilities)}`,
+    `💰 *Declared Net Worth / कुल संपत्ति:* ${formatVal(candidate.total_net_worth)}`,
+    `   • चल संपत्ति (Movable): ${formatVal(candidate.total_movable_assets)}`,
+    `   • अचल संपत्ति (Immovable): ${formatVal(candidate.total_immovable_assets)}`,
+    `   • देयताएं (Liabilities): ${formatVal(candidate.total_liabilities)}`,
     ``,
-    `⚖️ *Criminal Charges:* ${
+    `⚖️ *Criminal Charges / आपराधिक मामले:* ${
       candidate.serious_criminal_cases_count > 0
-        ? `⚠️ ${candidate.serious_criminal_cases_count} Serious IPC Cases`
+        ? `⚠️ ${candidate.serious_criminal_cases_count} गंभीर गैर-जमानती मामले (Serious IPC Cases)`
         : candidate.criminal_cases_count > 0
-        ? `⚖️ ${candidate.criminal_cases_count} Protest/Demonstration Cases`
-        : `✅ 0 Declared Cases`
+        ? `⚖️ ${candidate.criminal_cases_count} राजनीतिक प्रदर्शन मामले (Protest Cases)`
+        : `✅ 0 मामले (Clean Sworn Affidavit on ECI Record)`
     }`,
     ``,
     candidate.attendance_rate !== undefined
-      ? `🏛️ *Sansad Attendance:* ${candidate.attendance_rate}% (Debates: ${candidate.debates_count ?? 0}, Questions: ${candidate.questions_count ?? 0})`
-      : `🏛️ *Sansad Attendance:* N/A (Candidate / Non-MP)`,
+      ? `🏛️ *Sansad Attendance / संसद हाजिरी:* ${candidate.attendance_rate}% (${candidate.debates_count ?? 0} Debates, ${candidate.questions_count ?? 0} Questions)`
+      : `🏛️ *Sansad Attendance / संसद हाजिरी:* N/A (Candidate / Non-MP)`,
     ``,
     candidate.mplads
-      ? `🏗️ *MPLADS Velocity:* ${candidate.mplads.utilization_rate.toFixed(1)}% Spent (${formatVal(candidate.mplads.unspent_balance)} unspent)`
-      : `🏗️ *MPLADS Velocity:* N/A (No central quota)`,
+      ? `🏗️ *MPLADS Velocity / सांसद निधि:* ${candidate.mplads.utilization_rate.toFixed(1)}% Spent (बकाया: ${formatVal(candidate.mplads.unspent_balance)})`
+      : `🏗️ *MPLADS Velocity / सांसद निधि:* N/A (No central quota)`,
     ``,
-    `🔍 *Audit Verdict:* ${
+    `🔍 *Audit Verdict / सत्यापन निष्कर्ष:* ${
       candidate.is_rpa_section_8_disqualified
         ? `⚠️ DISQUALIFIED UNDER SECTION 8 RPA 1951`
         : candidate.has_section_9a_conflict
@@ -560,8 +666,8 @@ export function getReportCardFactSheet(candidate: Candidate): string {
         : `✅ CLEAN AUDIT (Part A & Part B disclosures match)`
     }`,
     candidate.defection_count ? `🔄 *Political Mobility:* ${candidate.defection_count} Career Party Transitions` : '',
-    `━━━━━━━━━━━━━━━━━━━━━`,
-    `Verified against sworn ECI Form 26 affidavit at ${getAppBaseUrl()}`,
+    `━━━━━━━━━━━━━━━━━━━━━━━━━`,
+    `Verified against sworn ECI Form 26 disclosures at ${getAppBaseUrl()}`,
   ].filter(Boolean);
 
   return lines.join('\n');
@@ -573,6 +679,10 @@ export function getWhatsAppShareUrl(candidate: Candidate): string {
 }
 
 export function getTwitterShareUrl(candidate: Candidate): string {
+  const cleanName = (candidate.name || '')
+    .replace(/^[\s.·•\-_]+/, '')
+    .replace(/\s+/g, ' ')
+    .trim() || candidate.name;
   const safeParty = candidate.party ? ` (${candidate.party})` : '';
   const netWorth = formatINR(candidate.total_net_worth);
   const auditVerdict = candidate.is_rpa_section_8_disqualified
@@ -583,7 +693,7 @@ export function getTwitterShareUrl(candidate: Candidate): string {
     ? '⚠️ Discrepancy Flagged'
     : '✅ 100% Clean Audit';
   
-  const text = `Official ECI sworn affidavit audit report for ${candidate.name}${safeParty} from ${candidate.constituency}, ${candidate.state}.\n\n💰 Declared Net Worth: ${netWorth}\n⚖️ Audit Verdict: ${auditVerdict}\n\nInspect verified court proofs on Apna Neta:`;
+  const text = `Official ECI sworn affidavit audit report for ${cleanName}${safeParty} from ${candidate.constituency}, ${candidate.state}.\n\n💰 Declared Net Worth: ${netWorth}\n⚖️ Audit Verdict: ${auditVerdict}\n\nInspect verified court proofs on Apna Neta:`;
   const url = getAppBaseUrl();
   return `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}&hashtags=ApnaNeta,Transparency,ECI`;
 }
