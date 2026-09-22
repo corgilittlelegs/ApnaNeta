@@ -190,38 +190,41 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
   return (
     <div className="space-y-6">
       {/* Top Header & Aggregate Overview */}
-      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 rounded-2xl p-6 sm:p-8 text-white border border-slate-700 shadow-xl">
+      <div className="bg-gradient-to-br from-[#0A192F] via-[#0E2244] to-[#071322] rounded-2xl p-6 sm:p-8 text-white border border-slate-800 shadow-xl relative overflow-hidden">
+        {/* Top Tiranga line */}
+        <div className="tiranga-accent-bar absolute top-0 left-0 right-0 w-full" />
+
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs px-2.5 py-0.5 bg-blue-500/20 text-blue-300 border border-blue-400/30 rounded-full font-semibold">
-                NATIONAL CIVIC INDEX
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <span className="text-xs px-2.5 py-0.5 bg-kesariya-500/20 text-kesariya-300 border border-kesariya-500/30 rounded-full font-semibold">
+                NATIONAL CIVIC INDEX • राष्ट्रीय नागरिक सूचकांक
               </span>
-              <span className="text-xs text-slate-400">• Sworn Transparency Rankings</span>
+              <span className="text-xs text-dholpur-300">• Sworn Transparency Rankings</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
-              {isCitizenMode ? 'Public Accountability Rankings' : 'Political Transparency Leaderboards'}
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight">
+              {isCitizenMode ? 'Public Accountability Rankings • राष्ट्रीय रैंकिंग' : 'Political Transparency Leaderboards'}
             </h1>
-            <p className="text-sm text-slate-300 mt-1 max-w-2xl">
+            <p className="text-sm text-dholpur-200 mt-1 max-w-2xl font-sans leading-relaxed">
               {isCitizenMode
-                ? 'Simple rankings showing which representatives are most active, how constituency funds are spent, and where wealth grew fastest.'
+                ? 'सरल राष्ट्रीय रैंकिंग: जानें कौन से सांसद सबसे अधिक सक्रिय हैं, स्थानीय निधि कैसे खर्च हुई, और संपत्ति में कितना इज़ाफा हुआ।'
                 : 'Real-time forensic aggregations identifying exponential wealth surges, affidavit arithmetic discrepancies, legislative participation, and public fund velocities.'}
             </p>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <div className="bg-white/10 backdrop-blur-md px-4 py-3 rounded-xl border border-white/10">
-              <span className="text-[11px] text-slate-300 block">Analyzed Profiles</span>
+              <span className="text-[11px] text-dholpur-300 block">Analyzed Profiles • सांसद</span>
               <span className="text-xl font-mono font-bold">{totalAnalyzed.toLocaleString()}</span>
             </div>
             <div className="bg-white/10 backdrop-blur-md px-4 py-3 rounded-xl border border-white/10">
-              <span className="text-[11px] text-rose-300 block">Flagged Discrepancies</span>
+              <span className="text-[11px] text-rose-300 block">Flagged Discrepancies • अंतर</span>
               <span className="text-xl font-mono font-bold text-rose-400">
                 {totalDiscrepancies} ({((totalDiscrepancies / (totalAnalyzed || 1)) * 100).toFixed(1)}%)
               </span>
             </div>
             <div className="bg-white/10 backdrop-blur-md px-4 py-3 rounded-xl border border-white/10 col-span-2 sm:col-span-1">
-              <span className="text-[11px] text-emerald-300 block">Avg Sansad Attendance</span>
+              <span className="text-[11px] text-emerald-300 block">Avg Attendance • हाजिरी</span>
               <span className="text-xl font-mono font-bold text-emerald-400">{avgAttendanceOverall}%</span>
             </div>
           </div>
@@ -229,14 +232,14 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
       </div>
 
       {/* Tabs Navigation */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-2 sm:p-2.5 shadow-sm space-y-2 sm:space-y-0 sm:flex sm:flex-wrap sm:items-center sm:justify-between sm:gap-2">
+      <div className="bg-white rounded-2xl border border-dholpur-300 p-2 sm:p-2.5 shadow-xs space-y-2 sm:space-y-0 sm:flex sm:flex-wrap sm:items-center sm:justify-between sm:gap-2">
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 sm:pb-0 touch-pan-x sm:flex-wrap">
           <button
             onClick={() => setActiveTab('wealth_growth')}
             className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-semibold whitespace-nowrap flex-shrink-0 transition-all ${
               activeTab === 'wealth_growth'
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                ? 'bg-[#0A192F] text-kesariya-300 border border-kesariya-500/40 shadow-xs'
+                : 'text-slate-600 hover:bg-dholpur-100 hover:text-slate-900'
             }`}
           >
             <TrendingUp className="w-3.5 h-3.5" />

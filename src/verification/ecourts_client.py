@@ -3,7 +3,6 @@ import logging
 import asyncio
 from typing import List, Dict, Any, Optional
 from src.storage.supabase_client import supabase
-from src.verification.legal_classifier import legal_classifier
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("eCourtsClient")
@@ -14,12 +13,12 @@ CNR_REGEX = re.compile(r"^[A-Z]{4}\d{12}$", re.IGNORECASE)
 
 class ECourtsVerificationClient:
     """
-    Programmatic cross-referencing engine against the National eCourts Services.
-    Validates candidate-declared criminal dockets using 16-character Case Record
-    Numbers (CNR) or district court queries to verify:
-    - Formal framing of statutory charges
-    - Ongoing trial stage
-    - Potential unlisted convictions triggering Section 8 RPA disqualification
+    Evidence-aware eCourts verification adapter.
+
+    A CNR is only a candidate-declared identifier, not proof that a docket was
+    retrieved. The client records it as unverified until an authorized eCourts
+    adapter supplies a source URL and docket facts. It never infers a court
+    stage or Section 8 outcome from an affidavit alone.
     """
 
     def is_valid_cnr(self, cnr: str) -> bool:
@@ -47,17 +46,17 @@ class ECourtsVerificationClient:
 
     async def verify_case_docket(self, case_id: str) -> Dict[str, Any]:
         """
-        Simulates / executes authoritative verification against eCourts dockets.
-        Validates whether charges are formally framed and checks trial progression.
+        Records whether a declared CNR can be validated syntactically.
+
+        This method performs no eCourts network request. It therefore cannot
+        mark a docket as judicially verified; use record_official_docket_evidence
+        after a compliant source adapter has retrieved a docket.
         """
         cases = await supabase.select("criminal_cases", {"id": f"eq.{case_id}", "limit": "1"})
         if not cases:
             return {"verified": False, "error": "Case not found"}
 
         case = cases[0]
-        charges = case.get("statutory_charges", []) or []
-        case_type = case.get("case_type", "pending")
-        court_name = case.get("court_name") or "District Court"
         case_no = case.get("fir_or_case_number", "")
 
         cnr = self.parse_case_cnr_or_identifier(case)
@@ -67,55 +66,68 @@ class ECourtsVerificationClient:
             update_payload = {
                 "cnr_number": None,
                 "ecourts_verified": False,
-                "ecourts_stage": "Docket Not Disclosed",
-                "is_rpa_section_8_disqualified": False,
+                "ecourts_stage": None,
+                "is_rpa_section_8_disqualified": None,
             }
             await supabase.update("criminal_cases", update_payload, {"id": f"eq.{case_id}"})
             return {
                 "verified": False,
                 "cnr": None,
-                "stage": "Docket Not Disclosed",
-                "is_rpa_disqualified": False,
+                "stage": None,
+                "is_rpa_disqualified": None,
                 "error": "Primary filing lacks 16-character CNR identifier",
             }
 
-        # Evaluate stage based on declarations & court docket records
-        charges_framed = bool(case.get("charges_framed", False))
-        ecourts_stage = "Framed Charges" if charges_framed else "Cognizance / Appearance"
-        if case_type.lower() == "convicted":
-            ecourts_stage = "Disposed / Conviction"
-
-        # Check RPA Section 8 disqualification
-        rpa_eval = legal_classifier.evaluate_rpa_section_8_disqualification(
-            case_type=case_type,
-            charges=charges,
-            charges_framed=charges_framed,
-            is_convicted=(case_type.lower() == "convicted"),
-        )
-
         update_payload = {
             "cnr_number": cnr,
-            "ecourts_verified": True,
-            "ecourts_stage": ecourts_stage,
-            "is_rpa_section_8_disqualified": rpa_eval["is_disqualified"],
+            "ecourts_verified": False,
+            "ecourts_stage": None,
+            "is_rpa_section_8_disqualified": None,
         }
 
         try:
             await supabase.update("criminal_cases", update_payload, {"id": f"eq.{case_id}"})
             logger.info(
-                f"⚖️ eCourts Verified case {case_no} (CNR: {cnr}): "
-                f"Stage='{ecourts_stage}', RPA Disqualified={rpa_eval['is_disqualified']}"
+                f"CNR identifier recorded for case {case_no} (CNR: {cnr}); "
+                "no official docket evidence has been retrieved."
             )
             return {
-                "verified": True,
+                "verified": False,
                 "cnr": cnr,
-                "stage": ecourts_stage,
-                "is_rpa_disqualified": rpa_eval["is_disqualified"],
-                "disqualification_reason": rpa_eval["disqualification_reason"],
+                "stage": None,
+                "is_rpa_disqualified": None,
+                "error": "CNR syntax is valid but no official eCourts docket evidence was supplied",
             }
         except Exception as e:
             logger.error(f"Failed to update eCourts verification for {case_id}: {e}")
             return {"verified": False, "error": str(e)}
+
+    async def record_official_docket_evidence(
+        self,
+        case_id: str,
+        *,
+        cnr: str,
+        stage: str,
+        source_url: str,
+        retrieved_at: str,
+        is_rpa_section_8_disqualified: Optional[bool] = None,
+    ) -> Dict[str, Any]:
+        """Persists docket facts supplied by a compliant, source-attributed adapter."""
+        if not self.is_valid_cnr(cnr):
+            return {"verified": False, "error": "Invalid CNR"}
+        if not source_url.startswith("https://") or not retrieved_at or not stage:
+            return {"verified": False, "error": "Official source URL, retrieval time, and stage are required"}
+
+        payload = {
+            "cnr_number": cnr.strip().upper(),
+            "ecourts_verified": True,
+            "ecourts_stage": stage.strip(),
+            "ecourts_source_url": source_url,
+            "ecourts_retrieved_at": retrieved_at,
+            "is_rpa_section_8_disqualified": is_rpa_section_8_disqualified,
+        }
+        await supabase.update("criminal_cases", payload, {"id": f"eq.{case_id}"})
+        return {"verified": True, "cnr": payload["cnr_number"], "stage": payload["ecourts_stage"]}
 
     async def run(self) -> List[Dict[str, Any]]:
         """Verifies all criminal cases currently recorded in Supabase."""

@@ -14,10 +14,11 @@ from src.storage.supabase_client import supabase
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("SansadSync")
 
-# Verified PRS India Parliamentary Activity Datasets (Public Domain & Accurate)
-PRS_LS_ALL_URL = "https://raw.githubusercontent.com/Vonter/india-representatives-activity/main/csv/Lok%20Sabha.csv"
-PRS_LS_18TH_URL = "https://raw.githubusercontent.com/Vonter/india-representatives-activity/main/csv/Lok%20Sabha/18th.csv"
-PRS_LS_17TH_URL = "https://raw.githubusercontent.com/Vonter/india-representatives-activity/main/csv/Lok%20Sabha/17th.csv"
+# Community-maintained activity CSVs. They are discovery inputs, not an
+# official Sansad API, and every imported record retains its source URL.
+ACTIVITY_LS_ALL_URL = "https://raw.githubusercontent.com/Vonter/india-representatives-activity/main/csv/Lok%20Sabha.csv"
+ACTIVITY_LS_18TH_URL = "https://raw.githubusercontent.com/Vonter/india-representatives-activity/main/csv/Lok%20Sabha/18th.csv"
+ACTIVITY_LS_17TH_URL = "https://raw.githubusercontent.com/Vonter/india-representatives-activity/main/csv/Lok%20Sabha/17th.csv"
 
 # Official Digital Sansad Base
 SANSAD_BASE = "https://sansad.in"
@@ -25,7 +26,7 @@ API_LS_MEMBERS = f"{SANSAD_BASE}/api_ls/member"
 API_RS_MEMBERS = f"{SANSAD_BASE}/api_rs/member"
 
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 def parse_date(d_str: str) -> Optional[str]:
@@ -66,6 +67,25 @@ def parse_int(val: Any) -> int:
         return int(float(str(val).strip()))
     except (ValueError, TypeError):
         return 0
+
+
+def parse_optional_int(val: Any) -> Optional[int]:
+    """Converts a populated numeric value, preserving an absent value as unknown."""
+    if val is None or str(val).strip() == "":
+        return None
+    try:
+        return int(float(str(val).strip()))
+    except (ValueError, TypeError):
+        return None
+
+
+def question_texts_from_row(row: Dict[str, Any]) -> List[str]:
+    """Returns actual question text supplied by a source row, never synthesized text."""
+    for column in ("Question Text", "Question", "Question Subject", "Question Title"):
+        value = row.get(column)
+        if value and str(value).strip():
+            return [str(value).strip()]
+    return []
 
 
 def normalize_name(name: str) -> str:
@@ -136,9 +156,13 @@ class SansadScraper:
         logger.info(f"Loaded {len(exact_index)} total indexed candidates from Supabase.")
         return exact_index, token_index
 
-    async def sync_from_prs_activity(self, url: str, house_label: str = "Lok Sabha") -> int:
+    async def sync_from_activity_csv(self, url: str, house_label: str = "Lok Sabha") -> int:
         """
-        Streams official PRS MP track data and populates sansad_records & candidate profiles.
+        Imports a documented activity CSV and populates source-attributed records.
+
+        Aggregate CSVs generally do not contain individual question text or a
+        starred/unstarred breakdown. Those analytical fields remain NULL until
+        an authoritative source supplies them.
         """
         logger.info(f"Fetching parliamentary activity from: {url}")
         async with httpx.AsyncClient(timeout=60.0, follow_redirects=True) as client:
@@ -164,17 +188,11 @@ class SansadScraper:
             attendance_pct = parse_attendance(row.get("Attendance", "0"))
             debates_cnt = parse_int(row.get("Debates", 0))
             questions_cnt = parse_int(row.get("Questions", 0))
-            starred_cnt = parse_int(row.get("Starred Questions") or row.get("Starred", 0))
-            unstarred_cnt = parse_int(row.get("Unstarred Questions") or row.get("Unstarred", 0))
+            starred_cnt = parse_optional_int(row.get("Starred Questions", row.get("Starred")))
+            unstarred_cnt = parse_optional_int(row.get("Unstarred Questions", row.get("Unstarred")))
             pmb_cnt = parse_int(row.get("Private Member Bills", 0))
             start_date = parse_date(row.get("Start of Term", ""))
             end_date = parse_date(row.get("End of Term", ""))
-
-            # If total questions exist but starred/unstarred wasn't split in primary column
-            if questions_cnt > 0 and (starred_cnt == 0 and unstarred_cnt == 0):
-                # Official Sansad ratio: ~10% of accepted questions reach the oral Starred ballot
-                starred_cnt = max(0, round(questions_cnt * 0.10))
-                unstarred_cnt = max(0, questions_cnt - starred_cnt)
 
             norm = normalize_name(raw_name)
             t_key = name_tokens_key(raw_name)
@@ -228,14 +246,14 @@ class SansadScraper:
                 except Exception as e:
                     logger.warning(f"Error creating candidate anchor for {raw_name}: {e}")
 
-            # 3. Analyze policy topics if question text/focus is provided
+            # 3. Analyze policy topics only when the source supplies actual text.
             from src.verification.policy_classifier import policy_classifier
-            sample_queries = [
-                f"Question regarding development of roads and railways in {constituency}",
-                f"Inquiry into agricultural subsidies and MSP procurement in {state}",
-            ] if questions_cnt > 0 else []
-            portfolio = policy_classifier.classify_portfolio(sample_queries)
-            local_ratio = policy_classifier.calculate_local_vs_national_ratio(sample_queries, constituency, state)
+            question_texts = question_texts_from_row(row)
+            portfolio = policy_classifier.classify_portfolio(question_texts) if question_texts else None
+            local_ratio = (
+                policy_classifier.calculate_local_vs_national_ratio(question_texts, constituency, state)
+                if question_texts else None
+            )
 
             # 4. Build sansad_records entry with UNIFORM keys for PostgREST batching
             record: Dict[str, Any] = {
@@ -247,10 +265,13 @@ class SansadScraper:
                 "unstarred_questions_count": unstarred_cnt,
                 "debates_count": debates_cnt,
                 "private_member_bills": pmb_cnt,
-                "policy_topics": portfolio.get("policy_topics", {}),
+                "policy_topics": portfolio.get("policy_topics") if portfolio else None,
                 "local_vs_national_ratio": local_ratio,
                 "tenure_start": start_date,
                 "tenure_end": end_date,
+                "source_url": url,
+                "source_kind": "community_activity_csv",
+                "source_retrieved_at": datetime.now(timezone.utc).isoformat(),
             }
 
             sansad_batch[candidate_id] = record
@@ -350,6 +371,10 @@ class SansadScraper:
 
 sansad_scraper = SansadScraper()
 
+# Compatibility alias for callers that used the old name. It does not imply
+# ownership or validation by PRS India.
+SansadScraper.sync_from_prs_activity = SansadScraper.sync_from_activity_csv
+
 if __name__ == "__main__":
     import asyncio
 
@@ -359,14 +384,14 @@ if __name__ == "__main__":
         total = 0
         if target_term == "all":
             logger.info("Starting synchronization of ALL Lok Sabha terms (15th, 16th, 17th, 18th - 2,206 MPs)...")
-            total += await sansad_scraper.sync_from_prs_activity(PRS_LS_ALL_URL, house_label="Lok Sabha")
+            total += await sansad_scraper.sync_from_activity_csv(ACTIVITY_LS_ALL_URL, house_label="Lok Sabha")
         else:
             if target_term == "18th":
                 logger.info("Starting synchronization of 18th Lok Sabha (2024–Present)...")
-                total += await sansad_scraper.sync_from_prs_activity(PRS_LS_18TH_URL, house_label="Lok Sabha")
+                total += await sansad_scraper.sync_from_activity_csv(ACTIVITY_LS_18TH_URL, house_label="Lok Sabha")
             elif target_term == "17th":
                 logger.info("Starting synchronization of 17th Lok Sabha (2019–2024)...")
-                total += await sansad_scraper.sync_from_prs_activity(PRS_LS_17TH_URL, house_label="Lok Sabha")
+                total += await sansad_scraper.sync_from_activity_csv(ACTIVITY_LS_17TH_URL, house_label="Lok Sabha")
         logger.info(f"All Sansad synchronization complete! Total records inserted: {total}")
 
     try:

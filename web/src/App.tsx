@@ -84,7 +84,9 @@ function parseCandidateRow(row: any): Candidate {
   const isDisqualified = parsedDockets.some((d: any) => d.is_rpa_section_8_disqualified);
 
   const conflictList = Array.isArray(row.conflict_of_interest_audits) ? row.conflict_of_interest_audits : [];
-  const hasConflict = conflictList.length > 0;
+  // Entity matches are leads for review. Only a qualified determination may
+  // render as a statutory Section 9A conflict in the public profile.
+  const hasConflict = conflictList.some((conflict: any) => conflict.section_9a_flag === true);
 
   const mobilityList = Array.isArray(row.political_mobility_records) ? row.political_mobility_records : [];
   const defectionCount = mobilityList.length;
@@ -667,7 +669,7 @@ const AppContent: React.FC = () => {
   }, [candidates, searchQuery, selectedHouse, filterState]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900 font-sans pb-20 md:pb-0">
+    <div className="min-h-screen flex flex-col bg-[#FAF7F2] text-slate-900 font-sans pb-20 md:pb-0">
       <Navbar
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -679,32 +681,39 @@ const AppContent: React.FC = () => {
         onOpenCivicGuide={() => setIsCivicGuideOpen(true)}
       />
 
-      {/* Civic Pulse Masthead / Telemetry Overview */}
-      <section className="bg-white border-b border-slate-200/90 py-8 shadow-2xs">
+      {/* Sovereign Sansad Pavilion Masthead / Telemetry Overview */}
+      <section className="bg-[#FCFAF6] border-b border-dholpur-300/80 py-8 shadow-2xs relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="inline-flex items-center gap-1 text-[11px] font-mono font-semibold uppercase bg-emerald-50 text-emerald-800 border border-emerald-200/80 px-2 py-0.5 rounded-md">
-                  <ShieldCheck size={14} weight="duotone" className="text-emerald-600" />
+              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                <span className="inline-flex items-center gap-1 text-[11px] font-mono font-semibold uppercase bg-harit-50 text-harit-900 border border-harit-200/90 px-2.5 py-0.5 rounded-md">
+                  <ShieldCheck size={14} weight="duotone" className="text-harit-600" />
                   {isCitizenMode
-                    ? 'Sovereign Citizen Transparency • संप्रभु नागरिक पारदर्शिता'
+                    ? 'संप्रभु नागरिक पारदर्शिता • Sovereign Citizen Transparency'
                     : 'Section 79 Evidentiary Safe Harbor'}
                 </span>
-                <span className="text-xs text-slate-400 font-sans hidden sm:inline">
+                <span className="text-xs text-slate-500 font-sans hidden sm:inline">
                   {isCitizenMode
-                    ? '• Official Government Gazettes'
+                    ? '• Official Government Gazettes (भारतीय राजपत्र)'
                     : '• ECI Form 26 Sworn Disclosures'}
                 </span>
               </div>
               <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tight leading-tight">
-                {isCitizenMode
-                  ? 'Apna Neta: Transparent Civic Records for Every Citizen'
-                  : 'Empirical Political Accountability & Forensic Audits'}
+                {isCitizenMode ? (
+                  <>
+                    <span>Apna Neta: Transparent Civic Records for Every Citizen</span>
+                    <span className="block text-lg sm:text-xl font-devanagari text-kesariya-800 font-semibold mt-1">
+                      अपना नेता: हर नागरिक के लिए स्वतंत्र व निष्पक्ष बहीखाता
+                    </span>
+                  </>
+                ) : (
+                  'Empirical Political Accountability & Forensic Audits'
+                )}
               </h1>
               <p className="text-slate-600 text-xs sm:text-sm mt-1.5 max-w-2xl font-sans leading-relaxed">
                 {isCitizenMode
-                  ? 'Look up your Member of Parliament (MP), see how your local area development funds (सांसद निधि) were spent, track declared wealth growth, and review Parliament attendance in simple language.'
+                  ? 'अपने सांसद (MP) का विवरण देखें: उनके स्थानीय क्षेत्र विकास कोष (सांसद निधि) का उपयोग, घोषित संपत्ति की वृद्धि दर, और संसद में उपस्थिति व प्रश्न। हर तथ्य आधिकारिक शपथपत्रों से सत्यापित है।'
                   : 'Automated civic intelligence cross-referencing ECI affidavits, Sansad parliamentary participation, and MoSPI public fund flows. Every metric is bound to cryptographic PDF coordinates.'}
               </p>
             </div>
@@ -712,31 +721,39 @@ const AppContent: React.FC = () => {
 
           {/* Quick Telemetry Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4 mt-6">
-            <div className="p-3 sm:p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80 shadow-2xs">
-              <span className="text-[10px] sm:text-[11px] text-slate-500 font-medium block truncate">MPs & Candidates</span>
+            <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-dholpur-300/80 shadow-xs hover:border-dholpur-400 transition-all">
+              <span className="text-[10px] sm:text-[11px] text-slate-500 font-semibold block truncate">
+                सांसद व उम्मीदवार • MPs
+              </span>
               <p className="text-lg sm:text-2xl font-bold font-mono tabular-nums text-slate-900 mt-0.5 sm:mt-1">
                 {(totalDatabaseCount || candidates.length).toLocaleString()}
               </p>
-              <span className="text-[9.5px] sm:text-[10px] text-emerald-700 font-medium block truncate">
-                {isLiveConnected ? 'Live from Supabase' : 'Verified OpenSanctions'}
+              <span className="text-[9.5px] sm:text-[10px] text-harit-700 font-medium block truncate">
+                {isLiveConnected ? 'Live from Supabase' : 'Verified Open Records'}
               </span>
             </div>
 
-            <div className="p-3 sm:p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80 shadow-2xs">
-              <span className="text-[10px] sm:text-[11px] text-slate-500 font-medium block truncate">Double-Entry Audits</span>
+            <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-dholpur-300/80 shadow-xs hover:border-dholpur-400 transition-all">
+              <span className="text-[10px] sm:text-[11px] text-slate-500 font-semibold block truncate">
+                द्वि-प्रविष्टि ऑडिट • Double-Entry
+              </span>
               <p className="text-lg sm:text-2xl font-bold font-mono tabular-nums text-slate-900 mt-0.5 sm:mt-1">100%</p>
               <span className="text-[9.5px] sm:text-[10px] text-slate-500 block truncate">Automated checks</span>
             </div>
 
-            <div className="p-3 sm:p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80 shadow-2xs">
-              <span className="text-[10px] sm:text-[11px] text-slate-500 font-medium block truncate">MPLADS Velocity</span>
+            <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-dholpur-300/80 shadow-xs hover:border-dholpur-400 transition-all">
+              <span className="text-[10px] sm:text-[11px] text-slate-500 font-semibold block truncate">
+                सांसद निधि प्रवाह • MPLADS
+              </span>
               <p className="text-lg sm:text-2xl font-bold font-mono tabular-nums text-slate-900 mt-0.5 sm:mt-1">10-Yr Flow</p>
-              <span className="text-[9.5px] sm:text-[10px] text-blue-700 font-medium block truncate">Fund Tracking</span>
+              <span className="text-[9.5px] sm:text-[10px] text-ashoka-700 font-medium block truncate">MoSPI e-SAKSHI</span>
             </div>
 
-            <div className="p-3 sm:p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80 shadow-2xs">
-              <span className="text-[10px] sm:text-[11px] text-slate-500 font-medium block truncate">Operating Cost</span>
-              <p className="text-lg sm:text-2xl font-bold font-mono tabular-nums text-emerald-700 mt-0.5 sm:mt-1">$0.00</p>
+            <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-dholpur-300/80 shadow-xs hover:border-dholpur-400 transition-all">
+              <span className="text-[10px] sm:text-[11px] text-slate-500 font-semibold block truncate">
+                लागत • Operating Cost
+              </span>
+              <p className="text-lg sm:text-2xl font-bold font-mono tabular-nums text-harit-700 mt-0.5 sm:mt-1">₹0.00</p>
               <span className="text-[9.5px] sm:text-[10px] text-slate-500 block truncate">100% Free Public Good</span>
             </div>
           </div>
@@ -768,11 +785,12 @@ const AppContent: React.FC = () => {
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <h2 className="font-serif text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-                  Parliamentary Profiles & Audited Declarations ({filteredCandidates.length.toLocaleString()})
+                  Parliamentary Profiles & Audited Declarations ({filteredCandidates.length.toLocaleString()}){' '}
+                  <span className="hidden lg:inline text-base font-normal font-devanagari text-slate-500">• संसदीय प्रोफ़ाइल</span>
                 </h2>
                 {(isLoading || isSearching) && (
-                  <span className="flex items-center gap-1.5 text-xs text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
-                    <SpinnerGap size={14} weight="bold" className="animate-spin text-blue-700" />
+                  <span className="flex items-center gap-1.5 text-xs text-ashoka-700 bg-ashoka-50 px-2.5 py-1 rounded-lg border border-ashoka-200">
+                    <SpinnerGap size={14} weight="bold" className="animate-spin text-ashoka-700" />
                     {isSearching ? 'Searching database...' : 'Connecting...'}
                   </span>
                 )}
@@ -781,12 +799,12 @@ const AppContent: React.FC = () => {
             </div>
 
             {filteredCandidates.length === 0 ? (
-              <div className="p-12 text-center bg-white rounded-2xl border border-slate-200 shadow-2xs">
+              <div className="p-12 text-center bg-white rounded-2xl border border-dholpur-300 shadow-xs">
                 {!isLiveConnected && !isLoading ? (
                   <div className="space-y-2 max-w-md mx-auto">
-                    <p className="text-slate-800 text-sm font-semibold">Live Database Not Connected</p>
+                    <p className="text-slate-800 text-sm font-bold">Live Database Not Connected • लाइव डेटाबेस कनेक्टेड नहीं है</p>
                     <p className="text-slate-500 text-xs leading-relaxed">
-                      ApnaNeta operates strictly on authentic government data with zero synthetic placeholders. Please configure <code className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 font-mono text-[11px]">VITE_SUPABASE_URL</code> and <code className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 font-mono text-[11px]">VITE_SUPABASE_ANON_KEY</code> to query verified records.
+                      ApnaNeta operates strictly on authentic government data with zero synthetic placeholders under the <strong>Strict Zero-Synthetic-Data Invariant</strong>. Please configure <code className="bg-dholpur-100 px-1.5 py-0.5 rounded text-slate-700 font-mono text-[11px]">VITE_SUPABASE_URL</code> and <code className="bg-dholpur-100 px-1.5 py-0.5 rounded text-slate-700 font-mono text-[11px]">VITE_SUPABASE_ANON_KEY</code> to query verified records.
                     </p>
                   </div>
                 ) : (
@@ -819,11 +837,11 @@ const AppContent: React.FC = () => {
                         }
                       }}
                       disabled={isLoadingMore}
-                      className="px-8 py-3.5 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 text-slate-800 text-sm font-semibold rounded-2xl shadow-sm hover:shadow transition-all duration-200 cursor-pointer active:scale-95 disabled:opacity-50"
+                      className="px-8 py-3.5 bg-white hover:bg-dholpur-50 border border-dholpur-300 hover:border-dholpur-400 text-slate-800 text-sm font-semibold rounded-2xl shadow-xs hover:shadow transition-all duration-200 cursor-pointer active:scale-95 disabled:opacity-50"
                     >
                       {isLoadingMore ? (
                         <span className="flex items-center gap-2 justify-center">
-                          <SpinnerGap size={16} className="animate-spin text-blue-600" />
+                          <SpinnerGap size={16} className="animate-spin text-ashoka-600" />
                           Loading more parliamentarians...
                         </span>
                       ) : filteredCandidates.length > displayLimit ? (
@@ -842,10 +860,10 @@ const AppContent: React.FC = () => {
 
       {/* Sticky Bottom Comparison Drawer */}
       {selectedForComparison.length > 0 && (
-        <div className="fixed bottom-[4.75rem] md:bottom-6 left-1/2 -translate-x-1/2 z-40 bg-[#0A192F] text-white rounded-2xl shadow-2xl px-3 sm:px-5 py-2.5 sm:py-3 border border-slate-700 flex items-center justify-between gap-2 sm:gap-4 animate-in slide-in-from-bottom-6 w-[calc(100%-1.25rem)] max-w-xl">
+        <div className="fixed bottom-[4.75rem] md:bottom-6 left-1/2 -translate-x-1/2 z-40 bg-[#0A192F] text-white rounded-2xl shadow-2xl px-3 sm:px-5 py-2.5 sm:py-3 border border-kesariya-500/40 flex items-center justify-between gap-2 sm:gap-4 animate-in slide-in-from-bottom-6 w-[calc(100%-1.25rem)] max-w-xl">
           <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-            <Stack size={18} weight="duotone" className="text-blue-400 flex-shrink-0" />
-            <span className="text-xs font-semibold hidden md:inline">Compare:</span>
+            <Stack size={18} weight="duotone" className="text-kesariya-400 flex-shrink-0" />
+            <span className="text-xs font-semibold hidden md:inline">Compare • तुलना:</span>
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar max-w-[130px] sm:max-w-xs md:max-w-md">
               {selectedForComparison.map((c) => (
                 <div
@@ -870,7 +888,7 @@ const AppContent: React.FC = () => {
           <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
             <button
               onClick={() => setIsComparisonOpen(true)}
-              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center gap-1 cursor-pointer active:scale-95 whitespace-nowrap"
+              className="px-3 py-1.5 bg-kesariya-600 hover:bg-kesariya-500 text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center gap-1 cursor-pointer active:scale-95 whitespace-nowrap"
             >
               <span className="hidden sm:inline">Side-by-Side</span>
               <span className="sm:hidden">Compare</span>
@@ -892,17 +910,17 @@ const AppContent: React.FC = () => {
         <button
           onClick={() => setActiveView('directory')}
           className={`flex flex-col items-center justify-center flex-1 py-1 min-h-[48px] transition-colors ${
-            activeView === 'directory' ? 'text-blue-400 font-bold' : 'text-slate-400 hover:text-slate-200'
+            activeView === 'directory' ? 'text-kesariya-400 font-bold' : 'text-slate-400 hover:text-slate-200'
           }`}
         >
           <SquaresFour size={20} weight={activeView === 'directory' ? 'fill' : 'duotone'} />
-          <span className="text-[10px] mt-0.5 font-sans">Directory</span>
+          <span className="text-[10px] mt-0.5 font-sans">Directory • सूची</span>
         </button>
 
         <button
           onClick={() => setActiveView('leaderboards')}
           className={`flex flex-col items-center justify-center flex-1 py-1 min-h-[48px] transition-colors ${
-            activeView === 'leaderboards' ? 'text-amber-400 font-bold' : 'text-slate-400 hover:text-slate-200'
+            activeView === 'leaderboards' ? 'text-kesariya-400 font-bold' : 'text-slate-400 hover:text-slate-200'
           }`}
         >
           <Trophy size={20} weight={activeView === 'leaderboards' ? 'fill' : 'duotone'} />
@@ -918,9 +936,9 @@ const AppContent: React.FC = () => {
           className="flex flex-col items-center justify-center flex-1 py-1 min-h-[48px] text-slate-400 hover:text-slate-200 relative"
         >
           <Scales size={20} weight="duotone" />
-          <span className="text-[10px] mt-0.5 font-sans">Compare</span>
+          <span className="text-[10px] mt-0.5 font-sans">Compare • तुलना</span>
           {selectedForComparison.length > 0 && (
-            <span className="absolute top-1 right-1/4 sm:right-6 w-4 h-4 bg-blue-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center font-mono">
+            <span className="absolute top-1 right-1/4 sm:right-6 w-4 h-4 bg-kesariya-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center font-mono">
               {selectedForComparison.length}
             </span>
           )}
@@ -963,11 +981,13 @@ const AppContent: React.FC = () => {
       />
 
       {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500 font-sans">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p>
-            Apna Neta is an open-source non-partisan civic technology project. All declarations are reproduced
-            verbatim from sworn ECI Form 26 filings under Section 3(c)(ii) of the Digital Personal Data Protection Act, 2023.
+      <footer className="bg-[#FCFAF6] border-t border-dholpur-300/80 py-6 text-center text-xs text-slate-600 font-sans">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-1">
+          <p className="font-medium text-slate-700">
+            Apna Neta (अपना नेता) — The Sovereign Civic Technology Ledger of India • संप्रभु नागरिक पारदर्शिता मंच
+          </p>
+          <p className="text-[11px] text-slate-500">
+            All declarations are reproduced verbatim from sworn ECI Form 26 filings under Section 3(c)(ii) of the Digital Personal Data Protection Act, 2023.
           </p>
         </div>
       </footer>

@@ -10,7 +10,7 @@ logger = logging.getLogger("ConflictDetector")
 
 def normalize_corp_name(name: str) -> str:
     """Normalizes corporate names for robust matching."""
-    cleaned = name.upper().replace("PRIVATE LIMITED", "PVT LTD").replace("LIMITED", "LTD")
+    cleaned = (name or "").upper().replace("PRIVATE LIMITED", "PVT LTD").replace("LIMITED", "LTD")
     cleaned = "".join(c for c in cleaned if c.isalnum() or c.isspace())
     return " ".join(cleaned.split())
 
@@ -23,10 +23,12 @@ class ConflictDetector:
     for the supply of goods or execution of public works.
     """
 
-    def is_contract_subsisting(self, award_date_str: str, schedule_months: int) -> bool:
+    def is_contract_subsisting(self, award_date_str: Optional[str], schedule_months: Optional[int]) -> Optional[bool]:
         """
         Checks if an awarded government contract is active or subsisting.
         """
+        if not award_date_str or not schedule_months:
+            return None
         try:
             award_dt = datetime.strptime(award_date_str, "%Y-%m-%d").date()
             # Calculate approx expiration
@@ -36,19 +38,21 @@ class ConflictDetector:
             elapsed_days = (current_date - award_dt).days
             return elapsed_days <= (approx_days + 365) # Active execution window
         except Exception:
-            return True
+            return None
 
     def determine_disqualification_risk(
         self,
         candidate_house: str,
         awarding_authority: str,
-        is_subsisting: bool,
+        is_subsisting: Optional[bool],
     ) -> str:
         """
         Evaluates RPA Section 9A 'appropriate Government' nexus:
         - Lok Sabha / Rajya Sabha: Central or State government contracts
         - Vidhan Sabha: State government contracts
         """
+        if is_subsisting is None:
+            return "REVIEW"
         if not is_subsisting:
             return "WATCHLIST"
 
@@ -89,6 +93,11 @@ class ConflictDetector:
             corp_cin = (corp.get("cin") or "").strip().upper()
 
             for tender in all_tenders:
+                # Active tender notices are not awards and cannot support a
+                # Section 9A analysis. Require a source-confirmed award with a
+                # named counterparty before attempting entity matching.
+                if tender.get("record_type") != "contract_award" or not tender.get("contractor_name"):
+                    continue
                 tender_contractor_norm = normalize_corp_name(tender["contractor_name"])
                 tender_cin = (tender.get("contractor_cin_or_pan") or "").strip().upper()
 
@@ -96,7 +105,8 @@ class ConflictDetector:
                 name_match = corp_name_norm == tender_contractor_norm
 
                 if cin_match or name_match:
-                    # Match confirmed! Audit Section 9A criteria
+                    # This is an entity match requiring legal review, not a
+                    # disqualification conclusion.
                     subsisting = self.is_contract_subsisting(
                         tender["award_date"],
                         tender.get("execution_schedule_months", 12),
@@ -111,9 +121,10 @@ class ConflictDetector:
                         "candidate_id": candidate_id,
                         "tender_id": tender["id"],
                         "corporate_id": corp["id"],
-                        "conflict_type": "Directorship Active Government Contract",
-                        "section_9a_flag": subsisting,
+                        "conflict_type": "Potential directorship-contract match",
+                        "section_9a_flag": None,
                         "disqualification_risk": risk_level,
+                        "determination_status": "possible_match_requires_legal_review",
                         "evidence_details": {
                             "candidate_name": cand_name,
                             "company_name": corp["company_name"],
@@ -137,9 +148,11 @@ class ConflictDetector:
                             on_conflict="candidate_id,tender_id",
                         )
                         logger.warning(
-                            f"🚨 SECTION 9A CONFLICT DETECTED for {cand_name}: "
-                            f"Company '{corp['company_name']}' holds ₹{tender['contract_amount']/10000000:.2f}Cr "
-                            f"contract with '{tender['awarding_authority']}' (Risk: {risk_level})!"
+                            "Possible Section 9A match requiring legal review for %s: company %r and tender %s (priority: %s).",
+                            cand_name,
+                            corp["company_name"],
+                            tender["tender_id"],
+                            risk_level,
                         )
                         conflicts_found.append(conflict_record)
                     except Exception as e:

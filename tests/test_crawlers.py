@@ -1,7 +1,9 @@
 import unittest
+import importlib.util
 from src.ingestion.esakshi_crawler import ESAKSHISessionCrawler
 from src.ingestion.eci_crawler import ECIPlaywrightCrawler
 from src.ingestion.mospi_mplads import MoSPIMPLADSClient
+from src.ingestion.cppp_scraper import CPPPScraper
 
 
 class TestCrawlers(unittest.TestCase):
@@ -77,7 +79,21 @@ class TestCrawlers(unittest.TestCase):
         self.assertTrue(audit["st_compliant"])
         self.assertFalse(audit["has_statutory_shortfall"])
 
+    @unittest.skipUnless(importlib.util.find_spec("bs4"), "beautifulsoup4 is not installed")
+    def test_cppp_active_tender_is_not_mislabelled_as_contract_award(self):
+        html = """
+        <table id="activeTenders">
+          <tr><th>Tender Reference Number</th><th>Tender Title</th><th>Organisation Chain</th><th>Tender Value</th></tr>
+          <tr><td>TN-123</td><td>Road repair</td><td>Ministry of Works</td><td>500000</td></tr>
+        </table>
+        """
+        records = CPPPScraper().parse_gepnic_html_table(html)
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0]["record_type"], "tender_notice")
+        self.assertIsNone(records[0]["contractor_name"])
+        self.assertIsNone(records[0]["award_date"])
+        self.assertIsNone(records[0]["contract_amount"])
+
 
 if __name__ == "__main__":
     unittest.main()
-

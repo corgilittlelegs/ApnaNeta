@@ -122,19 +122,28 @@ CREATE TABLE IF NOT EXISTS sansad_records (
     tenure_end DATE,
     attendance_rate NUMERIC(5, 2), -- e.g. 85.50%
     questions_count INT DEFAULT 0,
-    starred_questions_count INT DEFAULT 0,
-    unstarred_questions_count INT DEFAULT 0,
+    starred_questions_count INT,
+    unstarred_questions_count INT,
     debates_count INT DEFAULT 0,
     private_member_bills INT DEFAULT 0,
-    policy_topics JSONB DEFAULT '{}'::jsonb,
+    policy_topics JSONB,
     local_vs_national_ratio NUMERIC(5, 2),
+    source_url TEXT,
+    source_kind TEXT,
+    source_retrieved_at TIMESTAMPTZ,
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-ALTER TABLE sansad_records ADD COLUMN IF NOT EXISTS starred_questions_count INT DEFAULT 0;
-ALTER TABLE sansad_records ADD COLUMN IF NOT EXISTS unstarred_questions_count INT DEFAULT 0;
-ALTER TABLE sansad_records ADD COLUMN IF NOT EXISTS policy_topics JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE sansad_records ADD COLUMN IF NOT EXISTS starred_questions_count INT;
+ALTER TABLE sansad_records ADD COLUMN IF NOT EXISTS unstarred_questions_count INT;
+ALTER TABLE sansad_records ADD COLUMN IF NOT EXISTS policy_topics JSONB;
 ALTER TABLE sansad_records ADD COLUMN IF NOT EXISTS local_vs_national_ratio NUMERIC(5, 2);
+ALTER TABLE sansad_records ADD COLUMN IF NOT EXISTS source_url TEXT;
+ALTER TABLE sansad_records ADD COLUMN IF NOT EXISTS source_kind TEXT;
+ALTER TABLE sansad_records ADD COLUMN IF NOT EXISTS source_retrieved_at TIMESTAMPTZ;
+ALTER TABLE sansad_records ALTER COLUMN starred_questions_count DROP DEFAULT;
+ALTER TABLE sansad_records ALTER COLUMN unstarred_questions_count DROP DEFAULT;
+ALTER TABLE sansad_records ALTER COLUMN policy_topics DROP DEFAULT;
 
 CREATE INDEX IF NOT EXISTS idx_sansad_candidate ON sansad_records (candidate_id);
 CREATE UNIQUE INDEX IF NOT EXISTS uq_sansad_candidate_house ON sansad_records (candidate_id, house);
@@ -257,17 +266,26 @@ CREATE TABLE IF NOT EXISTS procurement_tenders (
     tender_id TEXT NOT NULL UNIQUE,
     tender_title TEXT NOT NULL,
     awarding_authority TEXT NOT NULL,
-    contractor_name TEXT NOT NULL,
+    contractor_name TEXT,
     contractor_cin_or_pan TEXT,
-    contract_amount NUMERIC(15, 2) NOT NULL,
-    award_date DATE NOT NULL,
+    contract_amount NUMERIC(15, 2),
+    award_date DATE,
     execution_schedule_months INT,
     source_portal TEXT DEFAULT 'eprocure.gov.in',
+    source_url TEXT,
+    source_retrieved_at TIMESTAMPTZ,
+    record_type TEXT NOT NULL DEFAULT 'tender_notice',
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_tenders_contractor ON procurement_tenders (contractor_name);
 CREATE INDEX IF NOT EXISTS idx_tenders_award_date ON procurement_tenders (award_date);
+ALTER TABLE procurement_tenders ALTER COLUMN contractor_name DROP NOT NULL;
+ALTER TABLE procurement_tenders ALTER COLUMN contract_amount DROP NOT NULL;
+ALTER TABLE procurement_tenders ALTER COLUMN award_date DROP NOT NULL;
+ALTER TABLE procurement_tenders ADD COLUMN IF NOT EXISTS source_url TEXT;
+ALTER TABLE procurement_tenders ADD COLUMN IF NOT EXISTS source_retrieved_at TIMESTAMPTZ;
+ALTER TABLE procurement_tenders ADD COLUMN IF NOT EXISTS record_type TEXT NOT NULL DEFAULT 'tender_notice';
 
 -- 11. Section 9A RPA Commercial Conflict of Interest Audits
 CREATE TABLE IF NOT EXISTS conflict_of_interest_audits (
@@ -276,8 +294,9 @@ CREATE TABLE IF NOT EXISTS conflict_of_interest_audits (
     tender_id UUID REFERENCES procurement_tenders(id) ON DELETE CASCADE,
     corporate_id UUID REFERENCES corporate_associations(id) ON DELETE SET NULL,
     conflict_type TEXT NOT NULL, -- 'Directorship Active Contract', 'Family Member Award', 'Subsisting Works'
-    section_9a_flag BOOLEAN DEFAULT TRUE, -- Flagged for statutory disqualification under Section 9A RPA 1951
-    disqualification_risk TEXT DEFAULT 'HIGH', -- 'HIGH', 'MEDIUM', 'WATCHLIST'
+    section_9a_flag BOOLEAN, -- Set only after qualified legal determination
+    disqualification_risk TEXT DEFAULT 'REVIEW', -- review priority, not a legal conclusion
+    determination_status TEXT NOT NULL DEFAULT 'possible_match_requires_legal_review',
     evidence_details JSONB, -- Details of matching corporate entity, awarding agency, and amounts
     verified_at TIMESTAMPTZ DEFAULT NOW(),
     CONSTRAINT uq_candidate_tender_conflict UNIQUE (candidate_id, tender_id)
@@ -285,6 +304,8 @@ CREATE TABLE IF NOT EXISTS conflict_of_interest_audits (
 
 CREATE INDEX IF NOT EXISTS idx_conflict_candidate ON conflict_of_interest_audits (candidate_id);
 CREATE INDEX IF NOT EXISTS idx_conflict_section_9a ON conflict_of_interest_audits (section_9a_flag);
+ALTER TABLE conflict_of_interest_audits ALTER COLUMN section_9a_flag DROP DEFAULT;
+ALTER TABLE conflict_of_interest_audits ADD COLUMN IF NOT EXISTS determination_status TEXT NOT NULL DEFAULT 'possible_match_requires_legal_review';
 
 -- 12. Political Mobility and Career Defection Dynamics
 CREATE TABLE IF NOT EXISTS political_mobility_records (
@@ -295,15 +316,18 @@ CREATE TABLE IF NOT EXISTS political_mobility_records (
     transition_year INT NOT NULL,
     transition_date DATE,
     defection_index_score NUMERIC(5, 2) DEFAULT 1.00,
-    ruling_coalition_switch BOOLEAN DEFAULT FALSE,
-    cases_dropped_post_switch INT DEFAULT 0,
+    ruling_coalition_switch BOOLEAN,
+    cases_dropped_post_switch INT,
     post_switch_wealth_surge_cagr NUMERIC(6, 2),
-    is_opportunistic_switch BOOLEAN DEFAULT FALSE,
+    is_opportunistic_switch BOOLEAN,
     notes TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_mobility_candidate ON political_mobility_records (candidate_id);
+ALTER TABLE political_mobility_records ALTER COLUMN ruling_coalition_switch DROP DEFAULT;
+ALTER TABLE political_mobility_records ALTER COLUMN cases_dropped_post_switch DROP DEFAULT;
+ALTER TABLE political_mobility_records ALTER COLUMN is_opportunistic_switch DROP DEFAULT;
 
 -- 13. Campaign Finance & Corporate Political Contributions (Section 29C RPA & Trusts)
 CREATE TABLE IF NOT EXISTS campaign_donations (
@@ -328,6 +352,9 @@ ALTER TABLE criminal_cases ADD COLUMN IF NOT EXISTS ecourts_verified BOOLEAN DEF
 ALTER TABLE criminal_cases ADD COLUMN IF NOT EXISTS ecourts_stage TEXT; -- 'FIR', 'Cognizance', 'Framed Charges', 'Trial', 'Disposed'
 ALTER TABLE criminal_cases ADD COLUMN IF NOT EXISTS ecourts_last_hearing DATE;
 ALTER TABLE criminal_cases ADD COLUMN IF NOT EXISTS is_rpa_section_8_disqualified BOOLEAN DEFAULT FALSE;
+ALTER TABLE criminal_cases ADD COLUMN IF NOT EXISTS ecourts_source_url TEXT;
+ALTER TABLE criminal_cases ADD COLUMN IF NOT EXISTS ecourts_retrieved_at TIMESTAMPTZ;
+ALTER TABLE criminal_cases ALTER COLUMN is_rpa_section_8_disqualified DROP DEFAULT;
 
 -- 15. Security: Enable Row Level Security (RLS) & Public Read-Only Policies
 ALTER TABLE candidates ENABLE ROW LEVEL SECURITY;
@@ -468,4 +495,3 @@ GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, service_role;
 GRANT ALL ON ALL ROUTINES IN SCHEMA public TO postgres, service_role;
 
 NOTIFY pgrst, 'reload schema';
-

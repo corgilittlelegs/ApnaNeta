@@ -543,11 +543,20 @@ class ECIAffidavitScraper:
                 "deduplicated": True,
             }
 
-        # Step 4: Ephemeral In-Memory Storage Strategy (Zero Permanent R2 Storage)
-        # We do NOT upload multi-megabyte PDFs to Cloudflare R2.
-        # This keeps the pipeline free, prevents hitting storage quotas, and stays within limits.
-        # Primary source verification is preserved via sha256_hash and official source_url.
+        # Step 4: Persist an immutable evidence copy when R2 is configured.
+        # Never record a storage key for R2's local dry-run mode: that would make
+        # the UI imply an archived document exists when it does not.
         r2_key = None
+        if r2_storage.is_configured:
+            try:
+                r2_key = r2_storage.upload_affidavit_pdf(pdf_bytes, sha256_hash)
+            except Exception as exc:
+                logger.error("R2 archival failed for %s; preserving only the official ECI URL and hash: %s", sha256_hash, exc)
+        else:
+            logger.warning(
+                "R2 is not configured; affidavit %s will be indexed with its ECI URL and hash but no archive key.",
+                sha256_hash,
+            )
 
         # Step 5: Upsert Candidate in Supabase
         candidate_id = None
@@ -603,7 +612,7 @@ class ECIAffidavitScraper:
                         {
                             "source_url": pdf_url,
                             "sha256_hash": sha256_hash,
-                            "r2_storage_key": None,
+                            "r2_storage_key": r2_key,
                         },
                         {"id": f"eq.{affidavit_id}"},
                     )
@@ -617,7 +626,7 @@ class ECIAffidavitScraper:
                                 "filing_year": filing_year,
                                 "source_url": pdf_url,
                                 "sha256_hash": sha256_hash,
-                                "r2_storage_key": None,
+                                "r2_storage_key": r2_key,
                             }
                         ],
                     )
@@ -632,7 +641,7 @@ class ECIAffidavitScraper:
             "constituency": constituency,
             "state": state,
             "sha256_hash": sha256_hash,
-            "r2_storage_key": None,
+            "r2_storage_key": r2_key,
             "pdf_bytes_len": len(pdf_bytes),
             "candidate_id": candidate_id,
             "affidavit_id": affidavit_id,
@@ -698,7 +707,7 @@ if __name__ == "__main__":
     logger.info(f"Total States Scope:     {len(states_to_run)} state(s): {', '.join(states_to_run)}")
     logger.info(f"Constituencies Scope:   {raw_constituency}")
     logger.info(f"Batch Limit per State:  {batch_limit if batch_limit > 0 else 'All Constituencies'}")
-    logger.info(f"Storage Architecture:   Ephemeral In-Memory (Zero R2 Uploads, Direct ECI URL + SHA-256)")
+    logger.info("Storage Architecture:   Immutable R2 archive when configured; otherwise Direct ECI URL + SHA-256")
     logger.info("==========================================================")
 
     async def main():

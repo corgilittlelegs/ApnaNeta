@@ -64,6 +64,7 @@ class TestAdvancedFeatures(unittest.TestCase):
 
         # Test subsisting check
         self.assertTrue(detector.is_contract_subsisting("2024-01-01", 24))
+        self.assertIsNone(detector.is_contract_subsisting(None, None))
 
         # Test risk determination for public works department
         risk = detector.determine_disqualification_risk(
@@ -72,6 +73,14 @@ class TestAdvancedFeatures(unittest.TestCase):
             is_subsisting=True,
         )
         self.assertEqual(risk, "HIGH")
+        self.assertEqual(
+            detector.determine_disqualification_risk(
+                candidate_house="Lok Sabha",
+                awarding_authority="Ministry of Works",
+                is_subsisting=None,
+            ),
+            "REVIEW",
+        )
 
     def test_mobility_tracker_defection_index(self):
         tracker = PoliticalMobilityTracker()

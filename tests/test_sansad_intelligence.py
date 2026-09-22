@@ -42,13 +42,18 @@ class TestSansadIntelligence(unittest.TestCase):
         # 2 local hits / 1 national hit = 2.0
         self.assertEqual(ratio, 2.0)
 
-    def test_starred_unstarred_split_ratio(self):
-        total_questions = 120
-        starred = round(total_questions * 0.10)
-        unstarred = total_questions - starred
-        self.assertEqual(starred, 12)
-        self.assertEqual(unstarred, 108)
-        self.assertEqual(starred + unstarred, total_questions)
+    def test_absent_question_breakdowns_and_text_remain_unknown(self):
+        from src.ingestion.sansad_api import parse_optional_int, question_texts_from_row
+
+        # A total question count does not justify inventing a starred/unstarred
+        # split or generic policy questions.
+        self.assertIsNone(parse_optional_int(None))
+        self.assertIsNone(parse_optional_int(""))
+        self.assertEqual(parse_optional_int("0"), 0)
+        self.assertEqual(question_texts_from_row({"Questions": "120"}), [])
+
+        actual = "Will the Minister state the MSP procurement target for paddy?"
+        self.assertEqual(question_texts_from_row({"Question Text": actual}), [actual])
 
 
     def test_parse_date_formats(self):
@@ -73,4 +78,3 @@ class TestSansadIntelligence(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

@@ -57,10 +57,13 @@ class PoliticalMobilityTracker:
                         "transition_year": int(year2),
                         "transition_date": f"{year2}-01-01",
                         "defection_index_score": self.calculate_defection_index(1, max(1, year2 - year1)),
-                        "ruling_coalition_switch": False,
-                        "cases_dropped_post_switch": 0,
-                        "post_switch_wealth_surge_cagr": 0.0,
-                        "is_opportunistic_switch": True,
+                        # These require separately sourced coalition, court, and
+                        # wealth evidence. A party change alone cannot establish
+                        # any of them, so preserve them as unknown.
+                        "ruling_coalition_switch": None,
+                        "cases_dropped_post_switch": None,
+                        "post_switch_wealth_surge_cagr": None,
+                        "is_opportunistic_switch": None,
                         "notes": f"Party changed from '{p1_party}' ({year1}) to '{p2_party}' ({year2})",
                     }
                     await supabase.insert("political_mobility_records", [record])

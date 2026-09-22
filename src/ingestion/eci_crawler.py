@@ -202,8 +202,14 @@ class ECIPlaywrightCrawler:
                 pdf_bytes = resp.content
 
             sha256_hash = hashlib.sha256(pdf_bytes).hexdigest()
-            r2_key = f"affidavits/{sha256_hash}.pdf"
-            r2_storage.upload_affidavit_pdf(r2_key, pdf_bytes)
+            r2_key = None
+            if r2_storage.is_configured:
+                r2_key = r2_storage.upload_affidavit_pdf(pdf_bytes, sha256_hash)
+            else:
+                logger.warning(
+                    "R2 is not configured; preserving ECI source URL and hash without an archive key for %s.",
+                    sha256_hash,
+                )
 
             # Ensure candidate exists in Supabase
             cand_name = nomination["name"].strip()

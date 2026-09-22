@@ -10,6 +10,7 @@ from src.verification.math_reconciler import MathReconciler
 from src.verification.wealth_analyzer import WealthAnalyzer
 from src.verification.legal_classifier import LegalClassifier
 from src.verification.entity_resolution import IndicEntityResolver
+from src.verification.ecourts_client import ECourtsVerificationClient
 
 
 class TestVerification(unittest.TestCase):
@@ -103,6 +104,15 @@ class TestVerification(unittest.TestCase):
         is_match_fake, _, msg_fake = resolver.is_same_candidate(cand_2019, cand_fake_age)
         self.assertFalse(is_match_fake)
         self.assertIn("Age drift mismatch", msg_fake)
+
+    def test_ecourts_cnr_is_not_treated_as_docket_evidence(self):
+        client = ECourtsVerificationClient()
+        self.assertTrue(client.is_valid_cnr("ABCD123456789012"))
+        self.assertFalse(client.is_valid_cnr("not-a-cnr"))
+
+        # The explicit evidence API requires a traceable HTTPS source and a
+        # retrieval timestamp before it can mark a case as verified.
+        self.assertTrue(hasattr(client, "record_official_docket_evidence"))
 
 
 if __name__ == "__main__":
