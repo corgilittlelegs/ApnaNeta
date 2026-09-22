@@ -35,8 +35,10 @@ def haversine_distance_meters(lat1: float, lon1: float, lat2: float, lon2: float
 
 class MPLADSGISVerifier:
     """
-    Satellite and GIS Geolocation Verification Engine for MPLADS Projects.
-    Audits declared project coordinates to detect:
+    Coordinate plausibility and duplicate-location triage for MPLADS projects.
+
+    It does not inspect satellite imagery or municipal completion records, so it
+    must never represent a low-risk heuristic as GIS verification. It detects:
     - Boundary transgressions (funds spent outside MP's constituency)
     - Duplicate coordinate contractor fraud (multiple works billed at the same location)
     - Ocean/water-body invalid anomalies
@@ -169,7 +171,7 @@ class MPLADSGISVerifier:
         return {
             "ghost_project_risk": "LOW",
             "risk_score": 0.10,
-            "reason": "Verified coordinates located within constituency; unique geolocation",
+                "reason": "No coordinate anomaly detected; imagery or municipal verification is still required",
         }
 
     async def audit_candidate_works(self, candidate_id: str, constituency_name: str) -> Dict[str, Any]:
@@ -180,7 +182,7 @@ class MPLADSGISVerifier:
         if not works:
             return {
                 "total_works": 0,
-                "verified_count": 0,
+                "no_coordinate_anomaly_count": 0,
                 "critical_ghost_alerts": 0,
                 "high_risk_count": 0,
             }
@@ -189,7 +191,7 @@ class MPLADSGISVerifier:
 
         critical_count = 0
         high_count = 0
-        verified_count = 0
+        no_coordinate_anomaly_count = 0
 
         updates = []
         for w in works:
@@ -213,11 +215,13 @@ class MPLADSGISVerifier:
             elif risk_label == "HIGH":
                 high_count += 1
             elif risk_label == "LOW":
-                verified_count += 1
+                no_coordinate_anomaly_count += 1
 
             updates.append({
                 "work_id": w_id,
-                "gis_verified": risk_label == "LOW",
+                # A coordinate heuristic cannot verify a work's existence or
+                # completion. That field is reserved for external evidence.
+                "gis_verified": None,
                 "constituency_boundary_valid": is_valid_bound,
                 "duplicate_coordinate_flag": is_dup,
                 "ghost_project_risk": risk_label,
@@ -232,7 +236,7 @@ class MPLADSGISVerifier:
 
         return {
             "total_works": len(works),
-            "verified_count": verified_count,
+            "no_coordinate_anomaly_count": no_coordinate_anomaly_count,
             "critical_ghost_alerts": critical_count,
             "high_risk_count": high_count,
         }

@@ -1,4 +1,5 @@
 import unittest
+import importlib.util
 from src.verification.policy_classifier import PolicyTopicClassifier, POLICY_DOMAINS
 
 
@@ -54,6 +55,19 @@ class TestSansadIntelligence(unittest.TestCase):
 
         actual = "Will the Minister state the MSP procurement target for paddy?"
         self.assertEqual(question_texts_from_row({"Question Text": actual}), [actual])
+
+    @unittest.skipUnless(importlib.util.find_spec("bs4"), "beautifulsoup4 is not installed")
+    def test_official_question_page_parser_uses_rendered_rows(self):
+        from src.ingestion.sansad_official import OfficialSansadQuestionScraper
+
+        html = """
+        <table>
+          <tr><th>Q.No.</th><th>Subject</th><th>Member</th><th>Question Type</th></tr>
+          <tr><td>1</td><td>Railway safety</td><td>Shri Example Member</td><td>UNSTARRED</td></tr>
+        </table>
+        """
+        rows = OfficialSansadQuestionScraper.parse_question_rows(html)
+        self.assertEqual(rows, [{"member_name": "Shri Example Member", "subject": "Railway safety", "question_type": "UNSTARRED"}])
 
 
     def test_parse_date_formats(self):

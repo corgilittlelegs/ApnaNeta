@@ -6,22 +6,28 @@ from typing import List, Dict, Any, Optional
 import httpx
 from src.storage.supabase_client import supabase
 from src.utils.pii_sanitizer import mask_pan
+from src.ingestion.official_documents import OfficialDocumentDiscovery
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("CampaignFinance")
 
-# Public domain transparency datasets for Indian political donations
-ADR_CONTRIBUTIONS_CSV_URL = "https://raw.githubusercontent.com/datameet/electoral-bonds/master/data/electoral_trusts.csv"
+# Official ECI document indexes. The legacy community CSV remains a separately
+# labelled discovery input; it is never represented as an ECI filing.
+ECI_CONTRIBUTION_REPORTS_URL = "https://www.eci.gov.in/contribution-reports"
+ECI_ELECTORAL_TRUST_REPORTS_URL = "https://www.eci.gov.in/electoral-trusts-reports"
+COMMUNITY_ELECTORAL_TRUSTS_CSV_URL = "https://raw.githubusercontent.com/datameet/electoral-bonds/master/data/electoral_trusts.csv"
 
 
 class CampaignFinanceClient:
     """
-    Ingests and audits political party campaign finance disclosures:
+    Discovers and audits political party campaign finance disclosures:
     - Annual contribution reports submitted under Section 29C of the RPA 1951 (> ₹20,000)
     - Annual returns submitted by registered Electoral Trusts
     - Cross-references corporate donors against awarded public procurement contracts (CPPP)
       to detect patterns of regulatory capture and quid pro quo licensing.
-    Uses strictly genuine data feeds without hardcoded placeholder arrays.
+    Official ECI reports are first recorded in the provenance ledger for review
+    and extraction. A community CSV may be imported only as explicitly labelled
+    non-official discovery data.
     """
 
     async def cross_reference_procurement(self, donor_name: str) -> bool:
@@ -38,7 +44,7 @@ class CampaignFinanceClient:
             logger.debug(f"Error cross-referencing donor {donor_name}: {e}")
             return False
 
-    def parse_contribution_csv(self, csv_text: str) -> List[Dict[str, Any]]:
+    def parse_contribution_csv(self, csv_text: str, source_url: str) -> List[Dict[str, Any]]:
         """
         Parses official or open contribution CSV datasets into standardized donation records.
         """
@@ -50,9 +56,10 @@ class CampaignFinanceClient:
         for row in reader:
             party = (row.get("Party") or row.get("political_party") or "").strip()
             donor = (row.get("Donor") or row.get("donor_name") or row.get("Contributor") or "").strip()
-            amount_str = (row.get("Amount") or row.get("contribution_amount") or "0").replace(",", "").replace("₹", "").strip()
+            amount_str = (row.get("Amount") or row.get("contribution_amount") or "").replace(",", "").replace("₹", "").strip()
+            financial_year = (row.get("Financial Year") or row.get("financial_year") or "").strip()
 
-            if not party or not donor:
+            if not party or not donor or not financial_year:
                 continue
 
             try:
@@ -66,9 +73,11 @@ class CampaignFinanceClient:
                     "donor_name": donor,
                     "donor_pan": row.get("PAN") or row.get("donor_pan"),
                     "contribution_amount": amount,
-                    "financial_year": row.get("Financial Year") or row.get("financial_year") or "2023-24",
-                    "donation_mode": row.get("Mode") or "Electoral Trust",
+                    "financial_year": financial_year,
+                    "donation_mode": row.get("Mode") or row.get("donation_mode"),
                     "electoral_trust_name": row.get("Trust") or row.get("electoral_trust_name"),
+                    "source_url": source_url,
+                    "source_kind": "community_csv",
                 })
         return donations
 
@@ -88,6 +97,8 @@ class CampaignFinanceClient:
                 "donation_mode": d.get("donation_mode", "Bank Transfer"),
                 "electoral_trust_name": d.get("electoral_trust_name"),
                 "procurement_contract_awarded": is_contractor,
+                "source_url": d.get("source_url"),
+                "source_kind": d.get("source_kind"),
             }
 
             try:
@@ -104,25 +115,30 @@ class CampaignFinanceClient:
 
         return synced
 
+    async def discover_official_reports(self) -> int:
+        """Registers public ECI contribution and trust reports for reviewed extraction."""
+        discovery = OfficialDocumentDiscovery({"eci.gov.in"})
+        total = 0
+        for document_type, index_url in (
+            ("party_contribution_report", ECI_CONTRIBUTION_REPORTS_URL),
+            ("electoral_trust_report", ECI_ELECTORAL_TRUST_REPORTS_URL),
+        ):
+            urls = await discovery.discover_pdf_links(index_url)
+            total += await discovery.record_documents("Election Commission of India", document_type, urls)
+        return total
+
     async def run(self) -> List[Dict[str, Any]]:
-        """Fetches and processes live campaign finance disclosures."""
+        """Discovers official reports; optional community imports stay labelled."""
         logger.info("==========================================================")
         logger.info("Starting Campaign Finance & Electoral Trust Ingestion Engine")
         logger.info("==========================================================")
 
         try:
-            async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
-                resp = await client.get(ADR_CONTRIBUTIONS_CSV_URL)
-                if resp.status_code == 200 and len(resp.text) > 100:
-                    donations = self.parse_contribution_csv(resp.text)
-                    logger.info(f"Parsed {len(donations)} genuine trust donation disclosures.")
-                    results = await self.ingest_donations(donations)
-                    return results
-                else:
-                    logger.warning(f"Could not retrieve donations feed (status {resp.status_code})")
-                    return []
+            count = await self.discover_official_reports()
+            logger.info("Registered %d official ECI finance report(s) for extraction/review.", count)
+            return []
         except Exception as e:
-            logger.error(f"Error fetching campaign finance data: {e}")
+            logger.error(f"Error discovering official campaign finance reports: {e}")
             return []
 
 

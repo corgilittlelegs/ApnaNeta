@@ -2,6 +2,7 @@ import logging
 import asyncio
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
+from urllib.parse import urljoin, urlparse
 try:
     import httpx
 except ImportError:
@@ -11,10 +12,11 @@ from src.storage.supabase_client import supabase
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("CPPPScraper")
 
-# Official Central Public Procurement Portal endpoint for active tender notices.
-# This is not a contract-award register.
-CPPP_BASE_URL = "https://eprocure.gov.in/eprocure/app"
+# Official ePublishing portal. It advertises tender enquiries and award details;
+# the award-page URL is discovered from the public navigation rather than guessed.
+CPPP_BASE_URL = "https://www.eprocure.gov.in/eprocure/app"
 CPPP_ACTIVE_TENDERS_URL = f"{CPPP_BASE_URL}?page=FrontEndLatestActiveTendersOrgwise&service=page"
+CPPP_EPUBLISH_HOME_URL = "https://www.eprocure.gov.in/epublish/app?service=home"
 
 
 class CPPPScraper:
@@ -39,6 +41,41 @@ class CPPPScraper:
         if httpx is None:
             logger.error("httpx is required for CPPP retrieval; install project dependencies first.")
             return None
+
+    async def discover_bid_awards_page(self) -> Optional[str]:
+        """Follows the public ePublishing navigation to its Bid Awards page."""
+        if httpx is None:
+            return None
+        try:
+            from bs4 import BeautifulSoup
+            async with httpx.AsyncClient(timeout=30.0, follow_redirects=True, headers=self.headers) as client:
+                home = await client.get(CPPP_EPUBLISH_HOME_URL)
+                home.raise_for_status()
+            soup = BeautifulSoup(home.text, "html.parser")
+            for anchor in soup.find_all("a", href=True):
+                if "bid award" not in anchor.get_text(" ", strip=True).lower():
+                    continue
+                url = urljoin(CPPP_EPUBLISH_HOME_URL, anchor["href"])
+                parsed = urlparse(url)
+                if parsed.scheme == "https" and parsed.hostname == "www.eprocure.gov.in":
+                    return url
+        except Exception as exc:
+            logger.warning("Could not discover CPPP Bid Awards page: %s", exc)
+        return None
+
+    async def fetch_public_awards_page(self) -> Optional[tuple[str, str]]:
+        """Retrieves a publicly linked award page; never submits CAPTCHA forms."""
+        awards_url = await self.discover_bid_awards_page()
+        if not awards_url or httpx is None:
+            return None
+        try:
+            async with httpx.AsyncClient(timeout=30.0, follow_redirects=True, headers=self.headers) as client:
+                response = await client.get(awards_url)
+                response.raise_for_status()
+            return awards_url, response.text
+        except Exception as exc:
+            logger.warning("Could not fetch CPPP Bid Awards page: %s", exc)
+            return None
         try:
             async with httpx.AsyncClient(timeout=30.0, follow_redirects=True, headers=self.headers) as client:
                 resp = await client.get(CPPP_ACTIVE_TENDERS_URL)
@@ -51,7 +88,7 @@ class CPPPScraper:
             logger.error(f"Error connecting to CPPP portal: {e}")
             return None
 
-    def parse_gepnic_html_table(self, html_content: str) -> List[Dict[str, Any]]:
+    def parse_gepnic_html_table(self, html_content: str, source_url: str = CPPP_ACTIVE_TENDERS_URL) -> List[Dict[str, Any]]:
         """
         Parses a GePNIC table without assuming a tender notice is a contract award.
         """
@@ -108,7 +145,7 @@ class CPPPScraper:
                     "award_date": award_date,
                     "execution_schedule_months": None,
                     "source_portal": "eprocure.gov.in",
-                    "source_url": CPPP_ACTIVE_TENDERS_URL,
+                    "source_url": source_url,
                     "record_type": "contract_award" if is_award_table else "tender_notice",
                 })
             return extracted
@@ -155,12 +192,13 @@ class CPPPScraper:
         logger.info("Starting Central Public Procurement Portal (CPPP) Tender Notice Scraper")
         logger.info("==========================================================")
 
-        html = await self.fetch_active_tenders_page()
+        public_awards = await self.fetch_public_awards_page()
+        source_url, html = public_awards if public_awards else (CPPP_ACTIVE_TENDERS_URL, await self.fetch_active_tenders_page())
         if not html:
             logger.warning("No live data retrieved from CPPP portal (portal may be experiencing downtime).")
             return []
 
-        tenders = self.parse_gepnic_html_table(html)
+        tenders = self.parse_gepnic_html_table(html, source_url=source_url)
         logger.info(f"Extracted {len(tenders)} source-attributed CPPP records.")
         results = await self.ingest_tenders(tenders)
 

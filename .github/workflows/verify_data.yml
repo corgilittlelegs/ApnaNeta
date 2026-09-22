@@ -45,6 +45,14 @@ jobs:
         run: |
           python -m src.verification.math_reconciler
 
+      - name: Propose Cross-Election Identity Links for Review
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          PYTHONPATH: .
+        run: |
+          python -m src.verification.identity_linker
+
       - name: Audit Section 9A Commercial Conflicts of Interest
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

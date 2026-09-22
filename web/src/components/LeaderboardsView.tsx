@@ -190,7 +190,7 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
   return (
     <div className="space-y-6">
       {/* Top Header & Aggregate Overview */}
-      <div className="bg-gradient-to-br from-[#0A192F] via-[#0E2244] to-[#071322] rounded-2xl p-6 sm:p-8 text-white border border-slate-800 shadow-xl relative overflow-hidden">
+      <div className="bg-gradient-to-br from-[#0A192F] via-[#0E2244] to-[#071322] rounded-2xl p-6 sm:p-8 text-white border border-sovereign-800 shadow-xl relative overflow-hidden">
         {/* Top Tiranga line */}
         <div className="tiranga-accent-bar absolute top-0 left-0 right-0 w-full" />
 
@@ -218,28 +218,28 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
               <span className="text-xl font-mono font-bold">{totalAnalyzed.toLocaleString()}</span>
             </div>
             <div className="bg-white/10 backdrop-blur-md px-4 py-3 rounded-xl border border-white/10">
-              <span className="text-[11px] text-rose-300 block">Flagged Discrepancies • अंतर</span>
-              <span className="text-xl font-mono font-bold text-rose-400">
+              <span className="text-[11px] text-terracotta-300 block">Flagged Discrepancies • अंतर</span>
+              <span className="text-xl font-mono font-bold text-terracotta-400">
                 {totalDiscrepancies} ({((totalDiscrepancies / (totalAnalyzed || 1)) * 100).toFixed(1)}%)
               </span>
             </div>
             <div className="bg-white/10 backdrop-blur-md px-4 py-3 rounded-xl border border-white/10 col-span-2 sm:col-span-1">
-              <span className="text-[11px] text-emerald-300 block">Avg Attendance • हाजिरी</span>
-              <span className="text-xl font-mono font-bold text-emerald-400">{avgAttendanceOverall}%</span>
+              <span className="text-[11px] text-harit-300 block">Avg Attendance • हाजिरी</span>
+              <span className="text-xl font-mono font-bold text-harit-400">{avgAttendanceOverall}%</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Tabs Navigation */}
-      <div className="bg-white rounded-2xl border border-dholpur-300 p-2 sm:p-2.5 shadow-xs space-y-2 sm:space-y-0 sm:flex sm:flex-wrap sm:items-center sm:justify-between sm:gap-2">
+      <div className="bg-dholpur-100 rounded-2xl border border-dholpur-300 p-2 sm:p-2.5 shadow-xs space-y-2 sm:space-y-0 sm:flex sm:flex-wrap sm:items-center sm:justify-between sm:gap-2">
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 sm:pb-0 touch-pan-x sm:flex-wrap">
           <button
             onClick={() => setActiveTab('wealth_growth')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-semibold whitespace-nowrap flex-shrink-0 transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-semibold whitespace-nowrap flex-shrink-0 transition-all cursor-pointer ${
               activeTab === 'wealth_growth'
-                ? 'bg-[#0A192F] text-kesariya-300 border border-kesariya-500/40 shadow-xs'
-                : 'text-slate-600 hover:bg-dholpur-100 hover:text-slate-900'
+                ? 'bg-sovereign-950 text-kesariya-300 border border-kesariya-500/40 shadow-xs font-bold'
+                : 'text-sovereign-700 hover:bg-dholpur-200/80 hover:text-sovereign-950'
             }`}
           >
             <TrendingUp className="w-3.5 h-3.5" />
@@ -251,10 +251,10 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
 
           <button
             onClick={() => setActiveTab('discrepancy')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-semibold whitespace-nowrap flex-shrink-0 transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-semibold whitespace-nowrap flex-shrink-0 transition-all cursor-pointer ${
               activeTab === 'discrepancy'
-                ? 'bg-rose-600 text-white shadow-sm'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                ? 'bg-terracotta-600 text-white shadow-sm font-bold'
+                : 'text-sovereign-700 hover:bg-dholpur-200/80 hover:text-sovereign-950'
             }`}
           >
             <AlertTriangle className="w-3.5 h-3.5" />
@@ -266,10 +266,10 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
 
           <button
             onClick={() => setActiveTab('sansad')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-semibold whitespace-nowrap flex-shrink-0 transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-semibold whitespace-nowrap flex-shrink-0 transition-all cursor-pointer ${
               activeTab === 'sansad'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                ? 'bg-ashoka-700 text-white shadow-sm font-bold'
+                : 'text-sovereign-700 hover:bg-dholpur-200/80 hover:text-sovereign-950'
             }`}
           >
             <CalendarCheck className="w-3.5 h-3.5" />
@@ -281,10 +281,10 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
 
           <button
             onClick={() => setActiveTab('mplads')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-semibold whitespace-nowrap flex-shrink-0 transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-semibold whitespace-nowrap flex-shrink-0 transition-all cursor-pointer ${
               activeTab === 'mplads'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                ? 'bg-harit-700 text-white shadow-sm font-bold'
+                : 'text-sovereign-700 hover:bg-dholpur-200/80 hover:text-sovereign-950'
             }`}
           >
             <Landmark className="w-3.5 h-3.5" />
@@ -296,10 +296,10 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
 
           <button
             onClick={() => setActiveTab('averages')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-semibold whitespace-nowrap flex-shrink-0 transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-semibold whitespace-nowrap flex-shrink-0 transition-all cursor-pointer ${
               activeTab === 'averages'
-                ? 'bg-amber-600 text-white shadow-sm'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                ? 'bg-kesariya-600 text-sovereign-950 shadow-sm font-bold'
+                : 'text-sovereign-700 hover:bg-dholpur-200/80 hover:text-sovereign-950'
             }`}
           >
             <Award className="w-3.5 h-3.5" />
@@ -311,22 +311,22 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
         </div>
 
         {/* Global Filter Bar for Leaderboards */}
-        <div className="flex items-center gap-2 w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+        <div className="flex items-center gap-2 w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-dholpur-300">
           <div className="relative flex-1 sm:flex-initial">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-sovereign-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchFilter}
               onChange={(e) => setSearchFilter(e.target.value)}
               placeholder="Search politician or party..."
-              className="w-full sm:w-56 pl-8 pr-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200/60 focus:bg-white border border-transparent focus:border-blue-400 rounded-lg outline-none transition-all"
+              className="w-full sm:w-56 pl-8 pr-3 py-1.5 text-xs bg-dholpur-50 hover:bg-white focus:bg-white border border-dholpur-300 focus:border-kesariya-400 text-sovereign-900 rounded-lg outline-none transition-all placeholder:text-sovereign-400"
             />
           </div>
 
           <select
             value={houseFilter}
             onChange={(e) => setHouseFilter(e.target.value)}
-            className="text-xs bg-slate-100 border border-slate-200 rounded-lg px-2 py-1.5 font-medium text-slate-700 outline-none flex-shrink-0 max-w-[115px] sm:max-w-none"
+            className="text-xs bg-dholpur-50 border border-dholpur-300 rounded-lg px-2 py-1.5 font-medium text-sovereign-800 outline-none flex-shrink-0 max-w-[115px] sm:max-w-none focus:border-kesariya-400 cursor-pointer"
           >
             <option value="ALL">All Houses</option>
             <option value="Lok Sabha">Lok Sabha</option>
@@ -338,31 +338,31 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
 
       {/* Tab 1: Wealth Growth Content */}
       {activeTab === 'wealth_growth' && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+        <div className="sandstone-card rounded-2xl border border-dholpur-300 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-dholpur-200 bg-dholpur-100/70 flex items-center justify-between">
             <div>
-              <h3 className="font-bold text-slate-900 text-sm">Longitudinal Asset Accumulation (CAGR %)</h3>
-              <p className="text-xs text-slate-500">
+              <h3 className="font-serif font-bold text-sovereign-950 text-sm">Longitudinal Asset Accumulation (CAGR %)</h3>
+              <p className="text-xs text-sovereign-600">
                 Multi-term compound annual asset surge tracked between consecutive election sworn affidavits.
               </p>
             </div>
-            <span className="text-xs font-mono text-slate-500">{wealthGrowthRankings.length} tracked records</span>
+            <span className="text-xs font-mono text-sovereign-600">{wealthGrowthRankings.length} tracked records</span>
           </div>
 
           {/* Mobile Card View (< md) */}
-          <div className="md:hidden divide-y divide-slate-100">
+          <div className="md:hidden divide-y divide-dholpur-200">
             {wealthGrowthRankings.length === 0 ? (
-              <div className="py-8 text-center text-slate-400 text-xs">
+              <div className="py-8 text-center text-sovereign-500 text-xs">
                 No historical wealth trajectories recorded matching current filters.
               </div>
             ) : (
               wealthGrowthRankings.slice(0, 50).map((row, idx) => {
                 const isSelected = selectedForComparison.some((c) => c.id === row.candidate.id);
                 return (
-                  <div key={`${row.candidate.id}-${idx}`} className="p-3.5 hover:bg-slate-50/80 transition-colors">
+                  <div key={`${row.candidate.id}-${idx}`} className="p-3.5 hover:bg-dholpur-100/50 transition-colors">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <span className="font-mono font-bold text-xs text-slate-400 w-6 flex-shrink-0 text-center">
+                        <span className="font-mono font-bold text-xs text-sovereign-500 w-6 flex-shrink-0 text-center">
                           {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
                         </span>
                         {row.candidate.photo_url ? (
@@ -370,17 +370,17 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                             src={row.candidate.photo_url}
                             alt={row.candidate.name}
                             referrerPolicy="no-referrer"
-                            className="w-9 h-9 rounded-full object-cover border border-slate-200 shadow-2xs flex-shrink-0"
+                            className="w-9 h-9 rounded-full object-cover border border-dholpur-300 shadow-2xs flex-shrink-0"
                             onError={(e) => {
                               e.currentTarget.style.display = 'none';
                             }}
                           />
                         ) : null}
                         <div className="min-w-0">
-                          <h4 className="font-bold text-slate-900 text-xs sm:text-sm truncate leading-tight">
+                          <h4 className="font-serif font-bold text-sovereign-950 text-xs sm:text-sm truncate leading-tight">
                             {row.candidate.name}
                           </h4>
-                          <p className="text-[11px] text-slate-500 truncate">
+                          <p className="text-[11px] text-sovereign-600 truncate">
                             {row.candidate.party || 'Independent'} • {row.candidate.constituency}
                           </p>
                         </div>
@@ -390,31 +390,31 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                         <span
                           className={`font-mono font-bold px-2 py-0.5 rounded text-[11px] inline-block ${
                             row.growth.is_rapid_accumulation
-                              ? 'bg-rose-100 text-rose-800 border border-rose-200'
-                              : 'bg-emerald-100 text-emerald-800'
+                              ? 'bg-terracotta-100 text-terracotta-800 border border-terracotta-200'
+                              : 'bg-harit-100 text-harit-800 border border-harit-200'
                           }`}
                         >
                           +{row.growth.percentage_increase}%
                         </span>
                         {row.growth.cagr_percent && (
-                          <span className="block text-[10px] font-mono text-blue-700 font-semibold mt-0.5">
+                          <span className="block text-[10px] font-mono text-ashoka-700 font-semibold mt-0.5">
                             {row.growth.cagr_percent}% CAGR
                           </span>
                         )}
                       </div>
                     </div>
 
-                    <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-600">
+                    <div className="mt-2.5 pt-2 border-t border-dholpur-200 flex items-center justify-between text-[11px] text-sovereign-600">
                       <span className="font-mono text-[10.5px]">
                         {formatINR(row.growth.initial_assets)} &rarr; {formatINR(row.growth.final_assets)}
                       </span>
                       <div className="flex items-center gap-1.5">
                         <button
                           onClick={() => onToggleComparison(row.candidate)}
-                          className={`p-1.5 rounded-lg border transition-all ${
+                          className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
                             isSelected
-                              ? 'bg-blue-600 text-white border-blue-600'
-                              : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200'
+                              ? 'bg-kesariya-600 text-sovereign-950 border-kesariya-600 font-bold'
+                              : 'bg-white hover:bg-dholpur-100 text-sovereign-700 border-dholpur-300'
                           }`}
                           title={isSelected ? 'Remove from Comparison' : 'Add to Comparison'}
                         >
@@ -422,17 +422,17 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                         </button>
                         <button
                           onClick={() => onOpenShareCard(row.candidate)}
-                          className="p-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 transition-colors"
+                          className="p-1.5 rounded-lg bg-white hover:bg-dholpur-100 text-sovereign-700 border border-dholpur-300 transition-colors cursor-pointer"
                           title="Share Report Card"
                         >
-                          <Share2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <Share2 className="w-3.5 h-3.5 text-harit-600" />
                         </button>
                         <button
                           onClick={() => exportCandidateDossierPdf(row.candidate)}
-                          className="p-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 transition-colors"
+                          className="p-1.5 rounded-lg bg-white hover:bg-dholpur-100 text-sovereign-700 border border-dholpur-300 transition-colors cursor-pointer"
                           title="Download Legal Dossier PDF"
                         >
-                          <FileDown className="w-3.5 h-3.5 text-blue-600" />
+                          <FileDown className="w-3.5 h-3.5 text-kesariya-700" />
                         </button>
                       </div>
                     </div>
@@ -446,7 +446,7 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50/70 text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
+                <tr className="border-b border-dholpur-300 bg-dholpur-100/80 text-sovereign-600 font-semibold uppercase tracking-wider text-[10px]">
                   <th className="py-3 px-4 w-12 text-center">Rank</th>
                   <th className="py-3 px-4">Candidate & Constituency</th>
                   <th className="py-3 px-4">Period</th>
@@ -457,10 +457,10 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-dholpur-200">
                 {wealthGrowthRankings.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-12 text-center text-slate-400">
+                    <td colSpan={8} className="py-12 text-center text-sovereign-400">
                       No historical wealth trajectories recorded matching current filters.
                     </td>
                   </tr>
@@ -468,8 +468,8 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                   wealthGrowthRankings.slice(0, 50).map((row, idx) => {
                     const isSelected = selectedForComparison.some((c) => c.id === row.candidate.id);
                     return (
-                      <tr key={`${row.candidate.id}-${idx}`} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-3 px-4 text-center font-bold text-slate-400 font-mono">
+                      <tr key={`${row.candidate.id}-${idx}`} className="hover:bg-dholpur-100/50 transition-colors">
+                        <td className="py-3 px-4 text-center font-bold text-sovereign-400 font-mono">
                           {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
                         </td>
                         <td className="py-3 px-4">
@@ -479,51 +479,51 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                                 src={row.candidate.photo_url}
                                 alt={row.candidate.name}
                                 referrerPolicy="no-referrer"
-                                className="w-8 h-8 rounded-full object-cover border border-slate-200 shadow-2xs flex-shrink-0"
+                                className="w-8 h-8 rounded-full object-cover border border-dholpur-300 shadow-2xs flex-shrink-0"
                                 onError={(e) => {
                                   e.currentTarget.style.display = 'none';
                                 }}
                               />
                             ) : null}
                             <div>
-                              <div className="font-bold text-slate-900">{row.candidate.name}</div>
-                              <div className="text-[11px] text-slate-500">
+                              <div className="font-serif font-bold text-sovereign-950">{row.candidate.name}</div>
+                              <div className="text-[11px] text-sovereign-600">
                                 {row.candidate.party || 'Independent'} • {row.candidate.constituency}, {row.candidate.state}
                               </div>
                             </div>
                           </div>
                         </td>
-                        <td className="py-3 px-4 font-mono font-medium text-slate-700">
+                        <td className="py-3 px-4 font-mono font-medium text-sovereign-700">
                           {row.growth.from_year} &rarr; {row.growth.to_year}
                         </td>
-                        <td className="py-3 px-4 font-mono text-slate-600">
+                        <td className="py-3 px-4 font-mono text-sovereign-600">
                           {formatINR(row.growth.initial_assets)}
                         </td>
-                        <td className="py-3 px-4 font-mono font-bold text-slate-900">
+                        <td className="py-3 px-4 font-mono font-bold text-sovereign-950">
                           {formatINR(row.growth.final_assets)}
                         </td>
                         <td className="py-3 px-4">
                           <span
                             className={`font-mono font-bold px-2 py-0.5 rounded text-[11px] ${
                               row.growth.is_rapid_accumulation
-                                ? 'bg-rose-100 text-rose-800 border border-rose-200'
-                                : 'bg-emerald-100 text-emerald-800'
+                                ? 'bg-terracotta-100 text-terracotta-800 border border-terracotta-200'
+                                : 'bg-harit-100 text-harit-800 border border-harit-200'
                             }`}
                           >
                             +{row.growth.percentage_increase}%
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-center font-mono font-bold text-blue-700">
+                        <td className="py-3 px-4 text-center font-mono font-bold text-ashoka-700">
                           {row.growth.cagr_percent ? `${row.growth.cagr_percent}%` : '—'}
                         </td>
                         <td className="py-3 px-4 text-right">
                           <div className="inline-flex items-center gap-1.5">
                             <button
                               onClick={() => onToggleComparison(row.candidate)}
-                              className={`p-1.5 rounded-lg border transition-all ${
+                              className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
                                 isSelected
-                                  ? 'bg-blue-600 text-white border-blue-600'
-                                  : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200'
+                                  ? 'bg-kesariya-600 text-sovereign-950 border-kesariya-600 font-bold'
+                                  : 'bg-white hover:bg-dholpur-100 text-sovereign-700 border-dholpur-300'
                               }`}
                               title={isSelected ? 'Remove from Comparison' : 'Add to Comparison'}
                             >
@@ -531,17 +531,17 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                             </button>
                             <button
                               onClick={() => onOpenShareCard(row.candidate)}
-                              className="p-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 transition-colors"
+                              className="p-1.5 rounded-lg bg-white hover:bg-dholpur-100 text-sovereign-700 border border-dholpur-300 transition-colors cursor-pointer"
                               title="Share Report Card"
                             >
-                              <Share2 className="w-3.5 h-3.5 text-emerald-600" />
+                              <Share2 className="w-3.5 h-3.5 text-harit-600" />
                             </button>
                             <button
                               onClick={() => exportCandidateDossierPdf(row.candidate)}
-                              className="p-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 transition-colors"
+                              className="p-1.5 rounded-lg bg-white hover:bg-dholpur-100 text-sovereign-700 border border-dholpur-300 transition-colors cursor-pointer"
                               title="Download Legal Dossier PDF"
                             >
-                              <FileDown className="w-3.5 h-3.5 text-blue-600" />
+                              <FileDown className="w-3.5 h-3.5 text-kesariya-700" />
                             </button>
                           </div>
                         </td>
@@ -557,26 +557,26 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
 
       {/* Tab 2: Discrepancy Watchlist */}
       {activeTab === 'discrepancy' && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 bg-rose-50/50 flex items-center justify-between">
+        <div className="sandstone-card rounded-2xl border border-dholpur-300 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-terracotta-200 bg-terracotta-50/70 flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-rose-600" />
-                <h3 className="font-bold text-rose-950 text-sm">Forensic Discrepancy Watchlist</h3>
+                <AlertTriangle className="w-4 h-4 text-terracotta-600" />
+                <h3 className="font-serif font-bold text-terracotta-950 text-sm">Forensic Discrepancy Watchlist</h3>
               </div>
-              <p className="text-xs text-rose-700 mt-0.5">
+              <p className="text-xs text-terracotta-800 mt-0.5">
                 Sworn declarations where itemized asset lines (Part A) do not match the sworn abstract totals (Part B).
               </p>
             </div>
-            <span className="text-xs font-mono font-bold text-rose-800 bg-rose-100 px-2.5 py-1 rounded-full border border-rose-200">
+            <span className="text-xs font-mono font-bold text-terracotta-800 bg-terracotta-100 px-2.5 py-1 rounded-full border border-terracotta-300">
               {discrepancyWatchlist.length} Candidates Flagged
             </span>
           </div>
 
           {/* Mobile Card View (< md) */}
-          <div className="md:hidden divide-y divide-slate-100">
+          <div className="md:hidden divide-y divide-dholpur-200">
             {discrepancyWatchlist.length === 0 ? (
-              <div className="py-8 text-center text-slate-400 text-xs">
+              <div className="py-8 text-center text-sovereign-400 text-xs">
                 Zero discrepancies detected in the active dataset.
               </div>
             ) : (
@@ -585,30 +585,30 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                 const isSelected = selectedForComparison.some((c) => c.id === cand.id);
 
                 return (
-                  <div key={cand.id} className="p-3.5 hover:bg-rose-50/30 transition-colors">
+                  <div key={cand.id} className="p-3.5 hover:bg-terracotta-50/40 transition-colors">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="font-mono font-bold text-xs text-rose-600 w-6 flex-shrink-0 text-center">
+                        <span className="font-mono font-bold text-xs text-terracotta-600 w-6 flex-shrink-0 text-center">
                           #{idx + 1}
                         </span>
                         <div className="min-w-0">
-                          <h4 className="font-bold text-slate-900 text-xs sm:text-sm truncate leading-tight">
+                          <h4 className="font-serif font-bold text-sovereign-950 text-xs sm:text-sm truncate leading-tight">
                             {cand.name}
                           </h4>
-                          <p className="text-[11px] text-slate-500 truncate">
+                          <p className="text-[11px] text-sovereign-600 truncate">
                             {cand.party || 'Independent'} • {cand.constituency}
                           </p>
                         </div>
                       </div>
 
                       <div className="text-right flex-shrink-0">
-                        <span className="font-mono font-bold text-rose-700 bg-rose-100 px-2 py-0.5 rounded border border-rose-200 text-[11px]">
+                        <span className="font-mono font-bold text-terracotta-800 bg-terracotta-100 px-2 py-0.5 rounded border border-terracotta-300 text-[11px]">
                           {formatINR(totalDelta)} Δ
                         </span>
                       </div>
                     </div>
 
-                    <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                    <div className="mt-2.5 pt-2 border-t border-dholpur-200 flex items-center justify-between text-[11px]">
                       <button
                         onClick={() =>
                           onVerifyProof(
@@ -619,7 +619,7 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                             cand
                           )
                         }
-                        className="text-blue-600 hover:text-blue-800 font-medium hover:underline text-[11px]"
+                        className="text-ashoka-700 hover:text-ashoka-900 font-medium hover:underline text-[11px] cursor-pointer"
                       >
                         Inspect Scan &rarr;
                       </button>
@@ -627,10 +627,10 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                       <div className="flex items-center gap-1.5">
                         <button
                           onClick={() => onToggleComparison(cand)}
-                          className={`p-1.5 rounded-lg border transition-all ${
+                          className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
                             isSelected
-                              ? 'bg-blue-600 text-white border-blue-600'
-                              : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200'
+                              ? 'bg-kesariya-600 text-sovereign-950 border-kesariya-600 font-bold'
+                              : 'bg-white hover:bg-dholpur-100 text-sovereign-700 border-dholpur-300'
                           }`}
                           title={isSelected ? 'Remove from Comparison' : 'Add to Comparison'}
                         >
@@ -638,10 +638,10 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                         </button>
                         <button
                           onClick={() => onOpenShareCard(cand)}
-                          className="p-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 transition-colors"
+                          className="p-1.5 rounded-lg bg-white hover:bg-dholpur-100 text-sovereign-700 border border-dholpur-300 transition-colors cursor-pointer"
                           title="Share Report Card"
                         >
-                          <Share2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <Share2 className="w-3.5 h-3.5 text-harit-600" />
                         </button>
                       </div>
                     </div>
@@ -655,21 +655,21 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50/70 text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
+                <tr className="border-b border-dholpur-300 bg-dholpur-100/80 text-sovereign-600 font-semibold uppercase tracking-wider text-[10px]">
                   <th className="py-3 px-4 w-12 text-center">Rank</th>
                   <th className="py-3 px-4">Candidate & Seat</th>
                   <th className="py-3 px-4">Declared Net Worth</th>
                   <th className="py-3 px-4">Part A Movable Δ</th>
                   <th className="py-3 px-4">Part A Immovable Δ</th>
-                  <th className="py-3 px-4 font-bold text-rose-900">Total Arithmetic Variance</th>
+                  <th className="py-3 px-4 font-bold text-terracotta-900">Total Arithmetic Variance</th>
                   <th className="py-3 px-4">Safe Harbor Proof</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-dholpur-200">
                 {discrepancyWatchlist.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-12 text-center text-slate-400">
+                    <td colSpan={8} className="py-12 text-center text-sovereign-400">
                       Zero discrepancies detected in the active dataset. All mathematical declarations reconciled!
                     </td>
                   </tr>
@@ -679,27 +679,27 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                     const isSelected = selectedForComparison.some((c) => c.id === cand.id);
 
                     return (
-                      <tr key={cand.id} className="hover:bg-rose-50/30 transition-colors">
-                        <td className="py-3 px-4 text-center font-bold text-rose-600 font-mono">
+                      <tr key={cand.id} className="hover:bg-terracotta-50/40 transition-colors">
+                        <td className="py-3 px-4 text-center font-bold text-terracotta-600 font-mono">
                           #{idx + 1}
                         </td>
                         <td className="py-3 px-4">
-                          <div className="font-bold text-slate-900">{cand.name}</div>
-                          <div className="text-[11px] text-slate-500">
+                          <div className="font-serif font-bold text-sovereign-950">{cand.name}</div>
+                          <div className="text-[11px] text-sovereign-600">
                             {cand.party || 'Independent'} • {cand.constituency}, {cand.state}
                           </div>
                         </td>
-                        <td className="py-3 px-4 font-mono font-bold text-slate-900">
+                        <td className="py-3 px-4 font-mono font-bold text-sovereign-950">
                           {formatINR(cand.total_net_worth)}
                         </td>
-                        <td className="py-3 px-4 font-mono text-slate-600">
+                        <td className="py-3 px-4 font-mono text-sovereign-600">
                           {formatINR(cand.delta_movable)}
                         </td>
-                        <td className="py-3 px-4 font-mono text-slate-600">
+                        <td className="py-3 px-4 font-mono text-sovereign-600">
                           {formatINR(cand.delta_immovable)}
                         </td>
                         <td className="py-3 px-4">
-                          <span className="font-mono font-bold text-rose-700 bg-rose-100 px-2 py-0.5 rounded border border-rose-200">
+                          <span className="font-mono font-bold text-terracotta-800 bg-terracotta-100 px-2 py-0.5 rounded border border-terracotta-300">
                             {formatINR(totalDelta)}
                           </span>
                         </td>
@@ -714,7 +714,7 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                                 cand
                               )
                             }
-                            className="text-blue-600 hover:text-blue-800 font-medium hover:underline text-[11px]"
+                            className="text-ashoka-700 hover:text-ashoka-900 font-medium hover:underline text-[11px] cursor-pointer"
                           >
                             Inspect Scan &rarr;
                           </button>
@@ -723,10 +723,10 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                           <div className="inline-flex items-center gap-1.5">
                             <button
                               onClick={() => onToggleComparison(cand)}
-                              className={`p-1.5 rounded-lg border transition-all ${
+                              className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
                                 isSelected
-                                  ? 'bg-blue-600 text-white border-blue-600'
-                                  : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200'
+                                  ? 'bg-kesariya-600 text-sovereign-950 border-kesariya-600 font-bold'
+                                  : 'bg-white hover:bg-dholpur-100 text-sovereign-700 border-dholpur-300'
                               }`}
                               title={isSelected ? 'Remove from Comparison' : 'Add to Comparison'}
                             >
@@ -734,10 +734,10 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                             </button>
                             <button
                               onClick={() => onOpenShareCard(cand)}
-                              className="p-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 transition-colors"
+                              className="p-1.5 rounded-lg bg-white hover:bg-dholpur-100 text-sovereign-700 border border-dholpur-300 transition-colors cursor-pointer"
                               title="Share Report Card"
                             >
-                              <Share2 className="w-3.5 h-3.5 text-emerald-600" />
+                              <Share2 className="w-3.5 h-3.5 text-harit-600" />
                             </button>
                           </div>
                         </td>
@@ -753,28 +753,28 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
 
       {/* Tab 3: Sansad Attendance */}
       {activeTab === 'sansad' && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex flex-wrap items-center justify-between gap-3">
+        <div className="sandstone-card rounded-2xl border border-dholpur-300 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-dholpur-200 bg-dholpur-100/70 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 className="font-bold text-slate-900 text-sm">Sansad Parliamentary Attendance Meter</h3>
-              <p className="text-xs text-slate-500">
+              <h3 className="font-serif font-bold text-sovereign-950 text-sm">Sansad Parliamentary Attendance Meter</h3>
+              <p className="text-xs text-sovereign-600">
                 Official sittings attendance, debates, and questions logged by the Lok Sabha Secretariat.
               </p>
             </div>
 
-            <div className="flex items-center gap-1.5 bg-slate-200/70 p-1 rounded-xl">
+            <div className="flex items-center gap-1.5 bg-dholpur-200/80 p-1 rounded-xl">
               <button
                 onClick={() => setSansadSubTab('high')}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
-                  sansadSubTab === 'high' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  sansadSubTab === 'high' ? 'bg-kesariya-600 text-sovereign-950 shadow-sm font-bold' : 'text-sovereign-700 hover:text-sovereign-950'
                 }`}
               >
                 Top Attendance (≥ 80%)
               </button>
               <button
                 onClick={() => setSansadSubTab('low')}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
-                  sansadSubTab === 'low' ? 'bg-white text-rose-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  sansadSubTab === 'low' ? 'bg-terracotta-600 text-white shadow-sm font-bold' : 'text-sovereign-700 hover:text-sovereign-950'
                 }`}
               >
                 Lowest Attendance / Absentees
@@ -783,23 +783,23 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
           </div>
 
           {/* Mobile Card View (< md) */}
-          <div className="md:hidden divide-y divide-slate-100">
+          <div className="md:hidden divide-y divide-dholpur-200">
             {sansadRankings.slice(0, 50).map((cand, idx) => {
               const isSelected = selectedForComparison.some((c) => c.id === cand.id);
               const att = cand.attendance_rate || 0;
 
               return (
-                <div key={cand.id} className="p-3.5 hover:bg-slate-50/80 transition-colors">
+                <div key={cand.id} className="p-3.5 hover:bg-dholpur-100/50 transition-colors">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="font-mono font-bold text-xs text-slate-400 w-6 flex-shrink-0 text-center">
+                      <span className="font-mono font-bold text-xs text-sovereign-400 w-6 flex-shrink-0 text-center">
                         #{idx + 1}
                       </span>
                       <div className="min-w-0">
-                        <h4 className="font-bold text-slate-900 text-xs sm:text-sm truncate leading-tight">
+                        <h4 className="font-serif font-bold text-sovereign-950 text-xs sm:text-sm truncate leading-tight">
                           {cand.name}
                         </h4>
-                        <p className="text-[11px] text-slate-500 truncate">
+                        <p className="text-[11px] text-sovereign-600 truncate">
                           {cand.party || 'Independent'} • {cand.constituency} ({cand.house})
                         </p>
                       </div>
@@ -808,7 +808,7 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                     <div className="text-right flex-shrink-0">
                       <span
                         className={`font-mono font-bold text-xs ${
-                          att >= 80 ? 'text-emerald-700' : att >= 60 ? 'text-blue-700' : 'text-rose-700'
+                          att >= 80 ? 'text-harit-700' : att >= 60 ? 'text-kesariya-700' : 'text-terracotta-700'
                         }`}
                       >
                         {att}% Att.
@@ -816,7 +816,7 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                     </div>
                   </div>
 
-                  <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-600">
+                  <div className="mt-2.5 pt-2 border-t border-dholpur-200 flex items-center justify-between text-[11px] text-sovereign-600">
                     <div className="flex items-center gap-2 text-[10.5px]">
                       <span>Debates: <strong>{cand.debates_count ?? '—'}</strong></span>
                       <span>•</span>
@@ -825,10 +825,10 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                     <div className="flex items-center gap-1.5">
                       <button
                         onClick={() => onToggleComparison(cand)}
-                        className={`p-1.5 rounded-lg border transition-all ${
+                        className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
                           isSelected
-                            ? 'bg-blue-600 text-white border-blue-600'
-                            : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200'
+                            ? 'bg-kesariya-600 text-sovereign-950 border-kesariya-600 font-bold'
+                            : 'bg-white hover:bg-dholpur-100 text-sovereign-700 border-dholpur-300'
                         }`}
                         title={isSelected ? 'Remove from Comparison' : 'Add to Comparison'}
                       >
@@ -836,10 +836,10 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                       </button>
                       <button
                         onClick={() => onOpenShareCard(cand)}
-                        className="p-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 transition-colors"
+                        className="p-1.5 rounded-lg bg-white hover:bg-dholpur-100 text-sovereign-700 border border-dholpur-300 transition-colors cursor-pointer"
                         title="Share Report Card"
                       >
-                        <Share2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <Share2 className="w-3.5 h-3.5 text-harit-600" />
                       </button>
                     </div>
                   </div>
@@ -852,7 +852,7 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50/70 text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
+                <tr className="border-b border-dholpur-300 bg-dholpur-100/80 text-sovereign-600 font-semibold uppercase tracking-wider text-[10px]">
                   <th className="py-3 px-4 w-12 text-center">Rank</th>
                   <th className="py-3 px-4">Member of Parliament</th>
                   <th className="py-3 px-4">Party & State</th>
@@ -862,57 +862,57 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-dholpur-200">
                 {sansadRankings.slice(0, 50).map((cand, idx) => {
                   const isSelected = selectedForComparison.some((c) => c.id === cand.id);
                   const att = cand.attendance_rate || 0;
 
                   return (
-                    <tr key={cand.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3 px-4 text-center font-bold text-slate-400 font-mono">
+                    <tr key={cand.id} className="hover:bg-dholpur-100/50 transition-colors">
+                      <td className="py-3 px-4 text-center font-bold text-sovereign-400 font-mono">
                         #{idx + 1}
                       </td>
                       <td className="py-3 px-4">
-                        <div className="font-bold text-slate-900">{cand.name}</div>
-                        <div className="text-[11px] text-slate-500">{cand.constituency} ({cand.house})</div>
+                        <div className="font-serif font-bold text-sovereign-950">{cand.name}</div>
+                        <div className="text-[11px] text-sovereign-600">{cand.constituency} ({cand.house})</div>
                       </td>
                       <td className="py-3 px-4">
-                        <span className="font-medium text-slate-700">{cand.party || 'Independent'}</span>
-                        <span className="text-[11px] text-slate-400 block">{cand.state}</span>
+                        <span className="font-medium text-sovereign-800">{cand.party || 'Independent'}</span>
+                        <span className="text-[11px] text-sovereign-500 block">{cand.state}</span>
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
                           <span
                             className={`font-mono font-bold ${
-                              att >= 80 ? 'text-emerald-700' : att >= 60 ? 'text-blue-700' : 'text-rose-700'
+                              att >= 80 ? 'text-harit-700' : att >= 60 ? 'text-kesariya-700' : 'text-terracotta-700'
                             }`}
                           >
                             {att}%
                           </span>
-                          <div className="w-16 bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                          <div className="w-16 bg-dholpur-200 h-1.5 rounded-full overflow-hidden">
                             <div
                               className={`h-full ${
-                                att >= 80 ? 'bg-emerald-500' : att >= 60 ? 'bg-blue-500' : 'bg-rose-500'
+                                att >= 80 ? 'bg-harit-500' : att >= 60 ? 'bg-kesariya-500' : 'bg-terracotta-500'
                               }`}
                               style={{ width: `${Math.min(att, 100)}%` }}
                             />
                           </div>
                         </div>
                       </td>
-                      <td className="py-3 px-4 font-mono text-slate-700">
+                      <td className="py-3 px-4 font-mono text-sovereign-800">
                         {cand.debates_count ?? '—'}
                       </td>
-                      <td className="py-3 px-4 font-mono text-slate-700">
+                      <td className="py-3 px-4 font-mono text-sovereign-800">
                         {cand.questions_count ?? '—'}
                       </td>
                       <td className="py-3 px-4 text-right">
                         <div className="inline-flex items-center gap-1.5">
                           <button
                             onClick={() => onToggleComparison(cand)}
-                            className={`p-1.5 rounded-lg border transition-all ${
+                            className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
                               isSelected
-                                ? 'bg-blue-600 text-white border-blue-600'
-                                : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200'
+                                ? 'bg-kesariya-600 text-sovereign-950 border-kesariya-600 font-bold'
+                                : 'bg-white hover:bg-dholpur-100 text-sovereign-700 border-dholpur-300'
                             }`}
                             title={isSelected ? 'Remove from Comparison' : 'Add to Comparison'}
                           >
@@ -920,9 +920,9 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                           </button>
                           <button
                             onClick={() => onOpenShareCard(cand)}
-                            className="p-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 transition-colors"
+                            className="p-1.5 rounded-lg bg-white hover:bg-dholpur-100 text-sovereign-700 border border-dholpur-300 transition-colors cursor-pointer"
                           >
-                            <Share2 className="w-3.5 h-3.5 text-emerald-600" />
+                            <Share2 className="w-3.5 h-3.5 text-harit-600" />
                           </button>
                         </div>
                       </td>
@@ -937,41 +937,41 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
 
       {/* Tab 4: MPLADS Fund Velocity */}
       {activeTab === 'mplads' && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex flex-wrap items-center justify-between gap-3">
+        <div className="sandstone-card rounded-2xl border border-dholpur-300 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-dholpur-200 bg-dholpur-100/70 flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-1.5">
-                <h3 className="font-bold text-slate-900 text-sm">
+                <h3 className="font-serif font-bold text-sovereign-950 text-sm">
                   {isCitizenMode
                     ? 'Constituency Development Fund Flow (सांसद निधि)'
                     : 'MoSPI MPLADS Development Fund Flow'}
                 </h3>
                 <CivicTerm term="MPLADS" />
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-sovereign-600 mt-0.5">
                 {isCitizenMode
                   ? 'Official record of how much local area development money (₹5 Cr/year) was spent or left idle.'
                   : 'Official expenditure rate and unspent public development funds per constituency.'}
               </p>
             </div>
 
-            <div className="flex items-center gap-1.5 bg-slate-200/70 p-1 rounded-xl">
+            <div className="flex items-center gap-1.5 bg-dholpur-200/80 p-1 rounded-xl">
               <button
                 onClick={() => setMpladsSubTab('high_spend')}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   mpladsSubTab === 'high_spend'
-                    ? 'bg-white text-emerald-700 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-harit-600 text-white shadow-sm font-bold'
+                    : 'text-sovereign-700 hover:text-sovereign-950'
                 }`}
               >
                 Highest Spend Velocity (%)
               </button>
               <button
                 onClick={() => setMpladsSubTab('high_unspent')}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   mpladsSubTab === 'high_unspent'
-                    ? 'bg-white text-rose-700 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-terracotta-600 text-white shadow-sm font-bold'
+                    : 'text-sovereign-700 hover:text-sovereign-950'
                 }`}
               >
                 Largest Unspent Balance
@@ -980,23 +980,23 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
           </div>
 
           {/* Mobile Card View (< md) */}
-          <div className="md:hidden divide-y divide-slate-100">
+          <div className="md:hidden divide-y divide-dholpur-200">
             {mpladsRankings.slice(0, 50).map((cand, idx) => {
               const m = cand.mplads!;
               const isSelected = selectedForComparison.some((c) => c.id === cand.id);
 
               return (
-                <div key={cand.id} className="p-3.5 hover:bg-slate-50/80 transition-colors">
+                <div key={cand.id} className="p-3.5 hover:bg-dholpur-100/50 transition-colors">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="font-mono font-bold text-xs text-slate-400 w-6 flex-shrink-0 text-center">
+                      <span className="font-mono font-bold text-xs text-sovereign-400 w-6 flex-shrink-0 text-center">
                         #{idx + 1}
                       </span>
                       <div className="min-w-0">
-                        <h4 className="font-bold text-slate-900 text-xs sm:text-sm truncate leading-tight">
+                        <h4 className="font-serif font-bold text-sovereign-950 text-xs sm:text-sm truncate leading-tight">
                           {cand.constituency}, {cand.state}
                         </h4>
-                        <p className="text-[11px] text-slate-500 truncate">
+                        <p className="text-[11px] text-sovereign-600 truncate">
                           {cand.name} ({cand.party || 'IND'})
                         </p>
                       </div>
@@ -1006,8 +1006,8 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                       <span
                         className={`font-mono font-bold px-2 py-0.5 rounded text-[11px] inline-block ${
                           m.utilization_rate < 60
-                            ? 'bg-rose-100 text-rose-800'
-                            : 'bg-emerald-100 text-emerald-800'
+                            ? 'bg-terracotta-100 text-terracotta-800'
+                            : 'bg-harit-100 text-harit-800'
                         }`}
                       >
                         {m.utilization_rate.toFixed(1)}% Spent
@@ -1015,20 +1015,20 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                     </div>
                   </div>
 
-                  <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-600">
+                  <div className="mt-2.5 pt-2 border-t border-dholpur-200 flex items-center justify-between text-[11px] text-sovereign-600">
                     <div className="text-[10.5px]">
-                      <span className="font-mono">{formatINR(m.unspent_balance)} unspent</span>
-                      <span className="text-slate-400 block text-[9.5px]">
+                      <span className="font-mono text-sovereign-800 font-semibold">{formatINR(m.unspent_balance)} unspent</span>
+                      <span className="text-sovereign-500 block text-[9.5px]">
                         Works: {m.works_completed}/{m.works_recommended}
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <button
                         onClick={() => onToggleComparison(cand)}
-                        className={`p-1.5 rounded-lg border transition-all ${
+                        className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
                           isSelected
-                            ? 'bg-blue-600 text-white border-blue-600'
-                            : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200'
+                            ? 'bg-kesariya-600 text-sovereign-950 border-kesariya-600 font-bold'
+                            : 'bg-white hover:bg-dholpur-100 text-sovereign-700 border-dholpur-300'
                         }`}
                         title={isSelected ? 'Remove from Comparison' : 'Add to Comparison'}
                       >
@@ -1036,9 +1036,9 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                       </button>
                       <button
                         onClick={() => onOpenShareCard(cand)}
-                        className="p-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-600 border border-slate-200"
+                        className="p-1.5 rounded-lg bg-white hover:bg-dholpur-100 text-sovereign-700 border border-dholpur-300 cursor-pointer"
                       >
-                        <Share2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <Share2 className="w-3.5 h-3.5 text-harit-600" />
                       </button>
                     </div>
                   </div>
@@ -1051,7 +1051,7 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50/70 text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
+                <tr className="border-b border-dholpur-300 bg-dholpur-100/80 text-sovereign-600 font-semibold uppercase tracking-wider text-[10px]">
                   <th className="py-3 px-4 w-12 text-center">Rank</th>
                   <th className="py-3 px-4">Constituency & MP</th>
                   <th className="py-3 px-4">Entitled</th>
@@ -1062,62 +1062,62 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-dholpur-200">
                 {mpladsRankings.slice(0, 50).map((cand, idx) => {
                   const m = cand.mplads!;
                   const isSelected = selectedForComparison.some((c) => c.id === cand.id);
 
                   return (
-                    <tr key={cand.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3 px-4 text-center font-bold text-slate-400 font-mono">
+                    <tr key={cand.id} className="hover:bg-dholpur-100/50 transition-colors">
+                      <td className="py-3 px-4 text-center font-bold text-sovereign-400 font-mono">
                         #{idx + 1}
                       </td>
                       <td className="py-3 px-4">
-                        <div className="font-bold text-slate-900">{cand.constituency}, {cand.state}</div>
-                        <div className="text-[11px] text-slate-500">
+                        <div className="font-serif font-bold text-sovereign-950">{cand.constituency}, {cand.state}</div>
+                        <div className="text-[11px] text-sovereign-600">
                           {cand.name} ({cand.party || 'IND'})
                         </div>
                       </td>
-                      <td className="py-3 px-4 font-mono text-slate-600">
+                      <td className="py-3 px-4 font-mono text-sovereign-700">
                         {formatINR(m.entitled_amount)}
                       </td>
-                      <td className="py-3 px-4 font-mono text-slate-600">
+                      <td className="py-3 px-4 font-mono text-sovereign-700">
                         {formatINR(m.released_amount)}
                       </td>
                       <td className="py-3 px-4 font-mono font-bold">
                         <span
                           className={`px-2 py-0.5 rounded text-[11px] ${
                             m.utilization_rate < 60
-                              ? 'bg-rose-100 text-rose-800'
-                              : 'bg-emerald-100 text-emerald-800'
+                              ? 'bg-terracotta-100 text-terracotta-800 border border-terracotta-200'
+                              : 'bg-harit-100 text-harit-800 border border-harit-200'
                           }`}
                         >
                           {m.utilization_rate.toFixed(1)}%
                         </span>
                       </td>
-                      <td className="py-3 px-4 font-mono font-bold text-slate-900">
+                      <td className="py-3 px-4 font-mono font-bold text-sovereign-950">
                         {formatINR(m.unspent_balance)}
                       </td>
-                      <td className="py-3 px-4 text-slate-600">
+                      <td className="py-3 px-4 text-sovereign-700">
                         {m.works_completed} / {m.works_recommended}
                       </td>
                       <td className="py-3 px-4 text-right">
                         <div className="inline-flex items-center gap-1.5">
                           <button
                             onClick={() => onToggleComparison(cand)}
-                            className={`p-1.5 rounded-lg border transition-all ${
+                            className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
                               isSelected
-                                ? 'bg-blue-600 text-white border-blue-600'
-                                : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200'
+                                ? 'bg-kesariya-600 text-sovereign-950 border-kesariya-600 font-bold'
+                                : 'bg-white hover:bg-dholpur-100 text-sovereign-700 border-dholpur-300'
                             }`}
                           >
                             {isSelected ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
                           </button>
                           <button
                             onClick={() => onOpenShareCard(cand)}
-                            className="p-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-600 border border-slate-200"
+                            className="p-1.5 rounded-lg bg-white hover:bg-dholpur-100 text-sovereign-700 border border-dholpur-300 cursor-pointer"
                           >
-                            <Share2 className="w-3.5 h-3.5 text-emerald-600" />
+                            <Share2 className="w-3.5 h-3.5 text-harit-600" />
                           </button>
                         </div>
                       </td>
@@ -1132,32 +1132,32 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
 
       {/* Tab 5: Party & State Averages */}
       {activeTab === 'averages' && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+        <div className="sandstone-card rounded-2xl border border-dholpur-300 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-dholpur-200 bg-dholpur-100/70 flex items-center justify-between">
             <div>
-              <h3 className="font-bold text-slate-900 text-sm">Aggregated Transparency Benchmarks</h3>
-              <p className="text-xs text-slate-500">
+              <h3 className="font-serif font-bold text-sovereign-950 text-sm">Aggregated Transparency Benchmarks</h3>
+              <p className="text-xs text-sovereign-600">
                 Average net worth, discrepancy occurrence rates, and legislative attendance grouped by affiliation.
               </p>
             </div>
 
-            <div className="flex items-center gap-1.5 bg-slate-200/70 p-1 rounded-xl">
+            <div className="flex items-center gap-1.5 bg-dholpur-200/80 p-1 rounded-xl">
               <button
                 onClick={() => setAveragesGrouping('party')}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   averagesGrouping === 'party'
-                    ? 'bg-white text-blue-700 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-kesariya-600 text-sovereign-950 shadow-sm font-bold'
+                    : 'text-sovereign-700 hover:text-sovereign-950'
                 }`}
               >
                 Group by Party
               </button>
               <button
                 onClick={() => setAveragesGrouping('state')}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   averagesGrouping === 'state'
-                    ? 'bg-white text-blue-700 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-kesariya-600 text-sovereign-950 shadow-sm font-bold'
+                    : 'text-sovereign-700 hover:text-sovereign-950'
                 }`}
               >
                 Group by State
@@ -1166,42 +1166,42 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
           </div>
 
           {/* Mobile Card View (< md) */}
-          <div className="md:hidden divide-y divide-slate-100">
+          <div className="md:hidden divide-y divide-dholpur-200">
             {aggregateAverages.map((row) => (
-              <div key={row.groupKey} className="p-3.5 hover:bg-slate-50/80 transition-colors">
+              <div key={row.groupKey} className="p-3.5 hover:bg-dholpur-100/50 transition-colors">
                 <div className="flex items-center justify-between gap-2 mb-1.5">
-                  <h4 className="font-bold text-slate-900 text-xs sm:text-sm">{row.groupKey}</h4>
-                  <span className="font-mono text-xs text-slate-500 font-medium">
+                  <h4 className="font-serif font-bold text-sovereign-950 text-xs sm:text-sm">{row.groupKey}</h4>
+                  <span className="font-mono text-xs text-sovereign-500 font-medium">
                     {row.count} MP{row.count === 1 ? '' : 's'}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
                   <div>
-                    <span className="text-[10px] text-slate-400 block">Avg Net Worth</span>
-                    <span className="font-mono font-bold text-slate-800">{formatINR(row.avgNetWorth)}</span>
+                    <span className="text-[10px] text-sovereign-500 block">Avg Net Worth</span>
+                    <span className="font-mono font-bold text-sovereign-950">{formatINR(row.avgNetWorth)}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 block">Avg Attendance</span>
-                    <span className="font-mono font-bold text-slate-800">
+                    <span className="text-[10px] text-sovereign-500 block">Avg Attendance</span>
+                    <span className="font-mono font-bold text-sovereign-950">
                       {row.avgAttendance !== null ? `${row.avgAttendance.toFixed(1)}%` : '—'}
                     </span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 block">Discrepancy Rate</span>
+                    <span className="text-[10px] text-sovereign-500 block">Discrepancy Rate</span>
                     <span
                       className={`font-mono font-bold ${
-                        row.discrepancyRate > 15 ? 'text-rose-700' : 'text-emerald-700'
+                        row.discrepancyRate > 15 ? 'text-terracotta-700' : 'text-harit-700'
                       }`}
                     >
                       {row.discrepancyRate.toFixed(1)}%
                     </span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 block">Serious Crime Rate</span>
+                    <span className="text-[10px] text-sovereign-500 block">Serious Crime Rate</span>
                     <span
                       className={`font-mono font-bold ${
-                        row.seriousCrimeRate > 20 ? 'text-rose-700' : 'text-slate-700'
+                        row.seriousCrimeRate > 20 ? 'text-terracotta-700' : 'text-sovereign-800'
                       }`}
                     >
                       {row.seriousCrimeRate.toFixed(1)}%
@@ -1216,7 +1216,7 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50/70 text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
+                <tr className="border-b border-dholpur-300 bg-dholpur-100/80 text-sovereign-600 font-semibold uppercase tracking-wider text-[10px]">
                   <th className="py-3 px-4">
                     {averagesGrouping === 'party' ? 'Political Party' : 'State / UT'}
                   </th>
@@ -1227,29 +1227,29 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                   <th className="py-3 px-4">Serious IPC Case Rate</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-dholpur-200">
                 {aggregateAverages.map((row) => (
-                  <tr key={row.groupKey} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-3 px-4 font-bold text-slate-900">
+                  <tr key={row.groupKey} className="hover:bg-dholpur-100/50 transition-colors">
+                    <td className="py-3 px-4 font-serif font-bold text-sovereign-950">
                       {row.groupKey}
                     </td>
-                    <td className="py-3 px-4 text-center font-mono font-medium text-slate-700">
+                    <td className="py-3 px-4 text-center font-mono font-medium text-sovereign-700">
                       {row.count}
                     </td>
-                    <td className="py-3 px-4 font-mono font-bold text-slate-900">
+                    <td className="py-3 px-4 font-mono font-bold text-sovereign-950">
                       {formatINR(row.avgNetWorth)}
                     </td>
-                    <td className="py-3 px-4 font-mono text-slate-700">
+                    <td className="py-3 px-4 font-mono text-sovereign-700">
                       {row.avgAttendance !== null ? `${row.avgAttendance.toFixed(1)}%` : '—'}
                     </td>
                     <td className="py-3 px-4">
                       <span
                         className={`font-mono font-bold px-2 py-0.5 rounded text-[11px] ${
                           row.discrepancyRate > 15
-                            ? 'bg-rose-100 text-rose-800'
+                            ? 'bg-terracotta-100 text-terracotta-800 border border-terracotta-300'
                             : row.discrepancyRate > 0
-                            ? 'bg-amber-100 text-amber-800'
-                            : 'bg-emerald-100 text-emerald-800'
+                            ? 'bg-kesariya-100 text-kesariya-800 border border-kesariya-300'
+                            : 'bg-harit-100 text-harit-800 border border-harit-300'
                         }`}
                       >
                         {row.discrepancyRate.toFixed(1)}%
@@ -1259,8 +1259,8 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                       <span
                         className={`font-mono font-bold px-2 py-0.5 rounded text-[11px] ${
                           row.seriousCrimeRate > 20
-                            ? 'bg-rose-100 text-rose-800'
-                            : 'bg-slate-100 text-slate-700'
+                            ? 'bg-terracotta-100 text-terracotta-800 border border-terracotta-300'
+                            : 'bg-dholpur-100 text-sovereign-700 border border-dholpur-300'
                         }`}
                       >
                         {row.seriousCrimeRate.toFixed(1)}%

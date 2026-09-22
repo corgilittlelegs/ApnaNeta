@@ -59,17 +59,17 @@ export const ConstituencyFilter: React.FC<ConstituencyFilterProps> = ({
             <MapPin size={16} weight="duotone" />
           </div>
           <div>
-            <h3 className="font-serif font-bold text-sm tracking-tight text-slate-900">
+            <h3 className="font-serif font-bold text-sm tracking-tight text-sovereign-950">
               Constituency & Forensic Filter Dock • <span className="font-devanagari text-kesariya-800 font-semibold">निर्वाचन क्षेत्र व फ़िल्टर</span>
             </h3>
-            <p className="text-[11px] text-slate-500 font-sans line-clamp-1 sm:line-clamp-none">
+            <p className="text-[11px] text-sovereign-500 font-sans line-clamp-1 sm:line-clamp-none">
               Audit across India's 543 Lok Sabha seats, sworn Form 26 disclosures, and algorithmic checks
             </p>
           </div>
         </div>
 
         <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
-          <span className="text-xs font-mono tabular-nums font-bold px-2.5 py-1 bg-dholpur-100 text-slate-800 rounded-lg border border-dholpur-300">
+          <span className="text-xs font-mono tabular-nums font-bold px-2.5 py-1 bg-dholpur-100 text-sovereign-800 rounded-lg border border-dholpur-300">
             {totalMatches.toLocaleString()} matching MP{totalMatches === 1 ? '' : 's'}
           </span>
           {hasActiveFilters && (
@@ -85,13 +85,13 @@ export const ConstituencyFilter: React.FC<ConstituencyFilterProps> = ({
 
       {/* 1-Tap Quick Filter Pills (Touch Scrollable on Mobile) */}
       <div className="flex items-center gap-2 overflow-x-auto py-3 -mx-4 px-4 sm:mx-0 sm:px-0 no-scrollbar text-xs border-b border-dholpur-200 whitespace-nowrap touch-pan-x">
-        <span className="text-[10px] uppercase font-mono font-semibold text-slate-400 pl-0.5 flex-shrink-0">Quick Filters:</span>
+        <span className="text-[10px] uppercase font-mono font-semibold text-sovereign-500 pl-0.5 flex-shrink-0">Quick Filters:</span>
         <button
           onClick={() => handleQuickPill('ALL')}
           className={`px-3 py-1 rounded-full text-xs font-semibold transition-all border flex-shrink-0 ${
             filters.forensicFlag === 'ALL'
               ? 'bg-[#0A192F] text-kesariya-300 border-kesariya-500/40 shadow-xs'
-              : 'bg-dholpur-50 text-slate-600 border-dholpur-300 hover:bg-dholpur-100'
+              : 'bg-dholpur-50 text-sovereign-700 border-dholpur-300 hover:bg-dholpur-100'
           }`}
         >
           All 543 Lok Sabha • 543 सीटें
@@ -135,7 +135,7 @@ export const ConstituencyFilter: React.FC<ConstituencyFilterProps> = ({
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3 pt-3">
         {/* State Selection */}
         <div>
-          <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1 truncate">
+          <label className="block text-[10px] font-bold text-sovereign-700 uppercase tracking-wider mb-1 truncate">
             राज्य / UT • State
           </label>
           <select
@@ -147,7 +147,7 @@ export const ConstituencyFilter: React.FC<ConstituencyFilterProps> = ({
                 constituency: 'ALL',
               })
             }
-            className="w-full text-[11.5px] sm:text-xs bg-dholpur-50 border border-dholpur-300 rounded-xl px-2 sm:px-2.5 py-1.5 sm:py-2 text-slate-800 font-medium focus:bg-white focus:ring-1 focus:ring-kesariya-400 outline-none transition-all cursor-pointer hover:border-dholpur-400 truncate"
+            className="w-full text-[11.5px] sm:text-xs bg-dholpur-50 border border-dholpur-300 rounded-xl px-2 sm:px-2.5 py-1.5 sm:py-2 text-sovereign-900 font-medium focus:bg-white focus:ring-1 focus:ring-kesariya-400 outline-none transition-all cursor-pointer hover:border-dholpur-400 truncate"
           >
             <option value="ALL">All States / UTs ({availableStates.length})</option>
             {availableStates.map((s) => (
@@ -160,13 +160,13 @@ export const ConstituencyFilter: React.FC<ConstituencyFilterProps> = ({
 
         {/* Constituency Selection */}
         <div>
-          <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1 truncate">
+          <label className="block text-[10px] font-bold text-sovereign-700 uppercase tracking-wider mb-1 truncate">
             निर्वाचन क्षेत्र • Seat
           </label>
           <select
             value={filters.constituency}
             onChange={(e) => onFilterChange({ ...filters, constituency: e.target.value })}
-            className="w-full text-[11.5px] sm:text-xs bg-dholpur-50 border border-dholpur-300 rounded-xl px-2 sm:px-2.5 py-1.5 sm:py-2 text-slate-800 font-medium focus:bg-white focus:ring-1 focus:ring-kesariya-400 outline-none transition-all cursor-pointer hover:border-dholpur-400 truncate"
+            className="w-full text-[11.5px] sm:text-xs bg-dholpur-50 border border-dholpur-300 rounded-xl px-2 sm:px-2.5 py-1.5 sm:py-2 text-sovereign-900 font-medium focus:bg-white focus:ring-1 focus:ring-kesariya-400 outline-none transition-all cursor-pointer hover:border-dholpur-400 truncate"
           >
             <option value="ALL">All Constituencies</option>
             {availableConstituencies.map((c) => (
@@ -179,13 +179,13 @@ export const ConstituencyFilter: React.FC<ConstituencyFilterProps> = ({
 
         {/* Political Party Selection */}
         <div>
-          <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1 truncate">
+          <label className="block text-[10px] font-bold text-sovereign-700 uppercase tracking-wider mb-1 truncate">
             राजनीतिक दल • Party
           </label>
           <select
             value={filters.party}
             onChange={(e) => onFilterChange({ ...filters, party: e.target.value })}
-            className="w-full text-[11.5px] sm:text-xs bg-dholpur-50 border border-dholpur-300 rounded-xl px-2 sm:px-2.5 py-1.5 sm:py-2 text-slate-800 font-medium focus:bg-white focus:ring-1 focus:ring-kesariya-400 outline-none transition-all cursor-pointer hover:border-dholpur-400 truncate"
+            className="w-full text-[11.5px] sm:text-xs bg-dholpur-50 border border-dholpur-300 rounded-xl px-2 sm:px-2.5 py-1.5 sm:py-2 text-sovereign-900 font-medium focus:bg-white focus:ring-1 focus:ring-kesariya-400 outline-none transition-all cursor-pointer hover:border-dholpur-400 truncate"
           >
             <option value="ALL">All Parties</option>
             {availableParties.map((p) => (
@@ -198,7 +198,7 @@ export const ConstituencyFilter: React.FC<ConstituencyFilterProps> = ({
 
         {/* Forensic Audit Flag Filter */}
         <div>
-          <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1 truncate">
+          <label className="block text-[10px] font-bold text-sovereign-700 uppercase tracking-wider mb-1 truncate">
             ऑडिट फ़्लैग • Audit Flag
           </label>
           <select
@@ -209,7 +209,7 @@ export const ConstituencyFilter: React.FC<ConstituencyFilterProps> = ({
                 forensicFlag: e.target.value as FilterState['forensicFlag'],
               })
             }
-            className="w-full text-[11.5px] sm:text-xs bg-dholpur-50 border border-dholpur-300 rounded-xl px-2 sm:px-2.5 py-1.5 sm:py-2 text-slate-800 font-medium focus:bg-white focus:ring-1 focus:ring-kesariya-400 outline-none transition-all cursor-pointer hover:border-dholpur-400 truncate"
+            className="w-full text-[11.5px] sm:text-xs bg-dholpur-50 border border-dholpur-300 rounded-xl px-2 sm:px-2.5 py-1.5 sm:py-2 text-sovereign-900 font-medium focus:bg-white focus:ring-1 focus:ring-kesariya-400 outline-none transition-all cursor-pointer hover:border-dholpur-400 truncate"
           >
             <option value="ALL">All Candidates</option>
             <option value="DISCREPANCY">⚠️ Discrepancy • विसंगतियां</option>
@@ -222,7 +222,7 @@ export const ConstituencyFilter: React.FC<ConstituencyFilterProps> = ({
 
         {/* Wealth Tier Filter */}
         <div className="col-span-2 sm:col-span-1 lg:col-span-1">
-          <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1 truncate">
+          <label className="block text-[10px] font-bold text-sovereign-700 uppercase tracking-wider mb-1 truncate">
             कुल संपत्ति • Net Worth
           </label>
           <select
@@ -233,7 +233,7 @@ export const ConstituencyFilter: React.FC<ConstituencyFilterProps> = ({
                 wealthTier: e.target.value as FilterState['wealthTier'],
               })
             }
-            className="w-full text-[11.5px] sm:text-xs bg-dholpur-50 border border-dholpur-300 rounded-xl px-2 sm:px-2.5 py-1.5 sm:py-2 text-slate-800 font-medium focus:bg-white focus:ring-1 focus:ring-kesariya-400 outline-none transition-all cursor-pointer hover:border-dholpur-400 truncate"
+            className="w-full text-[11.5px] sm:text-xs bg-dholpur-50 border border-dholpur-300 rounded-xl px-2 sm:px-2.5 py-1.5 sm:py-2 text-sovereign-900 font-medium focus:bg-white focus:ring-1 focus:ring-kesariya-400 outline-none transition-all cursor-pointer hover:border-dholpur-400 truncate"
           >
             <option value="ALL">All Wealth Tiers</option>
             <option value="100CR_PLUS">&ge; ₹100 Crore (₹100 करोड़+)</option>

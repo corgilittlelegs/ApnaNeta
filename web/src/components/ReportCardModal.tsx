@@ -8,7 +8,6 @@ import {
   FileText,
   Loader2,
   Sparkles,
-  ExternalLink,
 } from 'lucide-react';
 import { Candidate } from '../types/candidate';
 import {
@@ -109,38 +108,43 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-slate-950/75 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[92dvh] sm:max-h-[92vh] flex flex-col overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-sovereign-950/80 backdrop-blur-md overflow-y-auto">
+      <div className="bg-dholpur-50 rounded-2xl shadow-2xl border border-kesariya-600/30 w-full max-w-2xl max-h-[92dvh] sm:max-h-[92vh] flex flex-col overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
         
+        {/* Top Tiranga Accent Line */}
+        <div className="tiranga-accent-bar" />
+
         {/* Header */}
-        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between gap-3 sm:gap-4">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-sovereign-800 bg-sovereign-950 text-white flex items-center justify-between gap-3 sm:gap-4">
           <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-emerald-100 border border-emerald-200 flex items-center justify-center text-emerald-700 flex-shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-kesariya-500/20 border border-kesariya-500/30 flex items-center justify-center text-kesariya-400 flex-shrink-0">
               <Sparkles className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <h2 className="text-sm sm:text-base font-bold text-slate-900 truncate">Citizen Report Card Graphic</h2>
-              <p className="text-[11px] sm:text-xs text-slate-500 truncate">1080x1080 PNG • Ready for WhatsApp & Social</p>
+              <h2 className="text-sm sm:text-base font-serif font-bold text-white truncate">
+                Citizen Report Card Graphic • नागरिक रिपोर्ट कार्ड
+              </h2>
+              <p className="text-[11px] sm:text-xs text-dholpur-300 truncate">1080x1080 PNG • Ready for WhatsApp & Social</p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors flex-shrink-0"
+            className="p-1.5 rounded-lg text-dholpur-400 hover:text-white hover:bg-sovereign-800 transition-colors flex-shrink-0 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Body: Graphic Preview */}
-        <div className="p-3 sm:p-6 bg-slate-900/95 flex flex-col items-center justify-center min-h-[260px] sm:min-h-[380px] max-h-[50vh] overflow-hidden">
+        <div className="p-3 sm:p-6 bg-sovereign-900/95 flex flex-col items-center justify-center min-h-[260px] sm:min-h-[380px] max-h-[50vh] overflow-hidden">
           {isGenerating ? (
-            <div className="flex flex-col items-center gap-3 text-slate-300">
-              <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+            <div className="flex flex-col items-center gap-3 text-dholpur-200">
+              <Loader2 className="w-8 h-8 animate-spin text-kesariya-400" />
               <p className="text-xs font-mono">Generating high-contrast audit graphic...</p>
             </div>
           ) : dataUrl ? (
-            <div className="relative group max-w-xs sm:max-w-md w-full shadow-2xl rounded-2xl overflow-hidden border border-slate-700/80 max-h-[45vh] sm:max-h-[55vh] flex items-center justify-center">
+            <div className="relative group max-w-xs sm:max-w-md w-full shadow-2xl rounded-2xl overflow-hidden border border-kesariya-600/30 max-h-[45vh] sm:max-h-[55vh] flex items-center justify-center">
               <img
                 src={dataUrl}
                 alt={`${candidate.name} Civic Report Card`}
@@ -148,17 +152,17 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
               />
             </div>
           ) : (
-            <p className="text-xs text-rose-400">Failed to render graphic preview.</p>
+            <p className="text-xs text-terracotta-400">Failed to render graphic preview.</p>
           )}
         </div>
 
         {/* Action Controls */}
-        <div className="p-4 sm:p-5 bg-white border-t border-slate-200 space-y-3">
+        <div className="p-4 sm:p-5 bg-dholpur-100 border-t border-dholpur-300 space-y-3">
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
             {/* Download */}
             <button
               onClick={handleDownload}
-              className="flex items-center justify-center gap-1.5 px-2.5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-xl shadow-sm transition-all cursor-pointer"
+              className="flex items-center justify-center gap-1.5 px-2.5 py-2.5 bg-kesariya-600 hover:bg-kesariya-700 text-sovereign-950 text-xs font-bold rounded-xl shadow-sm transition-all cursor-pointer"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Download</span>
@@ -167,7 +171,7 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
             {/* WhatsApp */}
             <button
               onClick={handleShareWhatsApp}
-              className="flex items-center justify-center gap-1.5 px-2.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-all cursor-pointer"
+              className="flex items-center justify-center gap-1.5 px-2.5 py-2.5 bg-harit-600 hover:bg-harit-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all cursor-pointer"
             >
               <Share2 className="w-3.5 h-3.5" />
               <span>WhatsApp</span>
@@ -176,7 +180,7 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
             {/* Post to X */}
             <button
               onClick={handleShareTwitter}
-              className="flex items-center justify-center gap-1.5 px-2.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-all cursor-pointer"
+              className="flex items-center justify-center gap-1.5 px-2.5 py-2.5 bg-sovereign-900 hover:bg-sovereign-800 text-dholpur-50 text-xs font-semibold rounded-xl shadow-sm transition-all cursor-pointer"
               title="Share Report Card on X (Twitter)"
             >
               <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
@@ -188,12 +192,12 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
             {/* Copy Image */}
             <button
               onClick={handleCopyImage}
-              className="flex items-center justify-center gap-1.5 px-2.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 transition-all cursor-pointer"
+              className="flex items-center justify-center gap-1.5 px-2.5 py-2.5 bg-dholpur-200 hover:bg-dholpur-300 text-sovereign-900 text-xs font-semibold rounded-xl border border-dholpur-300 transition-all cursor-pointer"
             >
               {copiedImage ? (
                 <>
-                  <Check className="w-3.5 h-3.5 text-emerald-600" />
-                  <span className="text-emerald-700 font-bold">Copied!</span>
+                  <Check className="w-3.5 h-3.5 text-harit-700" />
+                  <span className="text-harit-800 font-bold">Copied!</span>
                 </>
               ) : (
                 <>
@@ -206,12 +210,12 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
             {/* Copy Fact Sheet */}
             <button
               onClick={handleCopyFactSheet}
-              className="flex items-center justify-center gap-1.5 px-2.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 transition-all cursor-pointer col-span-2 sm:col-span-1"
+              className="flex items-center justify-center gap-1.5 px-2.5 py-2.5 bg-dholpur-200 hover:bg-dholpur-300 text-sovereign-900 text-xs font-semibold rounded-xl border border-dholpur-300 transition-all cursor-pointer col-span-2 sm:col-span-1"
             >
               {copiedText ? (
                 <>
-                  <Check className="w-3.5 h-3.5 text-emerald-600" />
-                  <span className="text-emerald-700 font-bold">Copied!</span>
+                  <Check className="w-3.5 h-3.5 text-harit-700" />
+                  <span className="text-harit-800 font-bold">Copied!</span>
                 </>
               ) : (
                 <>
@@ -222,7 +226,7 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
             </button>
           </div>
 
-          <p className="text-[11px] text-slate-500 text-center">
+          <p className="text-[11px] text-sovereign-600 text-center font-sans">
             Zero server computation. Rendered directly in your browser with official ECI Form 26 disclosures.
           </p>
         </div>
@@ -230,3 +234,4 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
     </div>
   );
 };
+

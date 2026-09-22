@@ -231,19 +231,19 @@ export const CivicTerm: React.FC<CivicTermProps> = ({
           e.stopPropagation();
           setIsOpen(!isOpen);
         }}
-        className={`group inline-flex items-center gap-1 cursor-pointer text-left focus:outline-none focus:ring-1 focus:ring-blue-400 rounded px-0.5 ${className}`}
+        className={`group inline-flex items-center gap-1 cursor-pointer text-left focus:outline-none focus:ring-1 focus:ring-kesariya-400 rounded px-0.5 ${className}`}
         aria-expanded={isOpen}
         title={`Click to learn about: ${definition.title}`}
       >
         {children && !showIconOnly ? (
-          <span className="underline decoration-dotted decoration-slate-400 group-hover:decoration-blue-500 underline-offset-2">
+          <span className="underline decoration-dotted decoration-dholpur-400 group-hover:decoration-kesariya-600 underline-offset-2">
             {children}
           </span>
         ) : null}
         <Info
           size={14}
           weight="bold"
-          className="text-blue-500/80 group-hover:text-blue-600 transition-colors flex-shrink-0"
+          className="text-kesariya-600 group-hover:text-kesariya-700 transition-colors flex-shrink-0"
         />
       </button>
 
@@ -255,7 +255,7 @@ export const CivicTerm: React.FC<CivicTermProps> = ({
           <div
             ref={popoverRef}
             onClick={(e) => e.stopPropagation()}
-            className="fixed z-[9999] p-3.5 bg-slate-900 text-white rounded-2xl shadow-2xl border border-slate-700 text-xs animate-in fade-in zoom-in-95 duration-150 max-h-[85vh] overflow-y-auto"
+            className="fixed z-[9999] p-3.5 bg-sovereign-950 text-white rounded-2xl shadow-2xl border border-kesariya-600/30 text-xs animate-in fade-in zoom-in-95 duration-150 max-h-[85vh] overflow-y-auto"
             style={{
               top: coords.top !== undefined ? `${coords.top}px` : undefined,
               bottom: coords.bottom !== undefined ? `${coords.bottom}px` : undefined,
@@ -266,7 +266,7 @@ export const CivicTerm: React.FC<CivicTermProps> = ({
             {/* Pointer Arrow */}
             {coords.placeAbove ? (
               <div
-                className="absolute -bottom-1.5 w-3 h-3 bg-slate-900 border-r border-b border-slate-700"
+                className="absolute -bottom-1.5 w-3 h-3 bg-sovereign-950 border-r border-b border-kesariya-600/30"
                 style={{
                   left: `${coords.arrowLeft}px`,
                   transform: 'translateX(-50%) rotate(45deg)',
@@ -274,7 +274,7 @@ export const CivicTerm: React.FC<CivicTermProps> = ({
               />
             ) : (
               <div
-                className="absolute -top-1.5 w-3 h-3 bg-slate-900 border-l border-t border-slate-700"
+                className="absolute -top-1.5 w-3 h-3 bg-sovereign-950 border-l border-t border-kesariya-600/30"
                 style={{
                   left: `${coords.arrowLeft}px`,
                   transform: 'translateX(-50%) rotate(45deg)',
@@ -283,20 +283,20 @@ export const CivicTerm: React.FC<CivicTermProps> = ({
             )}
 
             {/* Header */}
-            <div className="flex items-start justify-between gap-2 pb-2 border-b border-slate-800 relative z-10">
+            <div className="flex items-start justify-between gap-2 pb-2 border-b border-sovereign-800 relative z-10">
               <div>
-                <span className="text-[10px] font-mono uppercase tracking-wider text-blue-400 font-semibold block">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-kesariya-400 font-semibold block">
                   Civic Explainer • सरल शब्दावली
                 </span>
-                <h4 className="font-bold text-sm text-white">{definition.title}</h4>
+                <h4 className="font-serif font-bold text-sm text-white">{definition.title}</h4>
                 {definition.acronym && (
-                  <p className="text-[11px] text-slate-300 font-mono mt-0.5">{definition.acronym}</p>
+                  <p className="text-[11px] text-dholpur-300 font-mono mt-0.5">{definition.acronym}</p>
                 )}
-                <p className="text-[11px] text-amber-300 font-medium">{definition.hindiTitle}</p>
+                <p className="text-[11px] text-kesariya-300 font-medium font-devanagari">{definition.hindiTitle}</p>
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
+                className="text-dholpur-400 hover:text-white p-1 rounded-lg hover:bg-sovereign-800 transition-colors cursor-pointer"
                 aria-label="Close explainer"
               >
                 <X size={14} weight="bold" />
@@ -304,19 +304,19 @@ export const CivicTerm: React.FC<CivicTermProps> = ({
             </div>
 
             {/* Simple Explanation */}
-            <div className="py-2.5 space-y-2 text-slate-200 leading-relaxed font-sans relative z-10">
+            <div className="py-2.5 space-y-2 text-dholpur-100 leading-relaxed font-sans relative z-10">
               <p>{definition.simpleExplanation}</p>
 
-              <div className="p-2 bg-slate-800/80 rounded-xl border border-slate-700/80">
-                <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wide block mb-0.5">
+              <div className="p-2 bg-sovereign-900/90 rounded-xl border border-sovereign-800">
+                <span className="text-[10px] font-bold text-harit-400 uppercase tracking-wide block mb-0.5">
                   💡 Why this matters to you:
                 </span>
-                <p className="text-[11px] text-slate-300">{definition.whyItMatters}</p>
+                <p className="text-[11px] text-dholpur-200">{definition.whyItMatters}</p>
               </div>
             </div>
 
             {/* Footer Authority */}
-            <div className="pt-2 border-t border-slate-800 text-[10px] text-slate-400 flex items-center justify-between font-mono relative z-10">
+            <div className="pt-2 border-t border-sovereign-800 text-[10px] text-dholpur-400 flex items-center justify-between font-mono relative z-10">
               <span>Source: {definition.sourceAuthority}</span>
             </div>
           </div>,

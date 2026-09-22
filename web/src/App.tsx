@@ -669,7 +669,7 @@ const AppContent: React.FC = () => {
   }, [candidates, searchQuery, selectedHouse, filterState]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FAF7F2] text-slate-900 font-sans pb-20 md:pb-0">
+    <div className="min-h-screen flex flex-col bg-[#FAF7F2] text-sovereign-950 font-sans pb-20 md:pb-0">
       <Navbar
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -693,13 +693,13 @@ const AppContent: React.FC = () => {
                     ? 'संप्रभु नागरिक पारदर्शिता • Sovereign Citizen Transparency'
                     : 'Section 79 Evidentiary Safe Harbor'}
                 </span>
-                <span className="text-xs text-slate-500 font-sans hidden sm:inline">
+                <span className="text-xs text-sovereign-500 font-sans hidden sm:inline">
                   {isCitizenMode
                     ? '• Official Government Gazettes (भारतीय राजपत्र)'
                     : '• ECI Form 26 Sworn Disclosures'}
                 </span>
               </div>
-              <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tight leading-tight">
+              <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-sovereign-950 tracking-tight leading-tight">
                 {isCitizenMode ? (
                   <>
                     <span>Apna Neta: Transparent Civic Records for Every Citizen</span>
@@ -711,7 +711,7 @@ const AppContent: React.FC = () => {
                   'Empirical Political Accountability & Forensic Audits'
                 )}
               </h1>
-              <p className="text-slate-600 text-xs sm:text-sm mt-1.5 max-w-2xl font-sans leading-relaxed">
+              <p className="text-sovereign-700 text-xs sm:text-sm mt-1.5 max-w-2xl font-sans leading-relaxed">
                 {isCitizenMode
                   ? 'अपने सांसद (MP) का विवरण देखें: उनके स्थानीय क्षेत्र विकास कोष (सांसद निधि) का उपयोग, घोषित संपत्ति की वृद्धि दर, और संसद में उपस्थिति व प्रश्न। हर तथ्य आधिकारिक शपथपत्रों से सत्यापित है।'
                   : 'Automated civic intelligence cross-referencing ECI affidavits, Sansad parliamentary participation, and MoSPI public fund flows. Every metric is bound to cryptographic PDF coordinates.'}
@@ -722,10 +722,10 @@ const AppContent: React.FC = () => {
           {/* Quick Telemetry Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4 mt-6">
             <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-dholpur-300/80 shadow-xs hover:border-dholpur-400 transition-all">
-              <span className="text-[10px] sm:text-[11px] text-slate-500 font-semibold block truncate">
+              <span className="text-[10px] sm:text-[11px] text-sovereign-500 font-semibold block truncate">
                 सांसद व उम्मीदवार • MPs
               </span>
-              <p className="text-lg sm:text-2xl font-bold font-mono tabular-nums text-slate-900 mt-0.5 sm:mt-1">
+              <p className="text-lg sm:text-2xl font-bold font-mono tabular-nums text-sovereign-950 mt-0.5 sm:mt-1">
                 {(totalDatabaseCount || candidates.length).toLocaleString()}
               </p>
               <span className="text-[9.5px] sm:text-[10px] text-harit-700 font-medium block truncate">
@@ -734,27 +734,27 @@ const AppContent: React.FC = () => {
             </div>
 
             <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-dholpur-300/80 shadow-xs hover:border-dholpur-400 transition-all">
-              <span className="text-[10px] sm:text-[11px] text-slate-500 font-semibold block truncate">
+              <span className="text-[10px] sm:text-[11px] text-sovereign-500 font-semibold block truncate">
                 द्वि-प्रविष्टि ऑडिट • Double-Entry
               </span>
-              <p className="text-lg sm:text-2xl font-bold font-mono tabular-nums text-slate-900 mt-0.5 sm:mt-1">100%</p>
-              <span className="text-[9.5px] sm:text-[10px] text-slate-500 block truncate">Automated checks</span>
+              <p className="text-lg sm:text-2xl font-bold font-mono tabular-nums text-sovereign-950 mt-0.5 sm:mt-1">100%</p>
+              <span className="text-[9.5px] sm:text-[10px] text-sovereign-500 block truncate">Automated checks</span>
             </div>
 
             <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-dholpur-300/80 shadow-xs hover:border-dholpur-400 transition-all">
-              <span className="text-[10px] sm:text-[11px] text-slate-500 font-semibold block truncate">
+              <span className="text-[10px] sm:text-[11px] text-sovereign-500 font-semibold block truncate">
                 सांसद निधि प्रवाह • MPLADS
               </span>
-              <p className="text-lg sm:text-2xl font-bold font-mono tabular-nums text-slate-900 mt-0.5 sm:mt-1">10-Yr Flow</p>
+              <p className="text-lg sm:text-2xl font-bold font-mono tabular-nums text-sovereign-950 mt-0.5 sm:mt-1">10-Yr Flow</p>
               <span className="text-[9.5px] sm:text-[10px] text-ashoka-700 font-medium block truncate">MoSPI e-SAKSHI</span>
             </div>
 
             <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-dholpur-300/80 shadow-xs hover:border-dholpur-400 transition-all">
-              <span className="text-[10px] sm:text-[11px] text-slate-500 font-semibold block truncate">
+              <span className="text-[10px] sm:text-[11px] text-sovereign-500 font-semibold block truncate">
                 लागत • Operating Cost
               </span>
               <p className="text-lg sm:text-2xl font-bold font-mono tabular-nums text-harit-700 mt-0.5 sm:mt-1">₹0.00</p>
-              <span className="text-[9.5px] sm:text-[10px] text-slate-500 block truncate">100% Free Public Good</span>
+              <span className="text-[9.5px] sm:text-[10px] text-sovereign-500 block truncate">100% Free Public Good</span>
             </div>
           </div>
         </div>
@@ -784,9 +784,9 @@ const AppContent: React.FC = () => {
 
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <h2 className="font-serif text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                <h2 className="font-serif text-xl sm:text-2xl font-bold text-sovereign-950 tracking-tight">
                   Parliamentary Profiles & Audited Declarations ({filteredCandidates.length.toLocaleString()}){' '}
-                  <span className="hidden lg:inline text-base font-normal font-devanagari text-slate-500">• संसदीय प्रोफ़ाइल</span>
+                  <span className="hidden lg:inline text-base font-normal font-devanagari text-sovereign-500">• संसदीय प्रोफ़ाइल</span>
                 </h2>
                 {(isLoading || isSearching) && (
                   <span className="flex items-center gap-1.5 text-xs text-ashoka-700 bg-ashoka-50 px-2.5 py-1 rounded-lg border border-ashoka-200">
@@ -795,20 +795,20 @@ const AppContent: React.FC = () => {
                   </span>
                 )}
               </div>
-              <span className="text-xs text-slate-500 hidden sm:inline">Click any card to inspect photo proof or export dossier</span>
+              <span className="text-xs text-sovereign-500 hidden sm:inline">Click any card to inspect photo proof or export dossier</span>
             </div>
 
             {filteredCandidates.length === 0 ? (
               <div className="p-12 text-center bg-white rounded-2xl border border-dholpur-300 shadow-xs">
                 {!isLiveConnected && !isLoading ? (
                   <div className="space-y-2 max-w-md mx-auto">
-                    <p className="text-slate-800 text-sm font-bold">Live Database Not Connected • लाइव डेटाबेस कनेक्टेड नहीं है</p>
-                    <p className="text-slate-500 text-xs leading-relaxed">
-                      ApnaNeta operates strictly on authentic government data with zero synthetic placeholders under the <strong>Strict Zero-Synthetic-Data Invariant</strong>. Please configure <code className="bg-dholpur-100 px-1.5 py-0.5 rounded text-slate-700 font-mono text-[11px]">VITE_SUPABASE_URL</code> and <code className="bg-dholpur-100 px-1.5 py-0.5 rounded text-slate-700 font-mono text-[11px]">VITE_SUPABASE_ANON_KEY</code> to query verified records.
+                    <p className="text-sovereign-800 text-sm font-bold">Live Database Not Connected • लाइव डेटाबेस कनेक्टेड नहीं है</p>
+                    <p className="text-sovereign-500 text-xs leading-relaxed">
+                      ApnaNeta operates strictly on authentic government data with zero synthetic placeholders under the <strong>Strict Zero-Synthetic-Data Invariant</strong>. Please configure <code className="bg-dholpur-100 px-1.5 py-0.5 rounded text-sovereign-700 font-mono text-[11px]">VITE_SUPABASE_URL</code> and <code className="bg-dholpur-100 px-1.5 py-0.5 rounded text-sovereign-700 font-mono text-[11px]">VITE_SUPABASE_ANON_KEY</code> to query verified records.
                     </p>
                   </div>
                 ) : (
-                  <p className="text-slate-600 text-sm font-medium">No parliamentarians found matching your selected filters.</p>
+                  <p className="text-sovereign-600 text-sm font-medium">No parliamentarians found matching your selected filters.</p>
                 )}
               </div>
             ) : (
@@ -837,7 +837,7 @@ const AppContent: React.FC = () => {
                         }
                       }}
                       disabled={isLoadingMore}
-                      className="px-8 py-3.5 bg-white hover:bg-dholpur-50 border border-dholpur-300 hover:border-dholpur-400 text-slate-800 text-sm font-semibold rounded-2xl shadow-xs hover:shadow transition-all duration-200 cursor-pointer active:scale-95 disabled:opacity-50"
+                      className="px-8 py-3.5 bg-white hover:bg-dholpur-50 border border-dholpur-300 hover:border-dholpur-400 text-sovereign-800 text-sm font-semibold rounded-2xl shadow-xs hover:shadow transition-all duration-200 cursor-pointer active:scale-95 disabled:opacity-50"
                     >
                       {isLoadingMore ? (
                         <span className="flex items-center gap-2 justify-center">
@@ -868,14 +868,14 @@ const AppContent: React.FC = () => {
               {selectedForComparison.map((c) => (
                 <div
                   key={c.id}
-                  className="flex items-center gap-1 bg-slate-800 text-xs px-2 py-1 rounded-lg border border-slate-700 whitespace-nowrap flex-shrink-0"
+                  className="flex items-center gap-1 bg-sovereign-800 text-xs px-2 py-1 rounded-lg border border-sovereign-700 whitespace-nowrap flex-shrink-0"
                 >
                   <span className="truncate max-w-[70px] sm:max-w-[90px] font-medium text-[11px] sm:text-xs">
                     {c.name.split(' ')[0]}
                   </span>
                   <button
                     onClick={() => handleRemoveFromComparison(c.id)}
-                    className="text-slate-400 hover:text-rose-400 p-0.5 rounded transition-colors"
+                    className="text-dholpur-400 hover:text-rose-400 p-0.5 rounded transition-colors"
                     title="Remove"
                   >
                     <X size={11} weight="bold" />
@@ -897,7 +897,7 @@ const AppContent: React.FC = () => {
             </button>
             <button
               onClick={handleClearComparison}
-              className="text-slate-400 hover:text-slate-200 text-xs font-medium px-2 py-1 transition-colors cursor-pointer"
+              className="text-dholpur-400 hover:text-dholpur-200 text-xs font-medium px-2 py-1 transition-colors cursor-pointer"
             >
               Clear
             </button>
@@ -906,11 +906,11 @@ const AppContent: React.FC = () => {
       )}
 
       {/* Mobile Sticky Bottom Navigation Dock */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-[#0A192F]/95 backdrop-blur-md border-t border-slate-800 flex items-center justify-around h-16 px-2 pb-[env(safe-area-inset-bottom,0px)] text-white shadow-lg">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-[#0A192F]/95 backdrop-blur-md border-t border-sovereign-800 flex items-center justify-around h-16 px-2 pb-[env(safe-area-inset-bottom,0px)] text-white shadow-lg">
         <button
           onClick={() => setActiveView('directory')}
           className={`flex flex-col items-center justify-center flex-1 py-1 min-h-[48px] transition-colors ${
-            activeView === 'directory' ? 'text-kesariya-400 font-bold' : 'text-slate-400 hover:text-slate-200'
+            activeView === 'directory' ? 'text-kesariya-400 font-bold' : 'text-dholpur-400 hover:text-dholpur-200'
           }`}
         >
           <SquaresFour size={20} weight={activeView === 'directory' ? 'fill' : 'duotone'} />
@@ -920,7 +920,7 @@ const AppContent: React.FC = () => {
         <button
           onClick={() => setActiveView('leaderboards')}
           className={`flex flex-col items-center justify-center flex-1 py-1 min-h-[48px] transition-colors ${
-            activeView === 'leaderboards' ? 'text-kesariya-400 font-bold' : 'text-slate-400 hover:text-slate-200'
+            activeView === 'leaderboards' ? 'text-kesariya-400 font-bold' : 'text-dholpur-400 hover:text-dholpur-200'
           }`}
         >
           <Trophy size={20} weight={activeView === 'leaderboards' ? 'fill' : 'duotone'} />
@@ -933,7 +933,7 @@ const AppContent: React.FC = () => {
               setIsComparisonOpen(true);
             }
           }}
-          className="flex flex-col items-center justify-center flex-1 py-1 min-h-[48px] text-slate-400 hover:text-slate-200 relative"
+          className="flex flex-col items-center justify-center flex-1 py-1 min-h-[48px] text-dholpur-400 hover:text-dholpur-200 relative"
         >
           <Scales size={20} weight="duotone" />
           <span className="text-[10px] mt-0.5 font-sans">Compare • तुलना</span>
@@ -981,12 +981,12 @@ const AppContent: React.FC = () => {
       />
 
       {/* Footer */}
-      <footer className="bg-[#FCFAF6] border-t border-dholpur-300/80 py-6 text-center text-xs text-slate-600 font-sans">
+      <footer className="bg-[#FCFAF6] border-t border-dholpur-300/80 py-6 text-center text-xs text-sovereign-600 font-sans">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-1">
-          <p className="font-medium text-slate-700">
+          <p className="font-medium text-sovereign-800">
             Apna Neta (अपना नेता) — The Sovereign Civic Technology Ledger of India • संप्रभु नागरिक पारदर्शिता मंच
           </p>
-          <p className="text-[11px] text-slate-500">
+          <p className="text-[11px] text-sovereign-500">
             All declarations are reproduced verbatim from sworn ECI Form 26 filings under Section 3(c)(ii) of the Digital Personal Data Protection Act, 2023.
           </p>
         </div>

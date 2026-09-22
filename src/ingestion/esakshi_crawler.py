@@ -3,6 +3,7 @@ import sys
 import logging
 import asyncio
 import re
+from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 try:
     import httpx
@@ -91,11 +92,20 @@ class ESAKSHISessionCrawler:
         Standardizes raw e-SAKSHI work records into the database schema format.
         """
         work_id = str(raw_work.get("work_id") or raw_work.get("id") or "").strip()
-        title = raw_work.get("work_title") or raw_work.get("description") or "Community Development Work"
-        sector = raw_work.get("sector") or raw_work.get("category") or "Infrastructure"
-        sanctioned = float(raw_work.get("sanctioned_amount", 0.0))
-        expenditure = float(raw_work.get("expenditure_amount", 0.0))
-        status = raw_work.get("status", "Sanctioned")
+        title = raw_work.get("work_title") or raw_work.get("description")
+        sector = raw_work.get("sector") or raw_work.get("category")
+
+        def optional_amount(value: Any) -> Optional[float]:
+            if value is None or str(value).strip() == "":
+                return None
+            try:
+                return float(str(value).replace(",", ""))
+            except (TypeError, ValueError):
+                return None
+
+        sanctioned = optional_amount(raw_work.get("sanctioned_amount"))
+        expenditure = optional_amount(raw_work.get("expenditure_amount"))
+        status = raw_work.get("status")
 
         # GPS Geolocation coordinates
         lat = raw_work.get("latitude") or raw_work.get("lat")
@@ -104,7 +114,7 @@ class ESAKSHISessionCrawler:
         latitude = float(lat) if lat is not None else None
         longitude = float(lon) if lon is not None else None
 
-        sc_st = raw_work.get("sc_st_category") or raw_work.get("suballocation") or "General"
+        sc_st = raw_work.get("sc_st_category") or raw_work.get("suballocation")
         comp_date = raw_work.get("completion_date")
 
         return {
@@ -119,7 +129,12 @@ class ESAKSHISessionCrawler:
             "longitude": longitude,
             "sc_st_category": sc_st,
             "completion_date": comp_date,
-            "gis_verified": False,
+            "gis_verified": None,
+            "constituency_boundary_valid": None,
+            "duplicate_coordinate_flag": None,
+            "ghost_project_risk": None,
+            "source_url": ESAKSHI_WORKS_API,
+            "source_retrieved_at": datetime.now(timezone.utc).isoformat(),
         }
 
     async def sync_works_for_candidate(
@@ -139,7 +154,7 @@ class ESAKSHISessionCrawler:
         parsed_records = []
         for rw in raw_works:
             record = self.parse_work_record(rw, candidate_id)
-            if record.get("work_id"):
+            if record.get("work_id") and record.get("work_title"):
                 parsed_records.append(record)
 
         if not parsed_records:
@@ -162,6 +177,9 @@ class ESAKSHISessionCrawler:
         logger.info("==========================================================")
         logger.info("Starting e-SAKSHI Granular Works Automated Ingestion")
         logger.info("==========================================================")
+        if os.getenv("ENABLE_EXPERIMENTAL_ESAKSHI_ENDPOINT", "false").lower() != "true":
+            logger.info("Skipping undocumented e-SAKSHI works endpoint; set ENABLE_EXPERIMENTAL_ESAKSHI_ENDPOINT=true only after source-contract validation.")
+            return 0
         candidates = await supabase.select("candidates", {"limit": str(limit)})
         total_synced = 0
         consecutive_misses = 0

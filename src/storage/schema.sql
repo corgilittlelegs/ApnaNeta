@@ -148,6 +148,59 @@ ALTER TABLE sansad_records ALTER COLUMN policy_topics DROP DEFAULT;
 CREATE INDEX IF NOT EXISTS idx_sansad_candidate ON sansad_records (candidate_id);
 CREATE UNIQUE INDEX IF NOT EXISTS uq_sansad_candidate_house ON sansad_records (candidate_id, house);
 
+-- 6a. Provenance and review ledger. Every external capability must be able to
+-- retain a retrievable source, its retrieval time, and the state of review.
+CREATE TABLE IF NOT EXISTS source_documents (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    authority TEXT NOT NULL,
+    document_type TEXT NOT NULL,
+    source_url TEXT NOT NULL UNIQUE,
+    source_sha256 TEXT,
+    retrieved_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    r2_storage_key TEXT,
+    is_official BOOLEAN NOT NULL DEFAULT FALSE,
+    parser_version TEXT,
+    review_status TEXT NOT NULL DEFAULT 'unreviewed',
+    notes TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_source_documents_authority ON source_documents (authority, document_type);
+
+CREATE TABLE IF NOT EXISTS ingestion_runs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    pipeline TEXT NOT NULL,
+    source_document_id UUID REFERENCES source_documents(id) ON DELETE SET NULL,
+    started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    completed_at TIMESTAMPTZ,
+    status TEXT NOT NULL DEFAULT 'running',
+    records_seen INT NOT NULL DEFAULT 0,
+    records_written INT NOT NULL DEFAULT 0,
+    records_rejected INT NOT NULL DEFAULT 0,
+    error_summary TEXT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb
+);
+
+CREATE INDEX IF NOT EXISTS idx_ingestion_runs_pipeline ON ingestion_runs (pipeline, started_at DESC);
+
+-- Candidate matches are proposals, never automatic merges. A reviewer must
+-- explicitly approve one before it is used for longitudinal analysis.
+CREATE TABLE IF NOT EXISTS identity_resolution_links (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    candidate_a_id UUID NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
+    candidate_b_id UUID NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
+    confidence_score NUMERIC(4, 3) NOT NULL,
+    rationale TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending_review',
+    reviewed_at TIMESTAMPTZ,
+    reviewer_note TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT ck_identity_link_distinct CHECK (candidate_a_id <> candidate_b_id),
+    CONSTRAINT uq_identity_link_pair UNIQUE (candidate_a_id, candidate_b_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_identity_links_status ON identity_resolution_links (status, confidence_score DESC);
+
 -- 6b. Parliamentary Division Voting Records
 CREATE TABLE IF NOT EXISTS parliamentary_divisions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -210,16 +263,24 @@ CREATE TABLE IF NOT EXISTS mplads_works (
     longitude NUMERIC(10, 6),
     sc_st_category TEXT, -- General, SC (15%), ST (7.5%)
     completion_date DATE,
-    gis_verified BOOLEAN DEFAULT FALSE,
-    constituency_boundary_valid BOOLEAN DEFAULT TRUE,
-    duplicate_coordinate_flag BOOLEAN DEFAULT FALSE,
-    ghost_project_risk TEXT DEFAULT 'LOW', -- 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'
+    gis_verified BOOLEAN, -- Reserved for source-backed field or imagery verification
+    constituency_boundary_valid BOOLEAN,
+    duplicate_coordinate_flag BOOLEAN,
+    ghost_project_risk TEXT, -- heuristic risk; not a finding of a ghost project
+    source_url TEXT,
+    source_retrieved_at TIMESTAMPTZ,
     gis_audit_notes TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_mplads_works_candidate ON mplads_works (candidate_id);
 CREATE INDEX IF NOT EXISTS idx_mplads_works_coords ON mplads_works (latitude, longitude);
+ALTER TABLE mplads_works ALTER COLUMN gis_verified DROP DEFAULT;
+ALTER TABLE mplads_works ALTER COLUMN constituency_boundary_valid DROP DEFAULT;
+ALTER TABLE mplads_works ALTER COLUMN duplicate_coordinate_flag DROP DEFAULT;
+ALTER TABLE mplads_works ALTER COLUMN ghost_project_risk DROP DEFAULT;
+ALTER TABLE mplads_works ADD COLUMN IF NOT EXISTS source_url TEXT;
+ALTER TABLE mplads_works ADD COLUMN IF NOT EXISTS source_retrieved_at TIMESTAMPTZ;
 
 -- 8. Multi-Term Historical Wealth Growth (CAGR & Longitudinal Tracking)
 CREATE TABLE IF NOT EXISTS historical_wealth_cagr (
@@ -340,11 +401,15 @@ CREATE TABLE IF NOT EXISTS campaign_donations (
     donation_mode TEXT, -- 'Cheque', 'Draft', 'Bank Transfer', 'Electoral Trust'
     electoral_trust_name TEXT,
     procurement_contract_awarded BOOLEAN DEFAULT FALSE,
+    source_url TEXT,
+    source_kind TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_donations_party ON campaign_donations (political_party);
 CREATE INDEX IF NOT EXISTS idx_donations_donor ON campaign_donations (donor_name);
+ALTER TABLE campaign_donations ADD COLUMN IF NOT EXISTS source_url TEXT;
+ALTER TABLE campaign_donations ADD COLUMN IF NOT EXISTS source_kind TEXT;
 
 -- 14. eCourts Case Verification Enhancements on criminal_cases
 ALTER TABLE criminal_cases ADD COLUMN IF NOT EXISTS cnr_number TEXT;
@@ -363,6 +428,9 @@ ALTER TABLE assets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE criminal_cases ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_discrepancies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sansad_records ENABLE ROW LEVEL SECURITY;
+ALTER TABLE source_documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ingestion_runs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE identity_resolution_links ENABLE ROW LEVEL SECURITY;
 ALTER TABLE mplads_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE historical_wealth_cagr ENABLE ROW LEVEL SECURITY;
 ALTER TABLE corporate_associations ENABLE ROW LEVEL SECURITY;
@@ -391,6 +459,10 @@ CREATE POLICY "Public Read Access" ON audit_discrepancies FOR SELECT USING (true
 
 DROP POLICY IF EXISTS "Public Read Access" ON sansad_records;
 CREATE POLICY "Public Read Access" ON sansad_records FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Public Read Access" ON source_documents;
+CREATE POLICY "Public Read Access" ON source_documents FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Public Read Access" ON identity_resolution_links;
+CREATE POLICY "Public Read Access" ON identity_resolution_links FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Public Read Access" ON mplads_records;
 CREATE POLICY "Public Read Access" ON mplads_records FOR SELECT USING (true);

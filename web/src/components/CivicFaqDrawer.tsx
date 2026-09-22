@@ -10,7 +10,6 @@ import {
   CaretDown,
   CaretUp,
   CheckCircle,
-  Question,
 } from '@phosphor-icons/react';
 
 interface CivicFaqDrawerProps {
@@ -30,7 +29,7 @@ interface FaqItem {
 const FAQ_ITEMS: FaqItem[] = [
   {
     id: 'mplads',
-    icon: <Bank size={20} weight="duotone" className="text-blue-600" />,
+    icon: <Bank size={20} weight="duotone" className="text-kesariya-700" />,
     question: 'What is MPLADS (सांसद निधि) & can citizens suggest local works?',
     hindiQuestion: 'सांसद निधि क्या है और आम नागरिक विकास कार्य कैसे सुझा सकते हैं?',
     answer:
@@ -43,7 +42,7 @@ const FAQ_ITEMS: FaqItem[] = [
   },
   {
     id: 'form26',
-    icon: <FileText size={20} weight="duotone" className="text-emerald-600" />,
+    icon: <FileText size={20} weight="duotone" className="text-harit-700" />,
     question: 'What is Form 26 and why are false declarations a crime?',
     hindiQuestion: 'चुनावी हलफ़नामा (Form 26) क्या है और इसमें गलत जानकारी देना अपराध क्यों है?',
     answer:
@@ -56,7 +55,7 @@ const FAQ_ITEMS: FaqItem[] = [
   },
   {
     id: 'crime',
-    icon: <Scales size={20} weight="duotone" className="text-rose-600" />,
+    icon: <Scales size={20} weight="duotone" className="text-terracotta-700" />,
     question: 'What is the difference between serious criminal charges and protest cases?',
     hindiQuestion: 'गंभीर आपराधिक मामलों और राजनीतिक प्रदर्शन के मुकदमों में क्या अंतर है?',
     answer:
@@ -69,7 +68,7 @@ const FAQ_ITEMS: FaqItem[] = [
   },
   {
     id: 'wealth',
-    icon: <TrendUp size={20} weight="duotone" className="text-amber-600" />,
+    icon: <TrendUp size={20} weight="duotone" className="text-kesariya-700" />,
     question: 'What is the Wealth Discrepancy Ratio (WDR)?',
     hindiQuestion: 'संपत्ति-आय अनुपात (WDR) क्या दर्शाता है?',
     answer:
@@ -82,7 +81,7 @@ const FAQ_ITEMS: FaqItem[] = [
   },
   {
     id: 'verification',
-    icon: <ShieldCheck size={20} weight="duotone" className="text-indigo-600" />,
+    icon: <ShieldCheck size={20} weight="duotone" className="text-ashoka-700" />,
     question: 'How does Apna Neta guarantee zero synthetic or biased data?',
     hindiQuestion: 'अपना नेता निष्पक्षता और 100% सही डेटा की गारंटी कैसे देता है?',
     answer:
@@ -104,30 +103,33 @@ export const CivicFaqDrawer: React.FC<CivicFaqDrawerProps> = ({ isOpen, onClose 
     <div className="fixed inset-0 z-50 flex justify-end">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity"
+        className="fixed inset-0 bg-sovereign-950/70 backdrop-blur-xs transition-opacity"
         onClick={onClose}
       />
 
       {/* Drawer Panel */}
-      <div className="relative w-full max-w-lg bg-white h-full shadow-2xl z-10 flex flex-col overflow-hidden animate-in slide-in-from-right duration-200">
+      <div className="relative w-full max-w-lg bg-dholpur-50 h-full shadow-2xl z-10 flex flex-col overflow-hidden animate-in slide-in-from-right duration-200 border-l border-kesariya-600/30">
+        {/* Top Tiranga Accent Line */}
+        <div className="tiranga-accent-bar" />
+
         {/* Drawer Header */}
-        <div className="p-5 bg-[#0A192F] text-white border-b border-slate-800 flex items-center justify-between">
+        <div className="p-5 bg-sovereign-950 text-white border-b border-sovereign-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-600/20 text-blue-300 rounded-xl border border-blue-500/30">
+            <div className="p-2 bg-kesariya-500/20 text-kesariya-400 rounded-xl border border-kesariya-500/30">
               <BookOpen size={22} weight="duotone" />
             </div>
             <div>
               <h2 className="font-serif font-bold text-lg text-white">
                 Citizen Guide • नागरिक मार्गदर्शिका
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-dholpur-300">
                 Understanding public records, candidate affidavits, and citizen rights
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+            className="p-1.5 text-dholpur-400 hover:text-white hover:bg-sovereign-800 rounded-lg transition-colors cursor-pointer"
             aria-label="Close guide"
           >
             <X size={18} weight="bold" />
@@ -135,10 +137,10 @@ export const CivicFaqDrawer: React.FC<CivicFaqDrawerProps> = ({ isOpen, onClose 
         </div>
 
         {/* FAQ Content List */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-3 bg-slate-50">
-          <div className="p-3.5 bg-blue-50 border border-blue-200 rounded-2xl text-xs text-blue-950 flex items-start gap-2.5 mb-2">
-            <CheckCircle size={18} weight="fill" className="text-blue-600 flex-shrink-0 mt-0.5" />
-            <p>
+        <div className="flex-1 overflow-y-auto p-5 space-y-3 bg-dholpur-100/60">
+          <div className="p-3.5 bg-dholpur-50 border border-kesariya-500/30 rounded-2xl text-xs text-sovereign-950 flex items-start gap-2.5 mb-2 shadow-2xs">
+            <CheckCircle size={18} weight="fill" className="text-kesariya-700 flex-shrink-0 mt-0.5" />
+            <p className="font-sans leading-relaxed">
               This guide explains the key civic metrics used on Apna Neta in plain language so you
               can hold your elected representatives accountable with confidence.
             </p>
@@ -149,39 +151,39 @@ export const CivicFaqDrawer: React.FC<CivicFaqDrawerProps> = ({ isOpen, onClose 
             return (
               <div
                 key={item.id}
-                className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden transition-all"
+                className="sandstone-card rounded-2xl border border-dholpur-300 shadow-2xs overflow-hidden transition-all"
               >
                 <button
                   type="button"
                   onClick={() => setExpandedId(isExpanded ? null : item.id)}
-                  className="w-full p-4 text-left flex items-start justify-between gap-3 hover:bg-slate-50/80 transition-colors"
+                  className="w-full p-4 text-left flex items-start justify-between gap-3 hover:bg-dholpur-100/60 transition-colors cursor-pointer"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="p-1.5 bg-slate-100 rounded-lg flex-shrink-0 mt-0.5">
+                    <div className="p-1.5 bg-dholpur-100 rounded-lg flex-shrink-0 mt-0.5 border border-dholpur-200">
                       {item.icon}
                     </div>
                     <div>
-                      <h3 className="font-semibold text-slate-900 text-sm leading-snug">
+                      <h3 className="font-semibold text-sovereign-950 text-sm leading-snug">
                         {item.question}
                       </h3>
-                      <p className="text-[11px] text-slate-500 mt-0.5 font-medium">
+                      <p className="text-[11px] text-sovereign-600 mt-0.5 font-medium">
                         {item.hindiQuestion}
                       </p>
                     </div>
                   </div>
-                  <div className="text-slate-400 flex-shrink-0 mt-1">
+                  <div className="text-sovereign-500 flex-shrink-0 mt-1">
                     {isExpanded ? <CaretUp size={16} weight="bold" /> : <CaretDown size={16} weight="bold" />}
                   </div>
                 </button>
 
                 {isExpanded && (
-                  <div className="px-4 pb-4 pt-1 text-xs text-slate-600 border-t border-slate-100 space-y-2.5">
-                    <p className="leading-relaxed font-sans text-slate-700">{item.answer}</p>
-                    <div className="p-3 bg-slate-50 rounded-xl space-y-1.5 border border-slate-200/60">
-                      <span className="font-semibold text-[11px] text-slate-800 uppercase tracking-wide block">
+                  <div className="px-4 pb-4 pt-1 text-xs text-sovereign-700 border-t border-dholpur-200 space-y-2.5">
+                    <p className="leading-relaxed font-sans text-sovereign-800">{item.answer}</p>
+                    <div className="p-3 bg-dholpur-50 rounded-xl space-y-1.5 border border-dholpur-200/80">
+                      <span className="font-semibold text-[11px] text-sovereign-900 uppercase tracking-wide block">
                         Key takeaways:
                       </span>
-                      <ul className="space-y-1 text-[11.5px] text-slate-600 list-disc list-inside">
+                      <ul className="space-y-1 text-[11.5px] text-sovereign-700 list-disc list-inside">
                         {item.keyPoints.map((pt, idx) => (
                           <li key={idx} className="leading-relaxed">
                             {pt}
@@ -197,13 +199,14 @@ export const CivicFaqDrawer: React.FC<CivicFaqDrawerProps> = ({ isOpen, onClose 
         </div>
 
         {/* Drawer Footer */}
-        <div className="p-4 bg-white border-t border-slate-200 text-center text-xs text-slate-500">
+        <div className="p-4 bg-dholpur-100 border-t border-dholpur-300 text-center text-xs text-sovereign-600 font-sans">
           <p>
             Democratizing governance data for 1.4 Billion citizens •{' '}
-            <strong className="text-slate-700">Apna Neta (अपना नेता)</strong>
+            <strong className="text-sovereign-900 font-serif">Apna Neta (अपना नेता)</strong>
           </p>
         </div>
       </div>
     </div>
   );
 };
+

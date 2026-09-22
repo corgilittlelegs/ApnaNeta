@@ -36,12 +36,12 @@ export const Navbar: React.FC<NavbarProps> = ({
   const { viewMode, setViewMode, isCitizenMode } = useViewMode();
 
   return (
-    <header className="sticky top-0 z-40 bg-[#0A192F] text-white border-b border-slate-800 shadow-md">
+    <header className="sticky top-0 z-40 bg-[#0A192F] text-white border-b border-sovereign-800 shadow-md">
       {/* Top Sovereign Tiranga Accent Line */}
       <div className="tiranga-accent-bar w-full" />
 
       {/* TIER 1: Main Header (Identity, Spacious Search, Utility Actions) */}
-      <div className="border-b border-slate-800/80">
+      <div className="border-b border-sovereign-800/80">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 gap-2 sm:gap-6">
             {/* Brand Identity / Logo */}
@@ -61,7 +61,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
                 <p className="text-[9.5px] text-dholpur-300 font-sans tracking-wide hidden sm:block">
                   <span className="font-devanagari font-semibold text-kesariya-400">अपना नेता</span>{' '}
-                  <span className="text-slate-500">•</span> The Sovereign Civic Ledger of Bharat
+                  <span className="text-dholpur-400/60">•</span> The Sovereign Civic Ledger of Bharat
                 </p>
               </div>
             </div>
@@ -91,9 +91,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                       ? 'Search candidate name, constituency, or party (उदा. सांसद, दल या क्षेत्र)...'
                       : 'Search politician, constituency, or ECI docket...'
                   }
-                  className="w-full pl-10 pr-12 py-2 bg-slate-900/90 hover:bg-slate-900 focus:bg-slate-950 text-white text-xs sm:text-sm rounded-xl border border-slate-700/80 focus:border-kesariya-400 focus:ring-1 focus:ring-kesariya-400 outline-none transition-all placeholder:text-slate-400 font-sans shadow-inner"
+                  className="w-full pl-10 pr-12 py-2 bg-sovereign-900/90 hover:bg-sovereign-900 focus:bg-sovereign-950 text-white text-xs sm:text-sm rounded-xl border border-sovereign-700/80 focus:border-kesariya-400 focus:ring-1 focus:ring-kesariya-400 outline-none transition-all placeholder:text-dholpur-400 font-sans shadow-inner"
                 />
-                <span className="hidden sm:inline-block absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-dholpur-400 border border-slate-700">
+                <span className="hidden sm:inline-block absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono px-1.5 py-0.5 rounded bg-sovereign-800 text-dholpur-400 border border-sovereign-700">
                   ⌘K
                 </span>
               </div>
@@ -116,11 +116,11 @@ export const Navbar: React.FC<NavbarProps> = ({
 
               {/* House Filter Dropdown */}
               <div className="flex items-center gap-1 flex-shrink-0">
-                <Funnel size={14} weight="duotone" className="text-slate-400 hidden sm:block" />
+                <Funnel size={14} weight="duotone" className="text-dholpur-400 hidden sm:block" />
                 <select
                   value={selectedHouse}
                   onChange={(e) => onHouseChange(e.target.value)}
-                  className="text-xs bg-slate-900/90 border border-slate-700 rounded-xl px-2 sm:px-2.5 py-1.5 font-medium text-slate-200 outline-none focus:ring-1 focus:ring-kesariya-400 cursor-pointer hover:bg-slate-800 transition-colors max-w-[125px] sm:max-w-none"
+                  className="text-xs bg-sovereign-900/90 border border-sovereign-700 rounded-xl px-2 sm:px-2.5 py-1.5 font-medium text-dholpur-200 outline-none focus:ring-1 focus:ring-kesariya-400 cursor-pointer hover:bg-sovereign-800 transition-colors max-w-[125px] sm:max-w-none"
                   aria-label="Filter by House"
                 >
                   <option value="ALL">All Houses (सभी सदन)</option>
@@ -153,7 +153,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
                 placeholder="Search candidate, constituency (उदा. सांसद या दल)..."
-                className="w-full pl-9 pr-4 py-2 bg-slate-900/90 text-white text-xs sm:text-sm rounded-xl border border-slate-700 focus:border-kesariya-400 outline-none placeholder:text-slate-400"
+                className="w-full pl-9 pr-4 py-2 bg-sovereign-900/90 text-white text-xs sm:text-sm rounded-xl border border-sovereign-700 focus:border-kesariya-400 outline-none placeholder:text-dholpur-400"
               />
             </div>
           </div>
@@ -171,8 +171,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onClick={() => onViewChange('directory')}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                     activeView === 'directory'
-                      ? 'bg-slate-800 text-kesariya-300 shadow-xs border border-kesariya-500/30'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                      ? 'bg-sovereign-800 text-kesariya-300 shadow-xs border border-kesariya-500/30'
+                      : 'text-dholpur-400 hover:text-dholpur-200 hover:bg-sovereign-800/50'
                   }`}
                   title="Candidate Directory"
                 >
@@ -183,8 +183,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onClick={() => onViewChange('leaderboards')}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                     activeView === 'leaderboards'
-                      ? 'bg-slate-800 text-kesariya-300 shadow-xs border border-kesariya-500/30'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                      ? 'bg-sovereign-800 text-kesariya-300 shadow-xs border border-kesariya-500/30'
+                      : 'text-dholpur-400 hover:text-dholpur-200 hover:bg-sovereign-800/50'
                   }`}
                   title="Accountability Rankings & Leaderboards"
                 >
@@ -204,7 +204,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 Mode:
               </span>
               <div
-                className="flex items-center bg-slate-900/90 p-0.5 rounded-xl border border-slate-700 shadow-xs w-full max-w-xs md:max-w-none"
+                className="flex items-center bg-sovereign-900/90 p-0.5 rounded-xl border border-sovereign-700 shadow-xs w-full max-w-xs md:max-w-none"
                 title={
                   isCitizenMode
                     ? 'Currently in Citizen Mode (Simple Language & Real-World Impact). Click to switch to Forensic Mode.'
@@ -216,7 +216,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className={`flex-1 md:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all ${
                     isCitizenMode
                       ? 'bg-harit-700 text-white shadow-xs border border-harit-500/40'
-                      : 'text-slate-400 hover:text-white'
+                      : 'text-dholpur-400 hover:text-white'
                   }`}
                 >
                   <Users size={13} weight="bold" />
@@ -228,7 +228,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className={`flex-1 md:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all ${
                     !isCitizenMode
                       ? 'bg-ashoka-700 text-white shadow-xs border border-ashoka-500/40'
-                      : 'text-slate-400 hover:text-white'
+                      : 'text-dholpur-400 hover:text-white'
                   }`}
                 >
                   <Scales size={13} weight="bold" />

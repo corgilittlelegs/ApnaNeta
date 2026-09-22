@@ -13,12 +13,14 @@ except ImportError:
 
 from config.settings import settings
 from src.storage.supabase_client import supabase
+from src.ingestion.official_documents import OfficialDocumentDiscovery
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("MoSPIMPLADSIngest")
 
 # Official MoSPI e-SAKSHI MPLADS Portal URL
 ESAKSHI_BASE_URL = "https://mplads.mospi.gov.in"
+MPLADS_DASHBOARD_URL = "https://mplads.gov.in/mplads/Dashboard/DashBoard.aspx"
 
 # Authentic MoSPI 17th Lok Sabha (2019-2024) MPLADS expenditure dataset
 # Published under Open Data Commons Open Database License (ODbL) via OpenCity.in
@@ -166,6 +168,11 @@ class MoSPIMPLADSClient:
         except Exception as e:
             logger.debug(f"e-SAKSHI live query returned: {e}")
             return None
+
+    async def discover_public_dashboard(self) -> int:
+        """Records the official public dashboard without assuming an undocumented API."""
+        discovery = OfficialDocumentDiscovery({"mplads.gov.in", "mospi.gov.in"})
+        return await discovery.record_documents("MoSPI MPLADS", "public_dashboard", [MPLADS_DASHBOARD_URL])
 
     async def sync_candidate_mplads(self, data_item: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """
@@ -396,7 +403,17 @@ class MoSPIMPLADSClient:
         # 1. Ingest authentic MoSPI data from OpenCity
         await self.ingest_opencity_17th_ls_dataset()
 
-        # 2. Query candidates for any live updates (with circuit-breaker)
+        # 2. Register the public dashboard as current source evidence.
+        await self.discover_public_dashboard()
+
+        # The former /api/public/summary path is not a documented public data
+        # contract. Do not call it in scheduled production runs unless its
+        # operator explicitly enables a validated adapter.
+        if os.getenv("ENABLE_EXPERIMENTAL_ESAKSHI_ENDPOINT", "false").lower() != "true":
+            logger.info("Skipping undocumented e-SAKSHI endpoint; official dashboard source recorded for review.")
+            return []
+
+        # 3. Explicitly opted-in experimental endpoint, bounded by a circuit-breaker.
         candidates = await supabase.select("candidates", {"limit": "50"})
         results = []
         consecutive_misses = 0
@@ -428,4 +445,3 @@ mplads_client = MoSPIMPLADSClient()
 
 if __name__ == "__main__":
     asyncio.run(mplads_client.run())
-

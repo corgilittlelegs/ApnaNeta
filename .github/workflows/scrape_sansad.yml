@@ -28,13 +28,12 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          pip install httpx pydantic pydantic-settings
+          pip install httpx pydantic pydantic-settings beautifulsoup4
 
-      - name: Run Sansad Synchronizer
+      - name: Run Official Digital Sansad Question Synchronizer
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          TARGET_TERM: ${{ inputs.target_term || 'all' }}
           PYTHONPATH: .
         run: |
-          python -m src.ingestion.sansad_api
+          python -m src.ingestion.sansad_official
