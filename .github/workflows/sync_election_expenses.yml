@@ -26,8 +26,8 @@ jobs:
           python-version: '3.12'
           cache: pip
 
-      - name: Install discovery dependencies
-        run: pip install httpx beautifulsoup4 pydantic pydantic-settings
+      - name: Install ingestion dependencies
+        run: pip install httpx beautifulsoup4 pymupdf pydantic pydantic-settings
 
       - name: Discover official ECI expenditure reports
         env:
@@ -35,3 +35,14 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           PYTHONPATH: .
         run: python -m src.ingestion.election_expense_reports
+
+      - name: Archive and extract discovered expenditure reports
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          PYTHONPATH: .
+        run: python -m src.ingestion.election_expense_extractor

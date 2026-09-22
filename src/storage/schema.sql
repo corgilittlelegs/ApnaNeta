@@ -239,6 +239,28 @@ CREATE TABLE IF NOT EXISTS candidate_expense_reports (
 CREATE INDEX IF NOT EXISTS idx_expense_reports_candidate ON candidate_expense_reports (candidate_id, filing_status);
 CREATE INDEX IF NOT EXISTS idx_expense_reports_election ON candidate_expense_reports (election_id, filing_status);
 
+-- Extraction outcomes are review records, not candidate allegations. Ambiguous
+-- PDFs are retained with their source and parsed fields until a reviewer links
+-- them to the correct candidate and election event.
+CREATE TABLE IF NOT EXISTS expense_report_extractions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    source_document_id UUID NOT NULL UNIQUE REFERENCES source_documents(id) ON DELETE CASCADE,
+    candidate_name_declared TEXT,
+    election_name_declared TEXT,
+    filed_on_declared DATE,
+    declared_expenditure NUMERIC(15, 2),
+    expenditure_ceiling_declared NUMERIC(15, 2),
+    extracted_fields JSONB NOT NULL DEFAULT '{}'::jsonb,
+    extraction_status TEXT NOT NULL DEFAULT 'needs_review',
+    candidate_id UUID REFERENCES candidates(id) ON DELETE SET NULL,
+    election_id UUID REFERENCES election_events(id) ON DELETE SET NULL,
+    reviewer_note TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_expense_extractions_status ON expense_report_extractions (extraction_status, created_at DESC);
+
 -- 6b. Parliamentary Division Voting Records
 CREATE TABLE IF NOT EXISTS parliamentary_divisions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -471,6 +493,7 @@ ALTER TABLE ingestion_runs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE identity_resolution_links ENABLE ROW LEVEL SECURITY;
 ALTER TABLE election_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE candidate_expense_reports ENABLE ROW LEVEL SECURITY;
+ALTER TABLE expense_report_extractions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE mplads_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE historical_wealth_cagr ENABLE ROW LEVEL SECURITY;
 ALTER TABLE corporate_associations ENABLE ROW LEVEL SECURITY;
@@ -507,6 +530,8 @@ DROP POLICY IF EXISTS "Public Read Access" ON election_events;
 CREATE POLICY "Public Read Access" ON election_events FOR SELECT USING (true);
 DROP POLICY IF EXISTS "Public Read Access" ON candidate_expense_reports;
 CREATE POLICY "Public Read Access" ON candidate_expense_reports FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Public Read Access" ON expense_report_extractions;
+CREATE POLICY "Public Read Access" ON expense_report_extractions FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Public Read Access" ON mplads_records;
 CREATE POLICY "Public Read Access" ON mplads_records FOR SELECT USING (true);

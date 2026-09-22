@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, patch
 
 from src.verification.election_expense import evaluate_expense_compliance, filing_due_date
 from src.ingestion.election_expense_reports import ElectionExpenseReportDiscovery, EXPENDITURE_INDEXES
+from src.ingestion.election_expense_extractor import parse_expense_report_text
 
 
 class TestElectionExpenseCompliance(unittest.IsolatedAsyncioTestCase):
@@ -53,6 +54,21 @@ class TestElectionExpenseCompliance(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(total, len(EXPENDITURE_INDEXES) * 2)
         self.assertEqual(client.discover_pdf_links.await_count, len(EXPENDITURE_INDEXES))
         client.discover_pdf_links.assert_awaited_with(EXPENDITURE_INDEXES[-1], required_text="expenditure")
+
+    def test_report_parser_only_returns_explicitly_labelled_fields(self):
+        fields = parse_expense_report_text(
+            """
+            Name of Candidate: Asha Devi
+            Election Name: General Election to Lok Sabha 2024
+            Date of Filing: 04-07-2024
+            Total Election Expenditure: Rs. 9,200,000.00
+            Maximum Permitted Expenditure: Rs. 9,500,000.00
+            """
+        )
+        self.assertEqual(fields["candidate_name_declared"], "Asha Devi")
+        self.assertEqual(fields["filed_on_declared"], "2024-07-04")
+        self.assertEqual(fields["declared_expenditure"], "9200000.00")
+        self.assertEqual(fields["expenditure_ceiling_declared"], "9500000.00")
 
 
 if __name__ == "__main__":
