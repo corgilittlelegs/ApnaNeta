@@ -321,7 +321,7 @@ const AppContent: React.FC = () => {
 
   const averageMpladsRate = useMemo(() => {
     const withMplads = candidates.filter((c) => c.mplads?.utilization_rate != null);
-    if (withMplads.length === 0) return 74;
+    if (withMplads.length === 0) return null;
     return Math.round(
       withMplads.reduce((acc, c) => acc + (c.mplads?.utilization_rate || 0), 0) / withMplads.length
     );
@@ -820,7 +820,7 @@ const AppContent: React.FC = () => {
                   Declared Assets Total • कुल संपत्ति
                 </span>
                 <p className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-sovereign-950 mt-1">
-                  {formatINR(totalAssetsSum || 285000000)}
+                  {totalAssetsSum > 0 ? formatINR(totalAssetsSum) : '—'}
                 </p>
               </div>
               <div className="mt-3 flex items-end justify-between">
@@ -841,7 +841,7 @@ const AppContent: React.FC = () => {
                   Pending Criminal Cases • आपराधिक मामले
                 </span>
                 <p className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-terracotta-700 mt-1">
-                  {totalCriminalCasesSum || 283}
+                  {totalCriminalCasesSum}
                 </p>
               </div>
               <div className="mt-3 flex items-end justify-between">
@@ -862,14 +862,14 @@ const AppContent: React.FC = () => {
                   MPLADS Fund Utilization Rate • निधि उपयोग
                 </span>
                 <p className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-sovereign-950 mt-1">
-                  {averageMpladsRate}%
+                  {averageMpladsRate != null ? `${averageMpladsRate}%` : 'N/A'}
                 </p>
               </div>
               <div className="mt-3">
                 <div className="w-full bg-dholpur-200 rounded-full h-2 overflow-hidden">
                   <div
                     className="bg-harit-600 h-2 rounded-full transition-all"
-                    style={{ width: `${Math.min(100, averageMpladsRate)}%` }}
+                    style={{ width: `${Math.min(100, averageMpladsRate || 0)}%` }}
                   />
                 </div>
               </div>
