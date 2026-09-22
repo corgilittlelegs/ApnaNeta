@@ -20,6 +20,7 @@ import { Candidate } from '../types/candidate';
 import { DiscrepancyBadge } from './DiscrepancyBadge';
 import { exportCandidateDossierPdf } from '../utils/DossierPdfExport';
 import { useViewMode } from '../context/ViewModeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { CivicTerm } from './CivicTerm';
 import {
   CIVIC_IMPACT_BENCHMARKS,
@@ -52,6 +53,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
   onOpenAuditTrace,
 }) => {
   const { isCitizenMode } = useViewMode();
+  const { t, isHindi } = useLanguage();
   const { photoUrl: dynamicPhotoUrl, attribution: photoAttribution } = useCandidatePhoto(
     candidate.name,
     candidate.photo_url
@@ -87,6 +89,40 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
 
   // Generate 1-line citizen-friendly takeaway
   const generateCitizenSummary = () => {
+    if (isHindi) {
+      const parts: string[] = [];
+
+      if (candidate.is_rpa_section_8_disqualified) {
+        parts.push('न्यायालय द्वारा दोषी सिद्ध व अयोग्य घोषित');
+      } else if (candidate.serious_criminal_cases_count > 0) {
+        parts.push(`${candidate.serious_criminal_cases_count} गंभीर मुकदमों का सामना कर रहे हैं`);
+      } else if (candidate.criminal_cases_count > 0) {
+        parts.push(`${candidate.criminal_cases_count} प्रदर्शन/आंदोलन से जुड़े मामले दर्ज हैं`);
+      } else {
+        parts.push('आपराधिक रिकॉर्ड पूर्णतः स्वच्छ है');
+      }
+
+      if (candidate.attendance_rate !== undefined) {
+        if (candidate.attendance_rate >= CIVIC_THRESHOLDS.ATTENDANCE_HIGH_PERCENT) {
+          parts.push(`संसद में अत्यंत सक्रिय (${candidate.attendance_rate.toFixed(0)}% उपस्थिति)`);
+        } else if (candidate.attendance_rate >= CIVIC_THRESHOLDS.ATTENDANCE_LOW_PERCENT) {
+          parts.push(`संसद में औसत उपस्थिति (${candidate.attendance_rate.toFixed(0)}%)`);
+        } else {
+          parts.push(`संसद में कम उपस्थिति (${candidate.attendance_rate.toFixed(0)}%)`);
+        }
+      }
+
+      if (candidate.mplads) {
+        if (candidate.mplads.utilization_rate >= CIVIC_THRESHOLDS.MPLADS_GOOD_SPEND_PERCENT) {
+          parts.push(`एवं स्थानीय विकास कोष (सांसद निधि) का ${candidate.mplads.utilization_rate.toFixed(0)}% खर्च किया`);
+        } else if (candidate.mplads.unspent_balance > WEALTH_TIERS.TIER_1CR_TO_10CR) {
+          parts.push(`परंतु सांसद निधि का ${formatINR(candidate.mplads.unspent_balance)} अखर्च शेष रहा`);
+        }
+      }
+
+      return parts.join(', ') + '।';
+    }
+
     const parts: string[] = [];
 
     // 1. Criminal record assessment
@@ -193,7 +229,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                   title="Verified Form 26 Sworn Disclosures under RPA 1951"
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-voter-ink-600"></span>
-                  <span>सत्यापित • ECI Form 26</span>
+                  <span>{t.verifiedForm26}</span>
                 </span>
               </div>
             </div>
@@ -213,12 +249,12 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                 {isSelectedForComparison ? (
                   <>
                     <Check size={12} weight="bold" />
-                    <span className="hidden sm:inline">Added</span>
+                    <span className="hidden sm:inline">{t.addedBtn}</span>
                   </>
                 ) : (
                   <>
                     <Plus size={12} weight="bold" className="text-kesariya-600" />
-                    <span className="hidden sm:inline">Compare</span>
+                    <span className="hidden sm:inline">{t.compareBtn}</span>
                   </>
                 )}
               </button>
@@ -235,7 +271,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
             {/* 1-Line Plain Summary */}
             <div className="p-2.5 bg-kesariya-50/70 border border-kesariya-200/80 rounded-xl text-xs text-kesariya-950 flex items-start gap-2">
               <span className="font-bold text-[10px] uppercase tracking-wider text-kesariya-800 bg-kesariya-100/90 px-1.5 py-0.5 rounded flex-shrink-0 mt-0.5">
-                Summary • सारांश
+                {t.summaryLabel}
               </span>
               <p className="leading-relaxed font-sans text-sovereign-800 text-[11px] sm:text-xs">
                 {generateCitizenSummary()}
@@ -257,26 +293,26 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-bold text-[11px] flex items-center gap-1">
                     <Scales size={14} weight="duotone" />
-                    <span>अपराध • Crime</span>
+                    <span>{t.cardCrime}</span>
                   </span>
                   <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-white/70">
-                    {candidate.serious_criminal_cases_count > 0 ? '🔴 Major' : candidate.criminal_cases_count > 0 ? '🟡 Agitation' : '🟢 Clean'}
+                    {candidate.serious_criminal_cases_count > 0 ? t.statusMajor : candidate.criminal_cases_count > 0 ? t.statusAgitation : t.statusClean}
                   </span>
                 </div>
                 <div className="my-0.5">
                   <span className="font-bold text-sm block">
                     {candidate.is_rpa_section_8_disqualified
-                      ? 'Barred by Law'
+                      ? t.barredByLaw
                       : candidate.criminal_cases_count > 0
-                      ? `${candidate.criminal_cases_count} Case(s)`
-                      : '0 Charges Filed'}
+                      ? t.casesCount(candidate.criminal_cases_count)
+                      : t.zeroCharges}
                   </span>
                   <span className="text-[10px] text-sovereign-600 block mt-0.5">
                     {candidate.serious_criminal_cases_count > 0
-                      ? `${candidate.serious_criminal_cases_count} गंभीर मामले (Serious)`
+                      ? t.seriousCases(candidate.serious_criminal_cases_count)
                       : candidate.criminal_cases_count > 0
-                      ? 'मामूली/प्रदर्शन मामले (Protest)'
-                      : 'स्वच्छ छवि (Clean Record)'}
+                      ? t.protestCases
+                      : t.cleanRecord}
                   </span>
                 </div>
               </div>
@@ -296,18 +332,18 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-bold text-[11px] flex items-center gap-1">
                     <Bank size={14} weight="duotone" />
-                    <span>सांसद निधि • Funds</span>
+                    <span>{t.cardMplads}</span>
                   </span>
                   <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-white/70">
-                    {!candidate.mplads ? 'N/A' : `${candidate.mplads.utilization_rate.toFixed(0)}% Spent`}
+                    {!candidate.mplads ? 'N/A' : isHindi ? `${candidate.mplads.utilization_rate.toFixed(0)}% खर्च` : `${candidate.mplads.utilization_rate.toFixed(0)}% Spent`}
                   </span>
                 </div>
                 <div className="my-0.5">
                   <span className="font-bold text-sm block font-mono">
-                    {!candidate.mplads ? 'No Data' : `${formatINR(candidate.mplads.expenditure_amount || 0)}`}
+                    {!candidate.mplads ? (isHindi ? 'विवरण नहीं' : 'No Data') : `${formatINR(candidate.mplads.expenditure_amount || 0)}`}
                   </span>
                   <span className="text-[10px] text-sovereign-600 block mt-0.5 truncate">
-                    {!candidate.mplads ? 'Not an MP' : `बकाया: ${formatINR(candidate.mplads.unspent_balance)}`}
+                    {!candidate.mplads ? t.notAnMp : t.unspentBalance(formatINR(candidate.mplads.unspent_balance))}
                   </span>
                 </div>
               </div>
@@ -327,7 +363,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-bold text-[11px] flex items-center gap-1">
                     <CalendarCheck size={14} weight="duotone" />
-                    <span>संसद हाजिरी • Attendance</span>
+                    <span>{t.cardAttendance}</span>
                   </span>
                   <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-white/70">
                     {candidate.attendance_rate !== undefined ? `${candidate.attendance_rate}%` : 'N/A'}
@@ -338,11 +374,11 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                     {candidate.attendance_rate === undefined
                       ? 'N/A'
                       : candidate.attendance_rate >= CIVIC_THRESHOLDS.ATTENDANCE_FAIR_PERCENT
-                      ? 'सक्रिय (Active)'
-                      : 'औसत से कम'}
+                      ? t.attendanceActive
+                      : t.attendanceBelowAvg}
                   </span>
                   <span className="text-[10px] text-sovereign-600 block mt-0.5">
-                    {candidate.questions_count !== undefined ? `${candidate.questions_count} सवाल पूछे (Questions)` : 'सत्र भागीदारी'}
+                    {candidate.questions_count !== undefined ? t.questionsAsked(candidate.questions_count) : t.sessionParticipation}
                   </span>
                 </div>
               </div>
@@ -360,7 +396,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-bold text-[11px] flex items-center gap-1">
                     <CurrencyInr size={14} weight="duotone" />
-                    <span>चुनावी खर्च • Expense</span>
+                    <span>{t.cardExpense}</span>
                   </span>
                   <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-white/70">
                     {!candidate.election_expense_report ? 'N/A' : candidate.election_expense_report.filing_status.replace('_', ' ')}
@@ -368,14 +404,14 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                 </div>
                 <div className="my-0.5">
                   <span className="font-bold text-sm block font-mono">
-                    {candidate.election_expense_report?.declared_expenditure == null ? 'Not disclosed' : formatINR(candidate.election_expense_report.declared_expenditure)}
+                    {candidate.election_expense_report?.declared_expenditure == null ? (isHindi ? 'विवरण नहीं' : 'Not disclosed') : formatINR(candidate.election_expense_report.declared_expenditure)}
                   </span>
                   <span className="text-[10px] text-sovereign-600 block mt-0.5 truncate">
                     {!candidate.election_expense_report
-                      ? 'No official account on record'
+                      ? (isHindi ? 'कोई आधिकारिक रिकॉर्ड नहीं' : 'No official account on record')
                       : candidate.election_expense_report.ceiling_status === 'over_limit'
-                      ? 'Declared amount exceeds recorded ceiling'
-                      : `Due: ${candidate.election_expense_report.filing_due_on}`}
+                      ? (isHindi ? 'घोषित राशि सीमा से अधिक है' : 'Declared amount exceeds recorded ceiling')
+                      : `${isHindi ? 'अंतिम तिथि' : 'Due'}: ${candidate.election_expense_report.filing_due_on}`}
                   </span>
                 </div>
               </div>
@@ -393,10 +429,10 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-bold text-[11px] flex items-center gap-1">
                     <TrendUp size={14} weight="duotone" />
-                    <span>संपत्ति • Wealth</span>
+                    <span>{t.cardWealth}</span>
                   </span>
                   <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-white/70">
-                    {latestWealthGrowth ? `+${latestWealthGrowth.percentage_increase}%` : 'Declared'}
+                    {latestWealthGrowth ? `+${latestWealthGrowth.percentage_increase}%` : (isHindi ? 'घोषित' : 'Declared')}
                   </span>
                 </div>
                 <div className="my-0.5">
@@ -404,7 +440,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                     {formatINR(candidate.total_net_worth)}
                   </span>
                   <span className="text-[10px] text-sovereign-600 block mt-0.5">
-                    {latestWealthGrowth?.is_rapid_accumulation ? '⚠️ तीव्र वृद्धि (Surge)' : 'स्थिर विकास (Stable)'}
+                    {latestWealthGrowth?.is_rapid_accumulation ? t.wealthSurgeAlert : t.wealthStable}
                   </span>
                 </div>
               </div>
@@ -416,19 +452,19 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
         <div className="grid grid-cols-2 gap-3 p-3.5 bg-dholpur-50/70 rounded-xl border border-dholpur-200/80 mb-3 text-xs">
           <div>
             <span className="text-sovereign-500 block mb-0.5 text-[11px] uppercase tracking-wider font-semibold">
-              {isCitizenMode ? 'कुल संपत्ति • Net Worth' : 'Declared Net Worth'}
+              {t.labelNetWorthCard}
             </span>
             <span className="text-base sm:text-lg font-bold font-mono tabular-nums text-sovereign-950">
               {formatINR(candidate.total_net_worth)}
             </span>
             <span className="text-[10px] text-sovereign-500 block mt-0.5 font-mono">
-              Movable: {formatINR(candidate.total_movable_assets)}
+              {isHindi ? 'चल संपत्ति' : 'Movable'}: {formatINR(candidate.total_movable_assets)}
             </span>
           </div>
 
           <div>
             <span className="text-sovereign-500 block mb-0.5 text-[11px] uppercase tracking-wider font-semibold">
-              {isCitizenMode ? 'आपराधिक मामले • Crime' : 'Criminal Record'}
+              {t.labelCriminalRecordCard}
             </span>
             {candidate.is_rpa_section_8_disqualified ? (
               <span className="inline-flex items-center gap-1 font-bold text-rose-900 bg-rose-100 border border-rose-300 px-2 py-0.5 rounded-md">
@@ -490,10 +526,10 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
           <div className="flex items-center justify-between py-1.5 px-3 bg-voter-ink-50 border border-voter-ink-200 rounded-xl text-xs text-voter-ink-900 mb-3 shadow-2xs">
             <span className="font-medium flex items-center gap-1 text-[11px]">
               <ShareNetwork size={14} weight="duotone" className="text-voter-ink-700" />
-              {isCitizenMode ? 'दल परिवर्तन • Party Switch' : 'Political Mobility Dynamics'}
+              {t.labelPartySwitchCard}
             </span>
             <span className="text-[10px] bg-voter-ink-100 text-voter-ink-800 font-semibold px-2 py-0.5 rounded border border-voter-ink-200">
-              {candidate.defection_count} Career Party Switch(es)
+              {isHindi ? `${candidate.defection_count} बार दल परिवर्तन` : `${candidate.defection_count} Career Party Switch(es)`}
             </span>
           </div>
         )}
@@ -508,7 +544,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                   <span className="font-medium">
                     {isCitizenMode ? (
                       <>
-                        <span>सांसद निधि • MP Local Fund:</span>
+                        <span>{t.labelMpladsCard}</span>
                         <CivicTerm term="MPLADS" />
                       </>
                     ) : (
@@ -619,7 +655,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                 <div className="flex items-center gap-1.5">
                   <CalendarCheck size={15} weight="duotone" className="text-ashoka-700" />
                   <span>
-                    {isCitizenMode ? 'संसद हाजिरी • Attendance:' : 'Sansad Attendance:'}
+                    {isCitizenMode ? t.labelAttendanceCard : 'Sansad Attendance:'}
                   </span>
                 </div>
                 <span className="font-mono tabular-nums font-bold text-sovereign-950">
@@ -710,7 +746,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
               ✓
             </span>
             <span className="font-semibold text-sovereign-800">
-              Verified Civic Stamp • <span className="font-devanagari text-kesariya-800 font-medium">सत्यापित नागरिक मोहर</span>
+              {t.verifiedCivicStamp}
             </span>
           </div>
           <span className="font-mono text-[9.5px] text-sovereign-500 font-medium bg-dholpur-100/80 px-1.5 py-0.5 rounded border border-dholpur-200">
@@ -722,7 +758,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
       {/* Card Footer with Court-Ready PDF and Proof Inspection */}
       <div className="px-4 sm:px-5 py-2.5 sm:py-3 bg-dholpur-100/70 border-t border-dholpur-200/80 flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 text-xs text-sovereign-500">
         <span className="font-mono text-[10.5px] sm:text-[11px] flex-shrink-0">
-          Filing: {candidate.filing_year}
+          {isHindi ? 'नामांकन वर्ष' : 'Filing'}: {candidate.filing_year}
         </span>
         <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end">
           {onOpenShareCard && (
@@ -732,7 +768,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
               className="inline-flex items-center gap-1 text-sovereign-700 hover:text-sovereign-950 font-semibold bg-white hover:bg-dholpur-50 border border-dholpur-300 px-2 sm:px-2.5 py-1 rounded-lg shadow-2xs transition-all active:scale-95 text-[11px] sm:text-xs"
             >
               <ShareNetwork size={13} weight="duotone" className="text-harit-600" />
-              <span>Share</span>
+              <span>{t.reportCardBtn}</span>
             </button>
           )}
           <button
@@ -741,8 +777,8 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
             className="inline-flex items-center gap-1 text-sovereign-700 hover:text-sovereign-950 font-semibold bg-white hover:bg-dholpur-50 border border-dholpur-300 px-2 sm:px-2.5 py-1 rounded-lg shadow-2xs transition-all active:scale-95 text-[11px] sm:text-xs"
           >
             <FilePdf size={13} weight="duotone" className="text-ashoka-700" />
-            <span className="hidden sm:inline">PDF Dossier</span>
-            <span className="sm:hidden">Dossier</span>
+            <span className="hidden sm:inline">{t.dossierPdfBtn}</span>
+            <span className="sm:hidden">PDF</span>
           </button>
           <button
             onClick={() =>
@@ -757,7 +793,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
             className="text-ashoka-700 hover:text-ashoka-900 font-semibold hover:underline flex items-center gap-1 active:scale-95 text-[11px] sm:text-xs"
           >
             <FileMagnifyingGlass size={13} weight="bold" />
-            <span>Proof →</span>
+            <span>{t.viewAffidavitBtn} →</span>
           </button>
         </div>
       </div>

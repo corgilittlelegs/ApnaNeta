@@ -18,6 +18,7 @@ import {
 import { Candidate } from '../types/candidate';
 import { exportCandidateDossierPdf } from '../utils/DossierPdfExport';
 import { useViewMode } from '../context/ViewModeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { CivicTerm } from './CivicTerm';
 
 interface LeaderboardsViewProps {
@@ -44,6 +45,8 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
   const [mpladsSubTab, setMpladsSubTab] = useState<'high_spend' | 'high_unspent'>('high_spend');
   const [averagesGrouping, setAveragesGrouping] = useState<'party' | 'state'>('party');
   const { isCitizenMode } = useViewMode();
+  const { language, t } = useLanguage();
+  const isHindi = language === 'hi';
 
   const formatINR = (val: number) => {
     if (val >= 10000000) return `₹${(val / 10000000).toFixed(2)} Cr`;
@@ -198,33 +201,47 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
           <div>
             <div className="flex items-center gap-2 mb-2 flex-wrap">
               <span className="text-xs px-2.5 py-0.5 bg-kesariya-500/20 text-kesariya-300 border border-kesariya-500/30 rounded-full font-semibold">
-                NATIONAL CIVIC INDEX • राष्ट्रीय नागरिक सूचकांक
+                {isHindi ? 'राष्ट्रीय नागरिक सूचकांक' : 'NATIONAL CIVIC INDEX'}
               </span>
-              <span className="text-xs text-dholpur-300">• Sworn Transparency Rankings</span>
+              <span className="text-xs text-dholpur-300">
+                • {isHindi ? 'सत्यापित पारदर्शिता रैंकिंग' : 'Sworn Transparency Rankings'}
+              </span>
             </div>
             <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight">
-              {isCitizenMode ? 'Public Accountability Rankings • राष्ट्रीय रैंकिंग' : 'Political Transparency Leaderboards'}
+              {isCitizenMode
+                ? (isHindi ? 'सार्वजनिक जवाबदेही रैंकिंग' : 'Public Accountability Rankings')
+                : (isHindi ? 'राजनीतिक पारदर्शिता रैंकिंग' : 'Political Transparency Leaderboards')}
             </h1>
             <p className="text-sm text-dholpur-200 mt-1 max-w-2xl font-sans leading-relaxed">
-              {isCitizenMode
-                ? 'सरल राष्ट्रीय रैंकिंग: जानें कौन से सांसद सबसे अधिक सक्रिय हैं, स्थानीय निधि कैसे खर्च हुई, और संपत्ति में कितना इज़ाफा हुआ।'
-                : 'Real-time forensic aggregations identifying exponential wealth surges, affidavit arithmetic discrepancies, legislative participation, and public fund velocities.'}
+              {isHindi
+                ? (isCitizenMode
+                  ? 'सरल राष्ट्रीय रैंकिंग: जानें कौन से सांसद सबसे अधिक सक्रिय हैं, स्थानीय निधि कैसे खर्च हुई, और संपत्ति में कितना इज़ाफा हुआ।'
+                  : 'सांसदों की संपत्ति वृद्धि, हलफ़नामे की विसंगतियों और संसद में सक्रियता का व्यापक विश्लेषण।')
+                : (isCitizenMode
+                  ? 'Plain language national rankings: discover the most active MPs, fund utilization, and asset trajectories.'
+                  : 'Real-time forensic aggregations identifying exponential wealth surges, affidavit arithmetic discrepancies, legislative participation, and public fund velocities.')}
             </p>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <div className="bg-white/10 backdrop-blur-md px-4 py-3 rounded-xl border border-white/10">
-              <span className="text-[11px] text-dholpur-300 block">Analyzed Profiles • सांसद</span>
+              <span className="text-[11px] text-dholpur-300 block">
+                {isHindi ? 'विश्लेषित सांसद' : 'Analyzed Profiles'}
+              </span>
               <span className="text-xl font-mono font-bold">{totalAnalyzed.toLocaleString()}</span>
             </div>
             <div className="bg-white/10 backdrop-blur-md px-4 py-3 rounded-xl border border-white/10">
-              <span className="text-[11px] text-terracotta-300 block">Flagged Discrepancies • अंतर</span>
+              <span className="text-[11px] text-terracotta-300 block">
+                {isHindi ? 'दर्ज विसंगतियां' : 'Flagged Discrepancies'}
+              </span>
               <span className="text-xl font-mono font-bold text-terracotta-400">
                 {totalDiscrepancies} ({((totalDiscrepancies / (totalAnalyzed || 1)) * 100).toFixed(1)}%)
               </span>
             </div>
             <div className="bg-white/10 backdrop-blur-md px-4 py-3 rounded-xl border border-white/10 col-span-2 sm:col-span-1">
-              <span className="text-[11px] text-harit-300 block">Avg Attendance • हाजिरी</span>
+              <span className="text-[11px] text-harit-300 block">
+                {isHindi ? 'औसत हाजिरी' : 'Avg Attendance'}
+              </span>
               <span className="text-xl font-mono font-bold text-harit-400">{avgAttendanceOverall}%</span>
             </div>
           </div>
@@ -243,9 +260,11 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
             }`}
           >
             <TrendingUp className="w-3.5 h-3.5" />
-            <span className="sm:hidden">Wealth Growth</span>
+            <span className="sm:hidden">{isHindi ? 'संपत्ति' : 'Wealth'}</span>
             <span className="hidden sm:inline">
-              {isCitizenMode ? 'Fastest Growing Wealth (तेज़ी से बढ़ती संपत्ति)' : 'Wealth Growth (CAGR)'}
+              {isCitizenMode
+                ? (isHindi ? 'तेज़ी से बढ़ती संपत्ति' : 'Fastest Growing Wealth')
+                : (isHindi ? 'संपत्ति वृद्धि (CAGR)' : 'Wealth Growth (CAGR)')}
             </span>
           </button>
 
@@ -258,9 +277,11 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
             }`}
           >
             <AlertTriangle className="w-3.5 h-3.5" />
-            <span className="sm:hidden">Discrepancies</span>
+            <span className="sm:hidden">{isHindi ? 'विसंगतियाँ' : 'Discrepancies'}</span>
             <span className="hidden sm:inline">
-              {isCitizenMode ? 'Affidavit Discrepancies (हलफ़नामा जांच)' : 'Discrepancy Watchlist'}
+              {isCitizenMode
+                ? (isHindi ? 'हलफ़नामा जांच' : 'Affidavit Discrepancies')
+                : (isHindi ? 'विसंगति निगरानी' : 'Discrepancy Watchlist')}
             </span>
           </button>
 
@@ -273,9 +294,11 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
             }`}
           >
             <CalendarCheck className="w-3.5 h-3.5" />
-            <span className="sm:hidden">Sansad Activity</span>
+            <span className="sm:hidden">{isHindi ? 'उपस्थिति' : 'Sansad'}</span>
             <span className="hidden sm:inline">
-              {isCitizenMode ? 'Parliament Activity (संसद में सक्रियता)' : 'Sansad Attendance'}
+              {isCitizenMode
+                ? (isHindi ? 'संसद में सक्रियता' : 'Parliament Activity')
+                : (isHindi ? 'संसद उपस्थिति' : 'Sansad Attendance')}
             </span>
           </button>
 
@@ -288,9 +311,11 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
             }`}
           >
             <Landmark className="w-3.5 h-3.5" />
-            <span className="sm:hidden">MPLADS Spend</span>
+            <span className="sm:hidden">{isHindi ? 'सांसद निधि' : 'MPLADS'}</span>
             <span className="hidden sm:inline">
-              {isCitizenMode ? 'Local Fund Spending (सांसद निधि खर्च)' : 'MPLADS Fund Velocity'}
+              {isCitizenMode
+                ? (isHindi ? 'सांसद निधि खर्च' : 'Local Fund Spending')
+                : (isHindi ? 'सांसद निधि प्रवाह' : 'MPLADS Fund Velocity')}
             </span>
           </button>
 
@@ -303,9 +328,11 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
             }`}
           >
             <Award className="w-3.5 h-3.5" />
-            <span className="sm:hidden">State & Party</span>
+            <span className="sm:hidden">{isHindi ? 'राज्य/दल' : 'State/Party'}</span>
             <span className="hidden sm:inline">
-              {isCitizenMode ? 'Party & State Comparison (राज्य और दल)' : 'State & Party Averages'}
+              {isCitizenMode
+                ? (isHindi ? 'राज्य और दल तुलना' : 'Party & State Comparison')
+                : (isHindi ? 'राज्य और दल औसत' : 'State & Party Averages')}
             </span>
           </button>
         </div>
@@ -943,7 +970,7 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
               <div className="flex items-center gap-1.5">
                 <h3 className="font-serif font-bold text-sovereign-950 text-sm">
                   {isCitizenMode
-                    ? 'Constituency Development Fund Flow (सांसद निधि)'
+                    ? (isHindi ? 'सांसद स्थानीय क्षेत्र विकास निधि' : 'Constituency Development Fund Flow')
                     : 'MoSPI MPLADS Development Fund Flow'}
                 </h3>
                 <CivicTerm term="MPLADS" />

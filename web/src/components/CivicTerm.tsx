@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Info, X } from '@phosphor-icons/react';
+import { useLanguage } from '../context/LanguageContext';
 
 export type CivicTermKey =
   | 'MPLADS'
@@ -140,6 +141,7 @@ export const CivicTerm: React.FC<CivicTermProps> = ({
   const [coords, setCoords] = useState<PopoverCoords | null>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const { isHindi } = useLanguage();
   const definition = CIVIC_DICTIONARY[term];
 
   const updatePosition = useCallback(() => {
@@ -158,35 +160,29 @@ export const CivicTerm: React.FC<CivicTermProps> = ({
     const maxLeft = window.innerWidth - popoverWidth - margin;
     left = Math.max(minLeft, Math.min(left, maxLeft));
 
-    // Calculate relative arrow position pointing directly to the trigger
+    // Arrow always points to the trigger button center
     const arrowLeft = Math.max(16, Math.min(triggerCenter - left, popoverWidth - 16));
 
-    // Determine vertical placement (above vs below)
+    // Vertical placement
     const spaceBelow = window.innerHeight - rect.bottom;
-    const spaceAbove = rect.top;
-    const placeAbove = spaceBelow < estimatedHeight && spaceAbove > spaceBelow;
+    const placeAbove = spaceBelow < estimatedHeight + margin && rect.top > estimatedHeight + margin;
 
-    if (placeAbove) {
-      setCoords({
-        bottom: window.innerHeight - rect.top + 8,
-        left,
-        arrowLeft,
-        placeAbove: true,
-      });
-    } else {
-      setCoords({
-        top: rect.bottom + 8,
-        left,
-        arrowLeft,
-        placeAbove: false,
-      });
-    }
+    const top = placeAbove ? undefined : rect.bottom + 8;
+    const bottom = placeAbove ? window.innerHeight - rect.top + 8 : undefined;
+
+    setCoords({ top, bottom, left, arrowLeft, placeAbove });
   }, []);
+
+  const handleToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!isOpen) {
+      updatePosition();
+    }
+    setIsOpen(!isOpen);
+  };
 
   useEffect(() => {
     if (!isOpen) return;
-
-    updatePosition();
 
     const handleScrollOrResize = () => {
       updatePosition();
@@ -204,17 +200,20 @@ export const CivicTerm: React.FC<CivicTermProps> = ({
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsOpen(false);
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+        triggerRef.current?.focus();
+      }
     };
 
-    window.addEventListener('resize', handleScrollOrResize);
     window.addEventListener('scroll', handleScrollOrResize, true);
+    window.addEventListener('resize', handleScrollOrResize);
     document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      window.removeEventListener('resize', handleScrollOrResize);
       window.removeEventListener('scroll', handleScrollOrResize, true);
+      window.removeEventListener('resize', handleScrollOrResize);
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
     };
@@ -223,58 +222,40 @@ export const CivicTerm: React.FC<CivicTermProps> = ({
   if (!definition) return <>{children}</>;
 
   return (
-    <span className="relative inline-flex items-center">
+    <span className={`inline-flex items-center gap-1 ${className}`}>
+      {children && <span>{children}</span>}
       <button
         ref={triggerRef}
         type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setIsOpen(!isOpen);
-        }}
-        className={`group inline-flex items-center gap-1 cursor-pointer text-left focus:outline-none focus:ring-1 focus:ring-kesariya-400 rounded px-0.5 ${className}`}
+        onClick={handleToggle}
+        className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-dholpur-200/80 hover:bg-kesariya-100 text-sovereign-600 hover:text-kesariya-800 transition-colors cursor-pointer text-[10px] flex-shrink-0"
+        aria-label={`Explain ${definition.title}`}
         aria-expanded={isOpen}
-        title={`Click to learn about: ${definition.title}`}
       >
-        {children && !showIconOnly ? (
-          <span className="underline decoration-dotted decoration-dholpur-400 group-hover:decoration-kesariya-600 underline-offset-2">
-            {children}
-          </span>
-        ) : null}
-        <Info
-          size={14}
-          weight="bold"
-          className="text-kesariya-600 group-hover:text-kesariya-700 transition-colors flex-shrink-0"
-        />
+        <Info size={11} weight="bold" />
       </button>
 
-      {/* Popover Card: Portaled to document.body to prevent any container clipping or overflow issues */}
+      {/* Floating Explainer Popover (Portal to body to escape all container overflow/clip) */}
       {isOpen &&
         coords &&
-        typeof document !== 'undefined' &&
         createPortal(
           <div
             ref={popoverRef}
-            onClick={(e) => e.stopPropagation()}
-            className="fixed z-[9999] p-3.5 bg-sovereign-950 text-white rounded-2xl shadow-2xl border border-kesariya-600/30 text-xs animate-in fade-in zoom-in-95 duration-150 max-h-[85vh] overflow-y-auto"
+            role="dialog"
+            aria-modal="true"
+            className="fixed z-[9999] w-[320px] max-w-[calc(100vw-24px)] bg-[#0A192F] text-white rounded-2xl p-4 shadow-2xl border border-kesariya-500/40 text-xs animate-in fade-in zoom-in-95 duration-150"
             style={{
+              left: `${coords.left}px`,
               top: coords.top !== undefined ? `${coords.top}px` : undefined,
               bottom: coords.bottom !== undefined ? `${coords.bottom}px` : undefined,
-              left: `${coords.left}px`,
-              width: `${Math.min(320, window.innerWidth - 24)}px`,
             }}
           >
-            {/* Pointer Arrow */}
-            {coords.placeAbove ? (
+            {/* Popover Arrow */}
+            {coords.arrowLeft !== undefined && (
               <div
-                className="absolute -bottom-1.5 w-3 h-3 bg-sovereign-950 border-r border-b border-kesariya-600/30"
-                style={{
-                  left: `${coords.arrowLeft}px`,
-                  transform: 'translateX(-50%) rotate(45deg)',
-                }}
-              />
-            ) : (
-              <div
-                className="absolute -top-1.5 w-3 h-3 bg-sovereign-950 border-l border-t border-kesariya-600/30"
+                className={`absolute w-3 h-3 bg-[#0A192F] border-kesariya-500/40 ${
+                  coords.placeAbove ? 'bottom-[-6px] border-r border-b' : 'top-[-6px] border-l border-t'
+                }`}
                 style={{
                   left: `${coords.arrowLeft}px`,
                   transform: 'translateX(-50%) rotate(45deg)',
@@ -286,13 +267,14 @@ export const CivicTerm: React.FC<CivicTermProps> = ({
             <div className="flex items-start justify-between gap-2 pb-2 border-b border-sovereign-800 relative z-10">
               <div>
                 <span className="text-[10px] font-mono uppercase tracking-wider text-kesariya-400 font-semibold block">
-                  Civic Explainer • सरल शब्दावली
+                  {isHindi ? 'सरल शब्दावली' : 'Civic Explainer'}
                 </span>
-                <h4 className="font-serif font-bold text-sm text-white">{definition.title}</h4>
+                <h4 className="font-serif font-bold text-sm text-white">
+                  {isHindi ? definition.hindiTitle : definition.title}
+                </h4>
                 {definition.acronym && (
                   <p className="text-[11px] text-dholpur-300 font-mono mt-0.5">{definition.acronym}</p>
                 )}
-                <p className="text-[11px] text-kesariya-300 font-medium font-devanagari">{definition.hindiTitle}</p>
               </div>
               <button
                 onClick={() => setIsOpen(false)}
@@ -309,7 +291,7 @@ export const CivicTerm: React.FC<CivicTermProps> = ({
 
               <div className="p-2 bg-sovereign-900/90 rounded-xl border border-sovereign-800">
                 <span className="text-[10px] font-bold text-harit-400 uppercase tracking-wide block mb-0.5">
-                  💡 Why this matters to you:
+                  {isHindi ? '💡 यह आपके लिए क्यों आवश्यक है:' : '💡 Why this matters to you:'}
                 </span>
                 <p className="text-[11px] text-dholpur-200">{definition.whyItMatters}</p>
               </div>
@@ -317,7 +299,7 @@ export const CivicTerm: React.FC<CivicTermProps> = ({
 
             {/* Footer Authority */}
             <div className="pt-2 border-t border-sovereign-800 text-[10px] text-dholpur-400 flex items-center justify-between font-mono relative z-10">
-              <span>Source: {definition.sourceAuthority}</span>
+              <span>{isHindi ? 'आधिकारिक स्रोत:' : 'Source:'} {definition.sourceAuthority}</span>
             </div>
           </div>,
           document.body

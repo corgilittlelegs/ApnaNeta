@@ -21,6 +21,7 @@ import {
 } from '../utils/ReportCardExport';
 
 import { CivicEmblem } from './CivicEmblem';
+import { useLanguage } from '../context/LanguageContext';
 
 interface ReportCardModalProps {
   isOpen: boolean;
@@ -37,6 +38,7 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [copiedImage, setCopiedImage] = useState(false);
   const [copiedText, setCopiedText] = useState(false);
+  const { isHindi } = useLanguage();
 
   useEffect(() => {
     if (!isOpen || !candidate) {
@@ -122,7 +124,7 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
             <CivicEmblem size={32} />
             <div className="min-w-0">
               <h2 className="text-sm sm:text-base font-serif font-bold text-white truncate">
-                Citizen Report Card Graphic • नागरिक रिपोर्ट कार्ड
+                {isHindi ? 'नागरिक रिपोर्ट कार्ड' : 'Citizen Report Card Graphic'}
               </h2>
               <p className="text-[11px] sm:text-xs text-dholpur-300 truncate">
                 1080×1080 HD • Sworn ECI Form 26 Disclosures • WhatsApp & Social
@@ -145,10 +147,7 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
             <div className="flex flex-col items-center gap-3 text-dholpur-200">
               <Loader2 className="w-8 h-8 animate-spin text-kesariya-400" />
               <p className="text-xs font-serif font-medium tracking-wide">
-                Generating high-contrast audit graphic...
-              </p>
-              <p className="text-[11px] text-dholpur-400 font-devanagari">
-                नागरिक रिपोर्ट कार्ड तैयार हो रहा है...
+                {isHindi ? 'नागरिक रिपोर्ट कार्ड तैयार हो रहा है...' : 'Generating high-contrast audit graphic...'}
               </p>
             </div>
           ) : dataUrl ? (

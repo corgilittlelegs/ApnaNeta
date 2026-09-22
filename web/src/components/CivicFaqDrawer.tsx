@@ -11,6 +11,7 @@ import {
   CaretUp,
   CheckCircle,
 } from '@phosphor-icons/react';
+import { useLanguage } from '../context/LanguageContext';
 
 interface CivicFaqDrawerProps {
   isOpen: boolean;
@@ -23,21 +24,30 @@ interface FaqItem {
   question: string;
   hindiQuestion: string;
   answer: string;
+  hindiAnswer?: string;
   keyPoints: string[];
+  hindiKeyPoints?: string[];
 }
 
 const FAQ_ITEMS: FaqItem[] = [
   {
     id: 'mplads',
     icon: <Bank size={20} weight="duotone" className="text-kesariya-700" />,
-    question: 'What is MPLADS (सांसद निधि) & can citizens suggest local works?',
+    question: 'What is MPLADS & can citizens suggest local works?',
     hindiQuestion: 'सांसद निधि क्या है और आम नागरिक विकास कार्य कैसे सुझा सकते हैं?',
     answer:
       'MPLADS (Member of Parliament Local Area Development Scheme) provides every Lok Sabha and Rajya Sabha MP with ₹5 Crore per year directly from the Central Government to fund local community development projects in their constituency.',
+    hindiAnswer:
+      'सांसद स्थानीय क्षेत्र विकास योजना (MPLADS) के तहत प्रत्येक लोकसभा और राज्यसभा सांसद को उनके निर्वाचन क्षेत्र में स्थानीय विकास कार्यों के लिए केंद्र सरकार से प्रति वर्ष ₹5 करोड़ की निधि मिलती है।',
     keyPoints: [
       'Allowed works: Drinking water facilities, government school classrooms, rural roads, solar street lights, public health centers, and community halls.',
       'Citizen suggestion right: Under MoSPI guidelines, citizens and resident welfare associations (RWAs) can write directly to their MP recommending specific projects needed in their locality.',
       'Mandatory social reservation: At least 15% of the annual fund must be spent in Scheduled Caste (SC) inhabited areas and 7.5% in Scheduled Tribe (ST) areas.',
+    ],
+    hindiKeyPoints: [
+      'अनुमत कार्य: पेयजल व्यवस्था, सरकारी स्कूल भवन, ग्रामीण सड़कें, सोलर स्ट्रीट लाइटें, प्राथमिक स्वास्थ्य केंद्र व सामुदायिक भवन।',
+      'नागरिक सुझाव अधिकार: सांख्यिकी मंत्रालय (MoSPI) के दिशानिर्देशों के तहत नागरिक व RWA अपने सांसद को क्षेत्र के आवश्यक कार्यों की लिखित अनुशंसा भेज सकते हैं।',
+      'अनिवार्य सामाजिक आरक्षण: वार्षिक निधि का कम से कम 15% अनुसूचित जाति (SC) और 7.5% अनुसूचित जनजाति (ST) बाहुल्य क्षेत्रों में खर्च होना अनिवार्य है।',
     ],
   },
   {
@@ -47,10 +57,17 @@ const FAQ_ITEMS: FaqItem[] = [
     hindiQuestion: 'चुनावी हलफ़नामा (Form 26) क्या है और इसमें गलत जानकारी देना अपराध क्यों है?',
     answer:
       'Form 26 is a sworn legal affidavit that every candidate must sign under oath before a Notary or Magistrate when filing election nomination papers. It lists their complete bank balances, jewelry, real estate, debts, education, and criminal charges.',
+    hindiAnswer:
+      'प्रपत्र 26 (Form 26) एक कानूनी शपथपत्र है जिसे प्रत्येक प्रत्याशी को चुनाव नामांकन के समय नोटरी या मजिस्ट्रेट के समक्ष शपथपूर्वक दाखिल करना होता है। इसमें बैंक बैलेंस, संपत्ति, देनदारियां, शिक्षा और मुकदमों का पूरा ब्योरा होता है।',
     keyPoints: [
       'Constitutional right: Established by Supreme Court in ADR vs Union of India (2002) to guarantee voters have the right to know who they are voting for.',
       'Criminal penalty: Concealing assets or lying in Form 26 is punishable with up to 6 months imprisonment and fines under Section 125A of the Representation of the People Act, 1951.',
       'Apna Neta verification: We match the declared figures directly with the scanned government papers with pixel-accurate bounding box proof.',
+    ],
+    hindiKeyPoints: [
+      'संवैधानिक अधिकार: सुप्रीम कोर्ट ने ADR बनाम भारत संघ (2002) मामले में मतदाताओं के जानने के अधिकार को मौलिक अधिकार माना।',
+      'आपराधिक दंड: प्रपत्र 26 में संपत्ति छिपाना या झूठ बोलना जनप्रतिनिधित्व कानून 1951 की धारा 125A के तहत 6 माह तक के कारावास व जुर्माने से दंडनीय है।',
+      'सत्यापन: अपना नेता पर प्रत्येक आंकड़े को मूल सरकारी स्कैन कॉपी से सत्यापित कर दिखाया जाता है।',
     ],
   },
   {
@@ -60,10 +77,17 @@ const FAQ_ITEMS: FaqItem[] = [
     hindiQuestion: 'गंभीर आपराधिक मामलों और राजनीतिक प्रदर्शन के मुकदमों में क्या अंतर है?',
     answer:
       'Not all court cases are equal. Many elected leaders face FIRs for democratic protests, peaceful assemblies, or civil disobedience (e.g., Section 144 violations). Apna Neta clearly differentiates these from heinous offenses.',
+    hindiAnswer:
+      'सभी मुकदमे एक समान नहीं होते। कई जनप्रतिनिधियों पर लोकतांत्रिक प्रदर्शन, धरना या धारा 144 उल्लंघन के मामले दर्ज होते हैं। अपना नेता इन्हें जघन्य अपराधों से स्पष्ट रूप से अलग करता है।',
     keyPoints: [
       'Protest cases: Public assembly, traffic obstruction during rallies, slogan-raising, or political agitation.',
       'Serious criminal cases: Heinous offenses under IPC / BNS such as murder, extortion, fraud, corruption (Prevention of Corruption Act), violence, or crimes against women.',
       'Disqualification (RPA Section 8): Lawmakers convicted of serious offenses with a prison sentence of 2 years or more are immediately disqualified from holding office.',
+    ],
+    hindiKeyPoints: [
+      'प्रदर्शन मामले: जनसभा, रैली में यातायात अवरोध, नारेबाजी या शांतिपूर्ण राजनीतिक आंदोलन।',
+      'गंभीर मामले: हत्या, फिरौती, धोखाधड़ी, भ्रष्टाचार, हिंसा या महिलाओं के विरुद्ध अपराध जैसे जघन्य मामले।',
+      'अयोग्यता (धारा 8 RPA): 2 वर्ष या अधिक की सजा होने पर सांसद/विधायक तुरंत पद से अयोग्य हो जाते हैं।',
     ],
   },
   {
@@ -73,10 +97,17 @@ const FAQ_ITEMS: FaqItem[] = [
     hindiQuestion: 'संपत्ति-आय अनुपात (WDR) क्या दर्शाता है?',
     answer:
       'WDR calculates the relationship between a candidate’s total declared net worth and the cumulative taxable income they reported in their Income Tax Returns (ITR) over the preceding 5 years.',
+    hindiAnswer:
+      'WDR किसी प्रत्याशी की कुल घोषित संपत्ति और पिछले 5 वर्षों में उनके द्वारा दाखिल आयकर रिटर्न (ITR) की कुल कर योग्य आय के बीच का अनुपात निकालता है।',
     keyPoints: [
       'Normal growth: Wealth accumulation funded by steady business income, investments, or inheritance with matching tax filings.',
       'Anomalous growth: Net worth rising 5x to 10x higher than declared taxable earnings, indicating disproportionate assets.',
       'Multi-term CAGR: Evaluates asset growth rates across consecutive 5-year election terms to flag sudden spikes (>300%).',
+    ],
+    hindiKeyPoints: [
+      'सामान्य वृद्धि: कारोबार, निवेश या पैतृक संपत्ति से होने वाली ऐसी वृद्धि जो आयकर विवरण से मेल खाती हो।',
+      'असामान्य वृद्धि: जब कुल संपत्ति घोषित कर योग्य आय से 5 से 10 गुना अधिक तेज़ी से बढ़ती है।',
+      'दीर्घकालिक CAGR: लगातार चुनावी कार्यकालों में संपत्ति की वृद्धि दर का आकलन कर 300% से अधिक के उछाल को चिन्हित करना।',
     ],
   },
   {
@@ -86,16 +117,24 @@ const FAQ_ITEMS: FaqItem[] = [
     hindiQuestion: 'अपना नेता निष्पक्षता और 100% सही डेटा की गारंटी कैसे देता है?',
     answer:
       'Apna Neta is completely non-partisan and relies strictly on official gazettes. Every single number, name, and court case displayed on the platform links directly to primary government source documents.',
+    hindiAnswer:
+      'अपना नेता पूरी तरह गैर-पक्षपाती है और केवल आधिकारिक राजपत्रों पर निर्भर करता है। मंच पर प्रदर्शित प्रत्येक आंकड़ा, नाम और मुकदमा सीधे सरकारी दस्तावेज़ से जुड़ा है।',
     keyPoints: [
       'Primary sources: Election Commission of India (ECI), Parliament of India (sansad.in), MoSPI (e-SAKSHI), Ministry of Corporate Affairs (MCA21), and National Judicial Data Grid (eCourts).',
       'Zero placeholder policy: Where official records are not provided by authorities, the field is explicitly marked unverified or null.',
       'Open audits: Any citizen, journalist, or election agent can click "Verify Source" to view the exact page and row of the government document.',
+    ],
+    hindiKeyPoints: [
+      'प्राथमिक स्रोत: भारतीय चुनाव आयोग (ECI), भारतीय संसद (sansad.in), सांख्यिकी मंत्रालय (e-SAKSHI), कॉर्पोरेट कार्य मंत्रालय (MCA21) व ई-कोर्ट्स।',
+      'शून्य कृत्रिम डेटा नीति: यदि सरकारी रिकॉर्ड उपलब्ध नहीं है, तो उसे स्पष्ट रूप से खाली या असत्यापित दिखाया जाता है।',
+      'खुली पड़ताल: कोई भी नागरिक या पत्रकार "जाँच करें" पर क्लिक कर मूल सरकारी दस्तावेज़ का संबंधित पृष्ठ देख सकता है।',
     ],
   },
 ];
 
 export const CivicFaqDrawer: React.FC<CivicFaqDrawerProps> = ({ isOpen, onClose }) => {
   const [expandedId, setExpandedId] = useState<string | null>('mplads');
+  const { isHindi } = useLanguage();
 
   if (!isOpen) return null;
 
@@ -120,10 +159,12 @@ export const CivicFaqDrawer: React.FC<CivicFaqDrawerProps> = ({ isOpen, onClose 
             </div>
             <div>
               <h2 className="font-serif font-bold text-lg text-white">
-                Citizen Guide • नागरिक मार्गदर्शिका
+                {isHindi ? 'नागरिक मार्गदर्शिका' : 'Citizen Guide'}
               </h2>
               <p className="text-xs text-dholpur-300">
-                Understanding public records, candidate affidavits, and citizen rights
+                {isHindi
+                  ? 'सार्वजनिक रिकॉर्ड्स, हलफ़नामे एवं नागरिक अधिकारों की सरल समझ'
+                  : 'Understanding public records, candidate affidavits, and citizen rights'}
               </p>
             </div>
           </div>
@@ -141,13 +182,18 @@ export const CivicFaqDrawer: React.FC<CivicFaqDrawerProps> = ({ isOpen, onClose 
           <div className="p-3.5 bg-dholpur-50 border border-kesariya-500/30 rounded-2xl text-xs text-sovereign-950 flex items-start gap-2.5 mb-2 shadow-2xs">
             <CheckCircle size={18} weight="fill" className="text-kesariya-700 flex-shrink-0 mt-0.5" />
             <p className="font-sans leading-relaxed">
-              This guide explains the key civic metrics used on Apna Neta in plain language so you
-              can hold your elected representatives accountable with confidence.
+              {isHindi
+                ? 'यह मार्गदर्शिका अपना नेता पर उपयोग किए जाने वाले प्रमुख नागरिक मानकों को सरल भाषा में समझाती है ताकि आप आत्मविश्वास से अपने सांसदों से जवाबदेही मांग सकें।'
+                : 'This guide explains the key civic metrics used on Apna Neta in plain language so you can hold your elected representatives accountable with confidence.'}
             </p>
           </div>
 
           {FAQ_ITEMS.map((item) => {
             const isExpanded = expandedId === item.id;
+            const currentQuestion = isHindi ? item.hindiQuestion : item.question;
+            const currentAnswer = isHindi && item.hindiAnswer ? item.hindiAnswer : item.answer;
+            const currentKeyPoints = isHindi && item.hindiKeyPoints ? item.hindiKeyPoints : item.keyPoints;
+
             return (
               <div
                 key={item.id}
@@ -164,11 +210,8 @@ export const CivicFaqDrawer: React.FC<CivicFaqDrawerProps> = ({ isOpen, onClose 
                     </div>
                     <div>
                       <h3 className="font-semibold text-sovereign-950 text-sm leading-snug">
-                        {item.question}
+                        {currentQuestion}
                       </h3>
-                      <p className="text-[11px] text-sovereign-600 mt-0.5 font-medium">
-                        {item.hindiQuestion}
-                      </p>
                     </div>
                   </div>
                   <div className="text-sovereign-500 flex-shrink-0 mt-1">
@@ -178,13 +221,13 @@ export const CivicFaqDrawer: React.FC<CivicFaqDrawerProps> = ({ isOpen, onClose 
 
                 {isExpanded && (
                   <div className="px-4 pb-4 pt-1 text-xs text-sovereign-700 border-t border-dholpur-200 space-y-2.5">
-                    <p className="leading-relaxed font-sans text-sovereign-800">{item.answer}</p>
+                    <p className="leading-relaxed font-sans text-sovereign-800">{currentAnswer}</p>
                     <div className="p-3 bg-dholpur-50 rounded-xl space-y-1.5 border border-dholpur-200/80">
                       <span className="font-semibold text-[11px] text-sovereign-900 uppercase tracking-wide block">
-                        Key takeaways:
+                        {isHindi ? 'मुख्य बिंदु:' : 'Key takeaways:'}
                       </span>
                       <ul className="space-y-1 text-[11.5px] text-sovereign-700 list-disc list-inside">
-                        {item.keyPoints.map((pt, idx) => (
+                        {currentKeyPoints.map((pt, idx) => (
                           <li key={idx} className="leading-relaxed">
                             {pt}
                           </li>
@@ -201,8 +244,12 @@ export const CivicFaqDrawer: React.FC<CivicFaqDrawerProps> = ({ isOpen, onClose 
         {/* Drawer Footer */}
         <div className="p-4 bg-dholpur-100 border-t border-dholpur-300 text-center text-xs text-sovereign-600 font-sans">
           <p>
-            Democratizing governance data for 1.4 Billion citizens •{' '}
-            <strong className="text-sovereign-900 font-serif">Apna Neta (अपना नेता)</strong>
+            {isHindi
+              ? '1.4 अरब नागरिकों के लिए शासन संबंधी डेटा का लोकतंत्रीकरण • '
+              : 'Democratizing governance data for 1.4 Billion citizens • '}
+            <strong className="text-sovereign-900 font-serif">
+              {isHindi ? 'अपना नेता' : 'Apna Neta'}
+            </strong>
           </p>
         </div>
       </div>

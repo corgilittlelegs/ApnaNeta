@@ -24,10 +24,13 @@ import {
   GridFour,
   Funnel,
   SlidersHorizontal,
+  CaretLeft,
+  CaretRight,
 } from '@phosphor-icons/react';
 import { BoundingBox, Candidate } from '../types/candidate';
 import { exportCandidateDossierPdf } from '../utils/DossierPdfExport';
 import { CivicEmblem } from './CivicEmblem';
+import { useLanguage } from '../context/LanguageContext';
 
 interface AffidavitProofViewerProps {
   isOpen: boolean;
@@ -50,6 +53,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
   bbox,
   candidate,
 }) => {
+  const { language, t } = useLanguage();
   const [zoom, setZoom] = useState<number>(100);
   const [activeTab, setActiveTab] = useState<'transcript' | 'integrity_audit' | 'mplads' | 'wealth_history' | 'raw_pdf'>('transcript');
   const [selectedPage, setSelectedPage] = useState<number>(1);
@@ -58,6 +62,20 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
   const [verifiedSuccess, setVerifiedSuccess] = useState<boolean>(false);
 
   if (!isOpen) return null;
+
+  // Navigate to a specific filing part with smooth scroll and active focus
+  const handleSelectPage = (pageNumber: number) => {
+    setSelectedPage(pageNumber);
+    if (activeTab !== 'transcript') {
+      setActiveTab('transcript');
+    }
+    setTimeout(() => {
+      const element = document.getElementById(`doc-part-${pageNumber}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 50);
+  };
 
   // Clean candidate name (strip stray dots or honorific remnants)
   const cleanName = (candidateName || candidate?.name || '')
@@ -125,18 +143,17 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <h3 className="font-serif font-bold text-white text-sm sm:text-base leading-tight truncate">
-                    APNA NETA: Forensic Affidavit Verification & Legal Audit
+                    {language === 'hi'
+                      ? `अपना नेता: ${t.proofModalTitle}`
+                      : `APNA NETA: ${t.proofModalTitle}`}
                   </h3>
-                  <span className="text-xs font-devanagari text-kesariya-400 font-medium hidden md:inline">
-                    • प्रमाण सत्यापन एवं विधिक संपरीक्षा
-                  </span>
                 </div>
                 <div className="flex items-center gap-1.5 sm:gap-2 mt-0.5 flex-wrap">
                   <span className="text-[11px] sm:text-xs text-dholpur-300 truncate font-sans">
                     {cleanName} • {constituency} ({house})
                   </span>
                   <span className="text-[8.5px] sm:text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 bg-harit-900/60 text-harit-300 rounded-md border border-harit-600/40 whitespace-nowrap">
-                    Section 79 Evidence
+                    {t.proofEvidenceTag}
                   </span>
                 </div>
               </div>
@@ -195,7 +212,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                   activeTab === 'transcript' ? 'bg-kesariya-600 text-sovereign-950 shadow-sm font-bold' : 'text-dholpur-300 hover:text-white'
                 }`}
               >
-                Form 26 Transcript • शपथपत्र
+                {t.proofTabTranscript}
               </button>
               <button
                 onClick={() => setActiveTab('integrity_audit')}
@@ -204,7 +221,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                 }`}
               >
                 <Scales size={14} weight="duotone" className={activeTab === 'integrity_audit' ? 'text-sovereign-950' : 'text-kesariya-400'} />
-                <span>Integrity & Conflicts • विधिक विवाद</span>
+                <span>{t.proofTabIntegrity}</span>
                 {(candidate?.has_section_9a_conflict || candidate?.is_rpa_section_8_disqualified || (candidate?.defection_count ?? 0) > 0) && (
                   <span className="w-1.5 h-1.5 rounded-full bg-terracotta-500 animate-pulse" />
                 )}
@@ -216,7 +233,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                 }`}
               >
                 <Bank size={14} weight="duotone" className={activeTab === 'mplads' ? 'text-sovereign-950' : 'text-kesariya-400'} />
-                <span>MPLADS Works • सांसद निधि</span>
+                <span>{t.proofTabMplads}</span>
               </button>
               <button
                 onClick={() => setActiveTab('wealth_history')}
@@ -225,7 +242,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                 }`}
               >
                 <TrendUp size={14} weight="bold" className={activeTab === 'wealth_history' ? 'text-sovereign-950' : 'text-harit-400'} />
-                <span>10-Yr Wealth • संपत्ति वृद्धि</span>
+                <span>{t.proofTabWealth}</span>
               </button>
               <button
                 onClick={() => setActiveTab('raw_pdf')}
@@ -233,7 +250,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                   activeTab === 'raw_pdf' ? 'bg-kesariya-600 text-sovereign-950 shadow-sm font-bold' : 'text-dholpur-300 hover:text-white'
                 }`}
               >
-                Raw ECI PDF • मूल दस्तावेज़
+                {t.proofTabRawPdf}
               </button>
             </div>
 
@@ -258,11 +275,10 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
               className="flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-dholpur-50 text-sovereign-800 border border-dholpur-300 rounded-lg text-xs font-semibold transition-colors cursor-pointer shadow-2xs"
             >
               <Funnel size={13} weight="duotone" className="text-kesariya-600" />
-              <span>{isSidebarOpen ? 'Hide Pages ◂' : 'Show Pages ▸'}</span>
+              <span>{isSidebarOpen ? (language === 'hi' ? 'पृष्ठ छिपाएं ◂' : 'Hide Pages ◂') : (language === 'hi' ? 'पृष्ठ दिखाएं ▸' : 'Show Pages ▸')}</span>
             </button>
             <h4 className="font-serif font-bold text-sovereign-950 text-xs sm:text-sm tracking-wide flex items-center gap-1.5">
-              <span>ILLUMINATED CONSTITUTIONAL DOCUMENT VIEWER</span>
-              <span className="font-devanagari text-kesariya-800 font-medium hidden sm:inline">• प्रदीप्त संवैधानिक दस्तावेज़ दर्शक</span>
+              <span>{t.proofViewerTitle}</span>
             </h4>
           </div>
 
@@ -277,7 +293,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
               }`}
             >
               {verifiedSuccess ? <Check size={14} weight="bold" /> : <ShieldCheck size={14} weight="duotone" className="text-kesariya-400" />}
-              <span>{verifiedSuccess ? 'AFFIDAVIT VERIFIED ✓' : 'VERIFY AFFIDAVIT'}</span>
+              <span>{verifiedSuccess ? t.proofAffidavitVerified : t.proofVerifyAffidavit}</span>
             </button>
 
             {/* View Legal Actions Button */}
@@ -286,7 +302,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
               className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-dholpur-50 text-sovereign-900 text-xs font-semibold rounded-xl border border-dholpur-300 transition-all cursor-pointer shadow-2xs"
             >
               <Scales size={14} weight="duotone" className="text-ashoka-700" />
-              <span>VIEW LEGAL ACTIONS</span>
+              <span>{t.proofViewLegalActions}</span>
             </button>
 
             {/* Download Audit Report */}
@@ -296,7 +312,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-kesariya-600 hover:bg-kesariya-500 text-sovereign-950 text-xs font-bold rounded-xl border border-kesariya-500/50 transition-all cursor-pointer shadow-2xs"
               >
                 <DownloadSimple size={14} weight="bold" />
-                <span>DOWNLOAD AUDIT REPORT</span>
+                <span>{t.proofDownloadAuditReport}</span>
               </button>
             )}
           </div>
@@ -310,34 +326,34 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
             <aside className="w-full md:w-48 lg:w-56 bg-dholpur-100 border-b md:border-b-0 md:border-r border-dholpur-300 flex flex-col flex-shrink-0">
               <div className="p-3 border-b border-dholpur-200 flex items-center justify-between">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-sovereign-700 font-mono">
-                  FILING SECTIONS
+                  {t.proofFilingSections}
                 </span>
                 <span className="text-[10px] bg-dholpur-200 text-sovereign-700 px-1.5 py-0.5 rounded font-mono">
-                  4 Parts
+                  {t.proofFourParts}
                 </span>
               </div>
 
               {/* Thumbnails list */}
               <div className="flex-1 overflow-y-auto p-3 space-y-3">
                 {[
-                  { page: 1, label: 'Part 1: Sworn Identity & Oath', sub: 'ECI Form 26 Preamble' },
-                  { page: 2, label: 'Part 2: PAN & 5-Yr Income', sub: 'ITR Assessment' },
-                  { page: 3, label: 'Part 3: Movable & Immovable', sub: 'Asset Reconciler' },
-                  { page: 4, label: 'Part 4: Judicial Dockets', sub: 'Notary Verification' },
+                  { page: 1, label: t.proofPart1Title, sub: t.proofPart1Sub },
+                  { page: 2, label: t.proofPart2Title, sub: t.proofPart2Sub },
+                  { page: 3, label: t.proofPart3Title, sub: t.proofPart3Sub },
+                  { page: 4, label: t.proofPart4Title, sub: t.proofPart4Sub },
                 ].map((item) => (
                   <button
                     key={item.page}
-                    onClick={() => setSelectedPage(item.page)}
+                    onClick={() => handleSelectPage(item.page)}
                     className={`w-full text-left p-2.5 rounded-xl border transition-all cursor-pointer shadow-2xs ${
                       selectedPage === item.page
-                        ? 'bg-white border-kesariya-600 shadow-sm ring-2 ring-kesariya-400/30'
+                        ? 'bg-white border-kesariya-600 shadow-sm ring-2 ring-kesariya-400/50'
                         : 'bg-dholpur-50 hover:bg-white border-dholpur-200 text-sovereign-700'
                     }`}
                   >
                     <div className="w-full h-20 bg-white rounded-lg border border-dholpur-200 p-1.5 flex flex-col justify-between mb-2 shadow-inner">
                       <div className="flex items-center justify-between border-b border-dholpur-100 pb-1">
                         <span className="text-[9px] font-bold text-sovereign-900 font-mono">Part {item.page}</span>
-                        <span className="w-2 h-2 rounded-full bg-kesariya-500/60" />
+                        <span className={`w-2 h-2 rounded-full transition-all ${selectedPage === item.page ? 'bg-kesariya-500 ring-2 ring-kesariya-300' : 'bg-kesariya-500/40'}`} />
                       </div>
                       <div className="space-y-1">
                         <div className="h-1.5 bg-dholpur-200 rounded w-5/6" />
@@ -361,7 +377,25 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                 >
                   <GridFour size={16} weight="duotone" />
                 </button>
-                <span className="text-[10px] font-mono text-sovereign-500">Part {selectedPage} of 4</span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => handleSelectPage(Math.max(1, selectedPage - 1))}
+                    disabled={selectedPage <= 1}
+                    className="p-1 hover:text-sovereign-950 hover:bg-dholpur-200 rounded disabled:opacity-30 cursor-pointer transition-colors"
+                    title="Previous Part"
+                  >
+                    <CaretLeft size={14} weight="bold" />
+                  </button>
+                  <span className="text-[10px] font-mono text-sovereign-600 font-medium">Part {selectedPage} of 4</span>
+                  <button
+                    onClick={() => handleSelectPage(Math.min(4, selectedPage + 1))}
+                    disabled={selectedPage >= 4}
+                    className="p-1 hover:text-sovereign-950 hover:bg-dholpur-200 rounded disabled:opacity-30 cursor-pointer transition-colors"
+                    title="Next Part"
+                  >
+                    <CaretRight size={14} weight="bold" />
+                  </button>
+                </div>
                 <span className="text-[10px] font-mono font-bold text-kesariya-700">Official ECI</span>
               </div>
             </aside>
@@ -443,14 +477,27 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                         </span>
                       </div>
 
-                      {/* Deponent Sworn Declaration (Clauses 1 to 3) */}
+                      {/* PART 1: Deponent Sworn Declaration (Clauses 1 to 3) */}
                       <div
+                        id="doc-part-1"
                         className={`rounded-xl transition-all overflow-hidden p-3.5 sm:p-4 text-[11px] leading-relaxed text-sovereign-900 font-sans ${
-                          isIdentity
+                          selectedPage === 1
+                            ? 'ring-2 ring-kesariya-500 bg-kesariya-400/10 shadow-[0_0_20px_rgba(217,119,6,0.2)]'
+                            : isIdentity
                             ? 'border-2 border-kesariya-500 bg-kesariya-400/10 shadow-[0_0_20px_rgba(217,119,6,0.25)]'
                             : 'border border-dholpur-200 bg-dholpur-50/60'
                         }`}
                       >
+                        <div className="flex items-center justify-between mb-2 pb-1 border-b border-dholpur-200/80">
+                          <span className="font-mono text-[9px] font-bold text-kesariya-800 uppercase tracking-wider">
+                            {t.proofDocPart1Header}
+                          </span>
+                          {selectedPage === 1 && (
+                            <span className="text-[8.5px] font-mono font-bold bg-kesariya-600 text-white px-1.5 py-0.5 rounded shadow-2xs">
+                              ACTIVE SECTION
+                            </span>
+                          )}
+                        </div>
                         {isIdentity && (
                           <div className="bg-kesariya-100 border-b border-kesariya-300 -mx-4 -mt-4 px-3.5 py-1.5 flex items-center justify-between mb-3 font-sans">
                             <div className="flex items-center gap-2">
@@ -485,14 +532,27 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                         </p>
                       </div>
 
-                      {/* Section (4): Permanent Account Number (PAN) & 5-Yr Income Returns */}
+                      {/* PART 2: Section (4): Permanent Account Number (PAN) & 5-Yr Income Returns */}
                       <div
+                        id="doc-part-2"
                         className={`rounded-xl transition-all overflow-hidden p-3.5 text-[10px] font-sans ${
-                          isIncome
+                          selectedPage === 2
+                            ? 'ring-2 ring-kesariya-500 bg-kesariya-400/10 shadow-[0_0_20px_rgba(217,119,6,0.2)]'
+                            : isIncome
                             ? 'border-2 border-kesariya-500 bg-kesariya-400/10 shadow-[0_0_20px_rgba(217,119,6,0.25)]'
                             : 'border border-dholpur-200 bg-dholpur-50/60'
                         }`}
                       >
+                        <div className="flex items-center justify-between mb-2 pb-1 border-b border-dholpur-200/80">
+                          <span className="font-mono text-[9px] font-bold text-kesariya-800 uppercase tracking-wider">
+                            {t.proofDocPart2Header}
+                          </span>
+                          {selectedPage === 2 && (
+                            <span className="text-[8.5px] font-mono font-bold bg-kesariya-600 text-white px-1.5 py-0.5 rounded shadow-2xs">
+                              ACTIVE SECTION
+                            </span>
+                          )}
+                        </div>
                         {isIncome && (
                           <div className="bg-kesariya-100 border-b border-kesariya-300 -mx-3.5 -mt-3.5 px-3 py-1 flex items-center justify-between mb-2">
                             <span className="text-[9px] font-bold font-mono bg-kesariya-600 text-white px-2 py-0.5 rounded">
@@ -545,14 +605,27 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                         </table>
                       </div>
 
-                      {/* Section (7): Movable and Immovable Assets Summary */}
+                      {/* PART 3: Section (7): Movable and Immovable Assets Summary */}
                       <div
+                        id="doc-part-3"
                         className={`rounded-xl transition-all overflow-hidden p-3.5 text-[10px] font-sans ${
-                          (isMovable || isDiscrepancy || isNetWorth)
+                          selectedPage === 3
+                            ? 'ring-2 ring-kesariya-500 bg-kesariya-400/10 shadow-[0_0_20px_rgba(217,119,6,0.2)]'
+                            : (isMovable || isDiscrepancy || isNetWorth)
                             ? 'border-2 border-kesariya-500 bg-kesariya-400/10 shadow-[0_0_20px_rgba(217,119,6,0.25)]'
                             : 'border border-dholpur-200 bg-dholpur-50/60'
                         }`}
                       >
+                        <div className="flex items-center justify-between mb-2 pb-1 border-b border-dholpur-200/80">
+                          <span className="font-mono text-[9px] font-bold text-kesariya-800 uppercase tracking-wider">
+                            {t.proofDocPart3Header}
+                          </span>
+                          {selectedPage === 3 && (
+                            <span className="text-[8.5px] font-mono font-bold bg-kesariya-600 text-white px-1.5 py-0.5 rounded shadow-2xs">
+                              ACTIVE SECTION
+                            </span>
+                          )}
+                        </div>
                         {(isMovable || isDiscrepancy || isNetWorth) && (
                           <div className="bg-kesariya-100 border-b border-kesariya-300 -mx-3.5 -mt-3.5 px-3 py-1 flex items-center justify-between mb-2">
                             <span className="text-[9px] font-bold font-mono bg-kesariya-600 text-white px-2 py-0.5 rounded">
@@ -613,31 +686,105 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                         </table>
                       </div>
 
-                      {/* Notary Seal and Signature Block */}
-                      <div className="pt-3 border-t border-dholpur-300 flex items-end justify-between">
-                        {/* Official Terracotta Notary Rubber Stamp */}
-                        <div className="w-28 h-28 rounded-full border-2 border-dashed border-terracotta-600/80 p-2 text-terracotta-700 font-mono text-[6.5px] text-center flex flex-col items-center justify-center select-none rotate-[-6deg] bg-terracotta-50/30">
-                          <span className="font-bold text-[7.5px] uppercase tracking-wider">NOTARY PUBLIC</span>
-                          <span>GOVT. OF INDIA</span>
-                          <span className="font-bold">ECI STATUTORY FILING</span>
-                          <span>COMMISSION VALID</span>
-                          <span className="text-[6px]">RPA 1951 VERIFIED</span>
+                      {/* PART 4: Section (5) & (6): Judicial Dockets, Criminal Cases & Notary Verification */}
+                      <div
+                        id="doc-part-4"
+                        className={`rounded-xl transition-all overflow-hidden p-3.5 text-[10px] font-sans space-y-3 ${
+                          selectedPage === 4
+                            ? 'ring-2 ring-kesariya-500 bg-kesariya-400/10 shadow-[0_0_20px_rgba(217,119,6,0.2)]'
+                            : 'border border-dholpur-200 bg-dholpur-50/60'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1 pb-1 border-b border-dholpur-200/80">
+                          <span className="font-mono text-[9px] font-bold text-kesariya-800 uppercase tracking-wider">
+                            {t.proofDocPart4Header}
+                          </span>
+                          {selectedPage === 4 && (
+                            <span className="text-[8.5px] font-mono font-bold bg-kesariya-600 text-white px-1.5 py-0.5 rounded shadow-2xs">
+                              ACTIVE SECTION
+                            </span>
+                          )}
                         </div>
 
-                        {/* Deponent Signature */}
-                        <div className="text-right text-[10px] space-y-1 font-sans">
-                          <p className="text-sovereign-500 text-[9px] italic">
-                            Solemnly affirmed before me at {constituency} on {candidate?.filing_date ?? `${filingYear}`}.
+                        {/* Clauses 5 & 6 Criminal Case Disclosures */}
+                        <div>
+                          <p className="font-bold text-sovereign-950 mb-1.5">
+                            (5) & (6) Details of Pending Criminal Cases & RPA 1951 Section 8 Convictions:
                           </p>
-                          <p className="font-serif italic font-bold text-sovereign-950 text-sm pt-1">
-                            Sd/- {cleanName}
-                          </p>
-                          <p className="font-sans font-bold text-sovereign-700 text-[9px] uppercase tracking-wider">
-                            DEPONENT (CONTESTING CANDIDATE)
-                          </p>
-                          <span className="inline-flex items-center gap-1 text-[8px] text-harit-800 bg-harit-50 px-2 py-0.5 rounded border border-harit-300 font-sans">
-                            <CheckCircle size={12} weight="fill" className="text-harit-600" /> ECI Returning Officer Accepted
-                          </span>
+                          {candidate?.dockets && candidate.dockets.length > 0 ? (
+                            <table className="w-full text-[9px] border-collapse border border-dholpur-300 text-left bg-white mb-2">
+                              <thead>
+                                <tr className="bg-dholpur-100 text-sovereign-800">
+                                  <th className="border border-dholpur-300 p-1 font-mono">Case No.</th>
+                                  <th className="border border-dholpur-300 p-1">Court</th>
+                                  <th className="border border-dholpur-300 p-1">Charges / Sections</th>
+                                  <th className="border border-dholpur-300 p-1 text-center">Severity</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {candidate.dockets.map((d, i) => (
+                                  <tr key={i}>
+                                    <td className="border border-dholpur-300 p-1 font-mono">{d.fir_or_case_number || `Docket #${i + 1}`}</td>
+                                    <td className="border border-dholpur-300 p-1">{d.court_name || 'Competent Court'}</td>
+                                    <td className="border border-dholpur-300 p-1">
+                                      {d.statutory_charges && d.statutory_charges.length > 0
+                                        ? d.statutory_charges.join(', ')
+                                        : 'Filed on record'}
+                                    </td>
+                                    <td className="border border-dholpur-300 p-1 text-center font-bold text-terracotta-700">
+                                      {d.is_serious_category ? 'Heinous / Serious' : 'Protest / Other'}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          ) : candidate?.criminal_cases_count && candidate.criminal_cases_count > 0 ? (
+                            <div className="p-2 bg-terracotta-50/70 border border-terracotta-300 text-terracotta-900 rounded-lg mb-2">
+                              <p className="font-semibold">
+                                {candidate.criminal_cases_count} Criminal Charge(s) on ECI Form 26 record.
+                              </p>
+                              <p className="text-[9px] text-terracotta-800 mt-0.5">
+                                {candidate.serious_criminal_cases_count > 0
+                                  ? `${candidate.serious_criminal_cases_count} serious/heinous charges framed by court of competent jurisdiction.`
+                                  : 'Registered protest/agitation related first information reports.'}
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="p-2 bg-harit-50 border border-harit-200 text-harit-900 rounded-lg flex items-center gap-1.5 mb-2">
+                              <CheckCircle size={14} weight="fill" className="text-harit-600 flex-shrink-0" />
+                              <span>
+                                Deponent affirms 0 pending criminal cases and 0 convictions under Section 8 of the Representation of the People Act, 1951.
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Notary Seal and Signature Block */}
+                        <div className="pt-3 border-t border-dholpur-300 flex items-end justify-between">
+                          {/* Official Terracotta Notary Rubber Stamp */}
+                          <div className="w-28 h-28 rounded-full border-2 border-dashed border-terracotta-600/80 p-2 text-terracotta-700 font-mono text-[6.5px] text-center flex flex-col items-center justify-center select-none rotate-[-6deg] bg-terracotta-50/30 flex-shrink-0">
+                            <span className="font-bold text-[7.5px] uppercase tracking-wider">NOTARY PUBLIC</span>
+                            <span>GOVT. OF INDIA</span>
+                            <span className="font-bold">ECI STATUTORY FILING</span>
+                            <span>COMMISSION VALID</span>
+                            <span className="text-[6px]">RPA 1951 VERIFIED</span>
+                          </div>
+
+                          {/* Deponent Signature */}
+                          <div className="text-right text-[10px] space-y-1 font-sans">
+                            <p className="text-sovereign-500 text-[9px] italic">
+                              Solemnly affirmed before me at {constituency} on {candidate?.filing_date ?? `${filingYear}`}.
+                            </p>
+                            <p className="font-serif italic font-bold text-sovereign-950 text-sm pt-1">
+                              Sd/- {cleanName}
+                            </p>
+                            <p className="font-sans font-bold text-sovereign-700 text-[9px] uppercase tracking-wider">
+                              DEPONENT (CONTESTING CANDIDATE)
+                            </p>
+                            <span className="inline-flex items-center gap-1 text-[8px] text-harit-800 bg-harit-50 px-2 py-0.5 rounded border border-harit-300 font-sans">
+                              <CheckCircle size={12} weight="fill" className="text-harit-600" /> ECI Returning Officer Accepted
+                            </span>
+                          </div>
                         </div>
                       </div>
 
@@ -814,10 +961,10 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
             <div className="p-4 border-b border-dholpur-200 bg-gradient-to-r from-dholpur-100 to-white flex items-center justify-between">
               <div>
                 <h4 className="font-serif font-bold text-sovereign-950 text-sm tracking-wide">
-                  AUTOMATED ALGORITHMIC AUDIT TRACE
+                  {t.proofAuditTraceTitle}
                 </h4>
                 <p className="text-[10.5px] text-sovereign-500 font-sans">
-                  स्वचालित एल्गोरिथम ऑडिट ट्रेस • Real-time Forensic Verification
+                  {t.proofAuditTraceSub}
                 </p>
               </div>
               <span className="text-[9px] font-mono font-bold px-2 py-0.5 bg-harit-100 text-harit-800 rounded border border-harit-300">
@@ -1063,14 +1210,14 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
                 onClick={() => setActiveTab('integrity_audit')}
                 className="flex-1 py-2 px-3 bg-white hover:bg-dholpur-50 text-sovereign-900 text-xs font-bold rounded-xl border border-dholpur-300 transition-colors shadow-2xs cursor-pointer text-center"
               >
-                VIEW LEGAL ACTIONS
+                {t.proofViewLegalActions}
               </button>
               {candidate && (
                 <button
                   onClick={() => exportCandidateDossierPdf(candidate)}
                   className="flex-1 py-2 px-3 bg-kesariya-600 hover:bg-kesariya-500 text-sovereign-950 text-xs font-bold rounded-xl border border-kesariya-500/50 transition-colors shadow-2xs cursor-pointer text-center"
                 >
-                  DOWNLOAD AUDIT REPORT
+                  {t.proofDownloadAuditReport}
                 </button>
               )}
             </div>
@@ -1088,7 +1235,7 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
             onClick={onClose}
             className="px-5 py-1.5 bg-sovereign-900 text-dholpur-50 text-xs font-semibold rounded-xl hover:bg-sovereign-800 transition-colors shadow-sm cursor-pointer ml-3 flex-shrink-0"
           >
-            Close Proof
+            {t.proofCloseProof}
           </button>
         </div>
       </div>

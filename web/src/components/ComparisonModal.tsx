@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Candidate } from '../types/candidate';
 import { exportCandidateDossierPdf } from '../utils/DossierPdfExport';
+import { useLanguage } from '../context/LanguageContext';
 
 interface ComparisonModalProps {
   isOpen: boolean;
@@ -34,8 +35,9 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
   onOpenShareCard,
 }) => {
   const [activeMobileIndex, setActiveMobileIndex] = useState(0);
+  const { isHindi } = useLanguage();
 
-  if (!isOpen) return null;
+  if (!isOpen || candidates.length === 0) return null;
 
   const formatINR = (val: number) => {
     if (val >= 10000000) return `₹${(val / 10000000).toFixed(2)} Cr`;
@@ -44,8 +46,15 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-sovereign-950/80 backdrop-blur-md overflow-y-auto">
-      <div className="bg-dholpur-50 rounded-2xl shadow-2xl border border-kesariya-600/30 w-full max-w-6xl max-h-[92dvh] sm:max-h-[92vh] flex flex-col overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6">
+      {/* Dark backdrop */}
+      <div
+        className="fixed inset-0 bg-sovereign-950/80 backdrop-blur-sm transition-opacity"
+        onClick={onClose}
+      />
+
+      {/* Modal Container */}
+      <div className="relative w-full max-w-6xl max-h-[90vh] bg-white rounded-2xl shadow-2xl z-10 flex flex-col overflow-hidden border border-dholpur-300">
         
         {/* Top Tiranga Accent Line */}
         <div className="tiranga-accent-bar" />
@@ -58,16 +67,17 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-1.5 sm:gap-2">
-                <h2 className="text-base sm:text-lg font-serif font-bold text-white truncate">Candidate Matrix</h2>
-                <span className="text-xs font-devanagari text-kesariya-400 font-medium hidden sm:inline">
-                  • तुलनात्मक लेखापरीक्षण
-                </span>
+                <h2 className="text-base sm:text-lg font-serif font-bold text-white truncate">
+                  {isHindi ? 'तुलनात्मक लेखापरीक्षण' : 'Candidate Matrix'}
+                </h2>
                 <span className="text-[10px] sm:text-xs bg-kesariya-500/20 text-kesariya-300 font-bold px-2 py-0.5 rounded-full font-mono flex-shrink-0 border border-kesariya-500/30">
                   {candidates.length}/3
                 </span>
               </div>
               <p className="text-[11px] sm:text-xs text-dholpur-300 truncate sm:line-clamp-none">
-                Comparative audit across ECI Form 26 disclosures, Sansad attendance, and MPLADS.
+                {isHindi
+                  ? 'प्रपत्र 26 शपथपत्र, संसद उपस्थिति और सांसद निधि का तुलनात्मक विश्लेषण।'
+                  : 'Comparative audit across ECI Form 26 disclosures, Sansad attendance, and MPLADS.'}
               </p>
             </div>
           </div>

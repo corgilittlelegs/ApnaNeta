@@ -8,6 +8,7 @@ import { ReportCardModal } from './components/ReportCardModal';
 import { LeaderboardsView } from './components/LeaderboardsView';
 import { Candidate, BoundingBox, MPLADSRecord, HistoricalWealthRecord, ElectionExpenseReport } from './types/candidate';
 import { ViewModeProvider, useViewMode } from './context/ViewModeContext';
+import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { CivicFaqDrawer } from './components/CivicFaqDrawer';
 import {
   Cpu,
@@ -297,6 +298,7 @@ function mergeCandidatesIntoMap(map: Map<string, Candidate>, newCandidates: Cand
 
 const AppContent: React.FC = () => {
   const { isCitizenMode } = useViewMode();
+  const { t, isHindi } = useLanguage();
   const [isCivicGuideOpen, setIsCivicGuideOpen] = useState<boolean>(false);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [totalDatabaseCount, setTotalDatabaseCount] = useState<number>(0);
@@ -757,32 +759,26 @@ const AppContent: React.FC = () => {
               <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                 <span className="inline-flex items-center gap-1 text-[11px] font-mono font-semibold uppercase bg-harit-50 text-harit-900 border border-harit-200/90 px-2.5 py-0.5 rounded-md">
                   <ShieldCheck size={14} weight="duotone" className="text-harit-600" />
-                  {isCitizenMode
-                    ? 'संप्रभु नागरिक पारदर्शिता • Sovereign Citizen Transparency'
-                    : 'Section 79 Evidentiary Safe Harbor'}
+                  {isCitizenMode ? t.overviewBadgeCitizen : t.overviewBadgeForensic}
                 </span>
                 <span className="text-xs text-sovereign-500 font-sans hidden sm:inline">
-                  {isCitizenMode
-                    ? '• Official Government Gazettes (भारतीय राजपत्र)'
-                    : '• ECI Form 26 Sworn Disclosures'}
+                  • {isCitizenMode ? t.overviewGazetteCitizen : t.overviewGazetteForensic}
                 </span>
               </div>
               <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-sovereign-950 tracking-tight leading-tight">
                 {isCitizenMode ? (
                   <>
-                    <span>National Overview • राष्ट्रीय अवलोकन</span>
-                    <span className="block text-base sm:text-lg font-devanagari text-kesariya-800 font-semibold mt-1">
-                      संसदीय पारदर्शिता एवं सार्वजनिक कोष लेखापरीक्षण
+                    <span>{t.overviewTitleCitizen}</span>
+                    <span className="block text-base sm:text-lg text-kesariya-800 font-semibold mt-1">
+                      {t.overviewSubtitleCitizen}
                     </span>
                   </>
                 ) : (
-                  'Empirical Political Accountability & Forensic Audits'
+                  t.overviewTitleForensic
                 )}
               </h1>
               <p className="text-sovereign-700 text-xs sm:text-sm mt-1.5 max-w-2xl font-sans leading-relaxed">
-                {isCitizenMode
-                  ? 'अपने सांसद (MP) का विवरण देखें: उनके स्थानीय क्षेत्र विकास कोष (सांसद निधि) का उपयोग, घोषित संपत्ति की वृद्धि दर, और संसद में उपस्थिति व प्रश्न। हर तथ्य आधिकारिक शपथपत्रों से सत्यापित है।'
-                  : 'Automated civic intelligence cross-referencing ECI affidavits, Sansad parliamentary participation, and MoSPI public fund flows. Every metric is bound to cryptographic PDF coordinates.'}
+                {isCitizenMode ? t.overviewDescCitizen : t.overviewDescForensic}
               </p>
             </div>
           </div>
@@ -794,7 +790,7 @@ const AppContent: React.FC = () => {
             <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-dholpur-300/80 shadow-xs hover:border-dholpur-400 transition-all flex flex-col justify-between">
               <div>
                 <span className="text-[10px] sm:text-[11px] text-sovereign-600 font-semibold block truncate">
-                  Total MPs tracked • कुल सांसद
+                  {t.telemetryTotalMps}
                 </span>
                 <p className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-sovereign-950 mt-1">
                   {(totalDatabaseCount || candidates.length).toLocaleString()}
@@ -802,7 +798,7 @@ const AppContent: React.FC = () => {
               </div>
               <div className="mt-3 flex items-end justify-between">
                 <span className="text-[9.5px] text-harit-700 font-medium">
-                  {isLiveConnected ? 'Live Supabase' : 'Verified Open Records'}
+                  {isLiveConnected ? t.telemetryLiveSupabase : t.telemetryVerifiedOpenRecords}
                 </span>
                 {/* Mini bar chart SVG */}
                 <div className="flex items-end gap-0.5 h-4">
@@ -817,14 +813,14 @@ const AppContent: React.FC = () => {
             <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-dholpur-300/80 shadow-xs hover:border-dholpur-400 transition-all flex flex-col justify-between">
               <div>
                 <span className="text-[10px] sm:text-[11px] text-sovereign-600 font-semibold block truncate">
-                  Declared Assets Total • कुल संपत्ति
+                  {t.telemetryAssetsTotal}
                 </span>
                 <p className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-sovereign-950 mt-1">
                   {totalAssetsSum > 0 ? formatINR(totalAssetsSum) : '—'}
                 </p>
               </div>
               <div className="mt-3 flex items-end justify-between">
-                <span className="text-[9.5px] text-sovereign-500">Movable + Immovable</span>
+                <span className="text-[9.5px] text-sovereign-500">{t.telemetryAssetsSubtitle}</span>
                 {/* Mini bar chart in gold */}
                 <div className="flex items-end gap-0.5 h-4">
                   <div className="w-1.5 bg-kesariya-300 rounded-t h-1.5" />
@@ -838,14 +834,14 @@ const AppContent: React.FC = () => {
             <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-dholpur-300/80 shadow-xs hover:border-dholpur-400 transition-all flex flex-col justify-between">
               <div>
                 <span className="text-[10px] sm:text-[11px] text-sovereign-600 font-semibold block truncate">
-                  Pending Criminal Cases • आपराधिक मामले
+                  {t.telemetryCriminalCases}
                 </span>
                 <p className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-terracotta-700 mt-1">
                   {totalCriminalCasesSum}
                 </p>
               </div>
               <div className="mt-3 flex items-end justify-between">
-                <span className="text-[9.5px] text-terracotta-700 font-medium">ECI Sworn Dockets</span>
+                <span className="text-[9.5px] text-terracotta-700 font-medium">{t.telemetryCriminalSubtitle}</span>
                 {/* Mini red bar chart */}
                 <div className="flex items-end gap-0.5 h-4">
                   <div className="w-1.5 bg-terracotta-300 rounded-t h-2" />
@@ -859,7 +855,7 @@ const AppContent: React.FC = () => {
             <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-dholpur-300/80 shadow-xs hover:border-dholpur-400 transition-all flex flex-col justify-between">
               <div>
                 <span className="text-[10px] sm:text-[11px] text-sovereign-600 font-semibold block truncate">
-                  MPLADS Fund Utilization Rate • निधि उपयोग
+                  {t.telemetryMpladsRate}
                 </span>
                 <p className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-sovereign-950 mt-1">
                   {averageMpladsRate != null ? `${averageMpladsRate}%` : 'N/A'}
@@ -904,30 +900,29 @@ const AppContent: React.FC = () => {
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <h2 className="font-serif text-xl sm:text-2xl font-bold text-sovereign-950 tracking-tight">
-                  Parliamentary Profiles & Audited Declarations ({filteredCandidates.length.toLocaleString()}){' '}
-                  <span className="hidden lg:inline text-base font-normal font-devanagari text-sovereign-500">• संसदीय प्रोफ़ाइल</span>
+                  {t.profilesHeading(filteredCandidates.length)}
                 </h2>
                 {(isLoading || isSearching) && (
                   <span className="flex items-center gap-1.5 text-xs text-ashoka-700 bg-ashoka-50 px-2.5 py-1 rounded-lg border border-ashoka-200">
                     <SpinnerGap size={14} weight="bold" className="animate-spin text-ashoka-700" />
-                    {isSearching ? 'Searching database...' : 'Connecting...'}
+                    {isSearching ? t.searchingDatabase : t.connecting}
                   </span>
                 )}
               </div>
-              <span className="text-xs text-sovereign-500 hidden sm:inline">Click any card to inspect photo proof or export dossier</span>
+              <span className="text-xs text-sovereign-500 hidden sm:inline">{t.inspectHint}</span>
             </div>
 
             {filteredCandidates.length === 0 ? (
               <div className="p-12 text-center bg-white rounded-2xl border border-dholpur-300 shadow-xs">
                 {!isLiveConnected && !isLoading ? (
                   <div className="space-y-2 max-w-md mx-auto">
-                    <p className="text-sovereign-800 text-sm font-bold">Live Database Not Connected • लाइव डेटाबेस कनेक्टेड नहीं है</p>
+                    <p className="text-sovereign-800 text-sm font-bold">{t.dbNotConnectedTitle}</p>
                     <p className="text-sovereign-500 text-xs leading-relaxed">
-                      ApnaNeta operates strictly on authentic government data with zero synthetic placeholders under the <strong>Strict Zero-Synthetic-Data Invariant</strong>. Please configure <code className="bg-dholpur-100 px-1.5 py-0.5 rounded text-sovereign-700 font-mono text-[11px]">VITE_SUPABASE_URL</code> and <code className="bg-dholpur-100 px-1.5 py-0.5 rounded text-sovereign-700 font-mono text-[11px]">VITE_SUPABASE_ANON_KEY</code> to query verified records.
+                      {t.dbNotConnectedDesc}
                     </p>
                   </div>
                 ) : (
-                  <p className="text-sovereign-600 text-sm font-medium">No parliamentarians found matching your selected filters.</p>
+                  <p className="text-sovereign-600 text-sm font-medium">{t.noParliamentariansFound}</p>
                 )}
               </div>
             ) : (
@@ -961,12 +956,12 @@ const AppContent: React.FC = () => {
                       {isLoadingMore ? (
                         <span className="flex items-center gap-2 justify-center">
                           <SpinnerGap size={16} className="animate-spin text-ashoka-600" />
-                          Loading more parliamentarians...
+                          {t.loadingMore}
                         </span>
                       ) : filteredCandidates.length > displayLimit ? (
-                        `Load More Parliamentarians (${filteredCandidates.length - displayLimit} remaining in view)`
+                        t.loadMoreRemaining(filteredCandidates.length - displayLimit)
                       ) : (
-                        `Load More from Database (Showing ${candidates.length} of ${totalDatabaseCount})`
+                        t.loadMoreTotal(candidates.length, totalDatabaseCount)
                       )}
                     </button>
                   </div>
@@ -982,7 +977,7 @@ const AppContent: React.FC = () => {
         <div className="fixed bottom-[4.75rem] md:bottom-6 left-1/2 -translate-x-1/2 z-40 bg-[#0A192F] text-white rounded-2xl shadow-2xl px-3 sm:px-5 py-2.5 sm:py-3 border border-kesariya-500/40 flex items-center justify-between gap-2 sm:gap-4 animate-in slide-in-from-bottom-6 w-[calc(100%-1.25rem)] max-w-xl">
           <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
             <Stack size={18} weight="duotone" className="text-kesariya-400 flex-shrink-0" />
-            <span className="text-xs font-semibold hidden md:inline">Compare • तुलना:</span>
+            <span className="text-xs font-semibold hidden md:inline">{t.compareDrawerLabel}</span>
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar max-w-[130px] sm:max-w-xs md:max-w-md">
               {selectedForComparison.map((c) => (
                 <div
@@ -1009,8 +1004,8 @@ const AppContent: React.FC = () => {
               onClick={() => setIsComparisonOpen(true)}
               className="px-3 py-1.5 bg-kesariya-600 hover:bg-kesariya-500 text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center gap-1 cursor-pointer active:scale-95 whitespace-nowrap"
             >
-              <span className="hidden sm:inline">Side-by-Side</span>
-              <span className="sm:hidden">Compare</span>
+              <span className="hidden sm:inline">{t.compareSideBySide}</span>
+              <span className="sm:hidden">{t.compareBtn}</span>
               <span>({selectedForComparison.length})</span>
               <ArrowRight size={13} weight="bold" />
             </button>
@@ -1018,7 +1013,7 @@ const AppContent: React.FC = () => {
               onClick={handleClearComparison}
               className="text-dholpur-400 hover:text-dholpur-200 text-xs font-medium px-2 py-1 transition-colors cursor-pointer"
             >
-              Clear
+              {t.compareClear}
             </button>
           </div>
         </div>
@@ -1033,7 +1028,7 @@ const AppContent: React.FC = () => {
           }`}
         >
           <SquaresFour size={20} weight={activeView === 'directory' ? 'fill' : 'duotone'} />
-          <span className="text-[10px] mt-0.5 font-sans">Directory • सूची</span>
+          <span className="text-[10px] mt-0.5 font-sans">{t.mobileTabDirectory}</span>
         </button>
 
         <button
@@ -1043,7 +1038,7 @@ const AppContent: React.FC = () => {
           }`}
         >
           <Trophy size={20} weight={activeView === 'leaderboards' ? 'fill' : 'duotone'} />
-          <span className="text-[10px] mt-0.5 font-sans">Leaderboards</span>
+          <span className="text-[10px] mt-0.5 font-sans">{t.mobileTabLeaderboards}</span>
         </button>
 
         <button
@@ -1055,7 +1050,7 @@ const AppContent: React.FC = () => {
           className="flex flex-col items-center justify-center flex-1 py-1 min-h-[48px] text-dholpur-400 hover:text-dholpur-200 relative"
         >
           <Scales size={20} weight="duotone" />
-          <span className="text-[10px] mt-0.5 font-sans">Compare • तुलना</span>
+          <span className="text-[10px] mt-0.5 font-sans">{t.compareBtn}</span>
           {selectedForComparison.length > 0 && (
             <span className="absolute top-1 right-1/4 sm:right-6 w-4 h-4 bg-kesariya-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center font-mono">
               {selectedForComparison.length}
@@ -1103,10 +1098,14 @@ const AppContent: React.FC = () => {
       <footer className="bg-[#FCFAF6] border-t border-dholpur-300/80 py-6 text-center text-xs text-sovereign-600 font-sans">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-1">
           <p className="font-medium text-sovereign-800">
-            Apna Neta (अपना नेता) — The Sovereign Civic Technology Ledger of India • संप्रभु नागरिक पारदर्शिता मंच
+            {isHindi
+              ? 'अपना नेता — भारत का संप्रभु नागरिक प्रौद्योगिकी बहीखाता'
+              : 'Apna Neta — The Sovereign Civic Technology Ledger of Bharat'}
           </p>
           <p className="text-[11px] text-sovereign-500">
-            All declarations are reproduced verbatim from sworn ECI Form 26 filings under Section 3(c)(ii) of the Digital Personal Data Protection Act, 2023.
+            {isHindi
+              ? 'सभी घोषणाएं डिजिटल व्यक्तिगत डेटा संरक्षण अधिनियम 2023 की धारा 3(c)(ii) के तहत आधिकारिक प्रपत्र 26 से ली गई हैं।'
+              : 'All declarations are reproduced verbatim from sworn ECI Form 26 filings under Section 3(c)(ii) of the Digital Personal Data Protection Act, 2023.'}
           </p>
         </div>
       </footer>
@@ -1115,9 +1114,11 @@ const AppContent: React.FC = () => {
 };
 
 export const App: React.FC = () => (
-  <ViewModeProvider>
-    <AppContent />
-  </ViewModeProvider>
+  <LanguageProvider>
+    <ViewModeProvider>
+      <AppContent />
+    </ViewModeProvider>
+  </LanguageProvider>
 );
 
 export default App;
