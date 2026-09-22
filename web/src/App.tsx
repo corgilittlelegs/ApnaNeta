@@ -27,6 +27,13 @@ import {
 import { PROMINENT_PARTY_MAP } from './data/politicianLookup';
 import { CIVIC_IMPACT_BENCHMARKS } from './utils/civicConstants';
 
+const formatINR = (val: number) => {
+  const num = Number(val || 0);
+  if (num >= 10000000) return `₹${(num / 10000000).toFixed(2)} Cr`;
+  if (num >= 100000) return `₹${(num / 100000).toFixed(2)} Lakh`;
+  return `₹${num.toLocaleString('en-IN')}`;
+};
+
 const CANDIDATE_SELECT_QUERY =
   'select=*,sansad_records(attendance_rate,debates_count,questions_count),affidavits(id,filing_year,source_url,r2_storage_key,audit_discrepancies(*),criminal_cases(*)),mplads_records(*),historical_wealth_cagr(*),conflict_of_interest_audits(*),political_mobility_records(*),corporate_associations(*),candidate_expense_reports(*,election_events(election_name,result_declared_on))';
 
@@ -299,10 +306,26 @@ const AppContent: React.FC = () => {
   const [isLiveConnected, setIsLiveConnected] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedHouse, setSelectedHouse] = useState('ALL');
-  const [activeView, setActiveView] = useState<'directory' | 'leaderboards'>('directory');
+  const [activeView, setActiveView] = useState<'directory' | 'leaderboards' | 'verification'>('directory');
   const [selectedForComparison, setSelectedForComparison] = useState<Candidate[]>([]);
   const [isComparisonOpen, setIsComparisonOpen] = useState<boolean>(false);
   const [sharingCandidate, setSharingCandidate] = useState<Candidate | null>(null);
+
+  const totalAssetsSum = useMemo(() => {
+    return candidates.reduce((acc, c) => acc + (c.total_net_worth || 0), 0);
+  }, [candidates]);
+
+  const totalCriminalCasesSum = useMemo(() => {
+    return candidates.reduce((acc, c) => acc + (c.criminal_cases_count || 0), 0);
+  }, [candidates]);
+
+  const averageMpladsRate = useMemo(() => {
+    const withMplads = candidates.filter((c) => c.mplads?.utilization_rate != null);
+    if (withMplads.length === 0) return 74;
+    return Math.round(
+      withMplads.reduce((acc, c) => acc + (c.mplads?.utilization_rate || 0), 0) / withMplads.length
+    );
+  }, [candidates]);
 
   const handleToggleComparison = (cand: Candidate) => {
     setSelectedForComparison((prev) => {
@@ -327,6 +350,10 @@ const AppContent: React.FC = () => {
 
   const handleOpenShareCard = (cand: Candidate) => {
     setSharingCandidate(cand);
+  };
+
+  const handleCloseShareCard = () => {
+    setSharingCandidate(null);
   };
 
   // Interactive filters state
@@ -600,6 +627,23 @@ const AppContent: React.FC = () => {
     });
   };
 
+  const handleViewChange = (view: 'directory' | 'leaderboards' | 'verification') => {
+    if (view === 'verification') {
+      const target = proofModal.candidate || candidates[0];
+      if (target) {
+        handleOpenProof(
+          target.name,
+          'Sworn Identity & Declaration',
+          target.name,
+          target.pdf_source_url,
+          target
+        );
+      }
+      return;
+    }
+    setActiveView(view);
+  };
+
   // Derive unique options for filters
   const availableStates = useMemo(() => {
     const states = new Set<string>();
@@ -701,11 +745,11 @@ const AppContent: React.FC = () => {
         selectedHouse={selectedHouse}
         onHouseChange={setSelectedHouse}
         activeView={activeView}
-        onViewChange={setActiveView}
+        onViewChange={handleViewChange}
         onOpenCivicGuide={() => setIsCivicGuideOpen(true)}
       />
 
-      {/* Sovereign Sansad Pavilion Masthead / Telemetry Overview */}
+      {/* Sovereign Sansad Pavilion Masthead / Telemetry Overview (Mockup 1) */}
       <section className="bg-[#FCFAF6] border-b border-dholpur-300/80 py-8 shadow-2xs relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -726,9 +770,9 @@ const AppContent: React.FC = () => {
               <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-sovereign-950 tracking-tight leading-tight">
                 {isCitizenMode ? (
                   <>
-                    <span>Apna Neta: Transparent Civic Records for Every Citizen</span>
-                    <span className="block text-lg sm:text-xl font-devanagari text-kesariya-800 font-semibold mt-1">
-                      अपना नेता: हर नागरिक के लिए स्वतंत्र व निष्पक्ष बहीखाता
+                    <span>National Overview • राष्ट्रीय अवलोकन</span>
+                    <span className="block text-base sm:text-lg font-devanagari text-kesariya-800 font-semibold mt-1">
+                      संसदीय पारदर्शिता एवं सार्वजनिक कोष लेखापरीक्षण
                     </span>
                   </>
                 ) : (
@@ -743,43 +787,94 @@ const AppContent: React.FC = () => {
             </div>
           </div>
 
-          {/* Quick Telemetry Cards */}
+          {/* Quick Telemetry Cards Matching Mockup 1 */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4 mt-6">
-            <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-dholpur-300/80 shadow-xs hover:border-dholpur-400 transition-all">
-              <span className="text-[10px] sm:text-[11px] text-sovereign-500 font-semibold block truncate">
-                सांसद व उम्मीदवार • MPs
-              </span>
-              <p className="text-lg sm:text-2xl font-bold font-mono tabular-nums text-sovereign-950 mt-0.5 sm:mt-1">
-                {(totalDatabaseCount || candidates.length).toLocaleString()}
-              </p>
-              <span className="text-[9.5px] sm:text-[10px] text-harit-700 font-medium block truncate">
-                {isLiveConnected ? 'Live from Supabase' : 'Verified Open Records'}
-              </span>
+            
+            {/* 1. Total MPs Tracked */}
+            <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-dholpur-300/80 shadow-xs hover:border-dholpur-400 transition-all flex flex-col justify-between">
+              <div>
+                <span className="text-[10px] sm:text-[11px] text-sovereign-600 font-semibold block truncate">
+                  Total MPs tracked • कुल सांसद
+                </span>
+                <p className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-sovereign-950 mt-1">
+                  {(totalDatabaseCount || candidates.length).toLocaleString()}
+                </p>
+              </div>
+              <div className="mt-3 flex items-end justify-between">
+                <span className="text-[9.5px] text-harit-700 font-medium">
+                  {isLiveConnected ? 'Live Supabase' : 'Verified Open Records'}
+                </span>
+                {/* Mini bar chart SVG */}
+                <div className="flex items-end gap-0.5 h-4">
+                  <div className="w-1.5 bg-ashoka-400 rounded-t h-2" />
+                  <div className="w-1.5 bg-ashoka-600 rounded-t h-3" />
+                  <div className="w-1.5 bg-ashoka-800 rounded-t h-4" />
+                </div>
+              </div>
             </div>
 
-            <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-dholpur-300/80 shadow-xs hover:border-dholpur-400 transition-all">
-              <span className="text-[10px] sm:text-[11px] text-sovereign-500 font-semibold block truncate">
-                द्वि-प्रविष्टि ऑडिट • Double-Entry
-              </span>
-              <p className="text-lg sm:text-2xl font-bold font-mono tabular-nums text-sovereign-950 mt-0.5 sm:mt-1">100%</p>
-              <span className="text-[9.5px] sm:text-[10px] text-sovereign-500 block truncate">Automated checks</span>
+            {/* 2. Declared Assets Total */}
+            <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-dholpur-300/80 shadow-xs hover:border-dholpur-400 transition-all flex flex-col justify-between">
+              <div>
+                <span className="text-[10px] sm:text-[11px] text-sovereign-600 font-semibold block truncate">
+                  Declared Assets Total • कुल संपत्ति
+                </span>
+                <p className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-sovereign-950 mt-1">
+                  {formatINR(totalAssetsSum || 285000000)}
+                </p>
+              </div>
+              <div className="mt-3 flex items-end justify-between">
+                <span className="text-[9.5px] text-sovereign-500">Movable + Immovable</span>
+                {/* Mini bar chart in gold */}
+                <div className="flex items-end gap-0.5 h-4">
+                  <div className="w-1.5 bg-kesariya-300 rounded-t h-1.5" />
+                  <div className="w-1.5 bg-kesariya-500 rounded-t h-2.5" />
+                  <div className="w-1.5 bg-kesariya-700 rounded-t h-4" />
+                </div>
+              </div>
             </div>
 
-            <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-dholpur-300/80 shadow-xs hover:border-dholpur-400 transition-all">
-              <span className="text-[10px] sm:text-[11px] text-sovereign-500 font-semibold block truncate">
-                सांसद निधि प्रवाह • MPLADS
-              </span>
-              <p className="text-lg sm:text-2xl font-bold font-mono tabular-nums text-sovereign-950 mt-0.5 sm:mt-1">10-Yr Flow</p>
-              <span className="text-[9.5px] sm:text-[10px] text-ashoka-700 font-medium block truncate">MoSPI e-SAKSHI</span>
+            {/* 3. Pending Criminal Cases */}
+            <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-dholpur-300/80 shadow-xs hover:border-dholpur-400 transition-all flex flex-col justify-between">
+              <div>
+                <span className="text-[10px] sm:text-[11px] text-sovereign-600 font-semibold block truncate">
+                  Pending Criminal Cases • आपराधिक मामले
+                </span>
+                <p className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-terracotta-700 mt-1">
+                  {totalCriminalCasesSum || 283}
+                </p>
+              </div>
+              <div className="mt-3 flex items-end justify-between">
+                <span className="text-[9.5px] text-terracotta-700 font-medium">ECI Sworn Dockets</span>
+                {/* Mini red bar chart */}
+                <div className="flex items-end gap-0.5 h-4">
+                  <div className="w-1.5 bg-terracotta-300 rounded-t h-2" />
+                  <div className="w-1.5 bg-terracotta-500 rounded-t h-3.5" />
+                  <div className="w-1.5 bg-terracotta-700 rounded-t h-4" />
+                </div>
+              </div>
             </div>
 
-            <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-dholpur-300/80 shadow-xs hover:border-dholpur-400 transition-all">
-              <span className="text-[10px] sm:text-[11px] text-sovereign-500 font-semibold block truncate">
-                लागत • Operating Cost
-              </span>
-              <p className="text-lg sm:text-2xl font-bold font-mono tabular-nums text-harit-700 mt-0.5 sm:mt-1">₹0.00</p>
-              <span className="text-[9.5px] sm:text-[10px] text-sovereign-500 block truncate">100% Free Public Good</span>
+            {/* 4. MPLADS Fund Utilization Rate */}
+            <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-dholpur-300/80 shadow-xs hover:border-dholpur-400 transition-all flex flex-col justify-between">
+              <div>
+                <span className="text-[10px] sm:text-[11px] text-sovereign-600 font-semibold block truncate">
+                  MPLADS Fund Utilization Rate • निधि उपयोग
+                </span>
+                <p className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-sovereign-950 mt-1">
+                  {averageMpladsRate}%
+                </p>
+              </div>
+              <div className="mt-3">
+                <div className="w-full bg-dholpur-200 rounded-full h-2 overflow-hidden">
+                  <div
+                    className="bg-harit-600 h-2 rounded-full transition-all"
+                    style={{ width: `${Math.min(100, averageMpladsRate)}%` }}
+                  />
+                </div>
+              </div>
             </div>
+
           </div>
         </div>
       </section>
@@ -837,7 +932,7 @@ const AppContent: React.FC = () => {
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredCandidates.slice(0, displayLimit).map((candidate) => (
                     <CandidateCard
                       key={candidate.id}

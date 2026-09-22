@@ -8,6 +8,7 @@ import {
   Scales,
   BookOpen,
   SpinnerGap,
+  ShieldCheck,
 } from '@phosphor-icons/react';
 import { CivicEmblem } from './CivicEmblem';
 import { useViewMode } from '../context/ViewModeContext';
@@ -18,8 +19,8 @@ interface NavbarProps {
   isSearching?: boolean;
   selectedHouse: string;
   onHouseChange: (h: string) => void;
-  activeView?: 'directory' | 'leaderboards';
-  onViewChange?: (view: 'directory' | 'leaderboards') => void;
+  activeView?: 'directory' | 'leaderboards' | 'verification';
+  onViewChange?: (view: 'directory' | 'leaderboards' | 'verification') => void;
   onOpenCivicGuide?: () => void;
 }
 
@@ -181,7 +182,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </button>
                 <button
                   onClick={() => onViewChange('leaderboards')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                     activeView === 'leaderboards'
                       ? 'bg-sovereign-800 text-kesariya-300 shadow-xs border border-kesariya-500/30'
                       : 'text-dholpur-400 hover:text-dholpur-200 hover:bg-sovereign-800/50'
@@ -194,6 +195,22 @@ export const Navbar: React.FC<NavbarProps> = ({
                     className="text-kesariya-400"
                   />
                   <span>Leaderboards • रैंकिंग</span>
+                </button>
+                <button
+                  onClick={() => onViewChange('verification')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    activeView === 'verification'
+                      ? 'bg-sovereign-800 text-kesariya-300 shadow-xs border border-kesariya-500/30'
+                      : 'text-dholpur-400 hover:text-dholpur-200 hover:bg-sovereign-800/50'
+                  }`}
+                  title="Forensic Affidavit Verification & Legal Audit"
+                >
+                  <ShieldCheck
+                    size={15}
+                    weight={activeView === 'verification' ? 'fill' : 'duotone'}
+                    className="text-harit-400"
+                  />
+                  <span>Verification • सत्यापन</span>
                 </button>
               </nav>
             )}
