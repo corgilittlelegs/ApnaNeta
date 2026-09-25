@@ -118,18 +118,20 @@ class HistoricalWealthEngine:
         logger.info("Starting Multi-Term Historical Wealth Growth Engine (CAGR)")
         logger.info("==========================================================")
 
-        candidates = await supabase.select_all("candidates")
-        logger.info(f"Loaded {len(candidates)} candidates for longitudinal wealth analysis.")
+        from collections import Counter
+        affidavits = await supabase.select_all("affidavits", params={"select": "candidate_id,filing_year"})
+        cand_counts = Counter(a.get("candidate_id") for a in affidavits if a.get("candidate_id"))
+        eligible_cids = [cid for cid, count in cand_counts.items() if count >= 2]
+
+        logger.info(f"Loaded {len(affidavits)} total affidavit(s). Found {len(eligible_cids)} candidate(s) with multi-term filings.")
         all_results = []
 
-        for cand in candidates:
-            c_id = cand.get("id")
-            if c_id:
-                res = await self.analyze_candidate_history(c_id)
-                all_results.extend(res)
+        for c_id in eligible_cids:
+            res = await self.analyze_candidate_history(c_id)
+            all_results.extend(res)
 
         logger.info("==========================================================")
-        logger.info(f"🎉 Analysis Complete! Audited {len(candidates)} candidate(s), generated {len(all_results)} multi-term wealth intervals.")
+        logger.info(f"🎉 Analysis Complete! Audited {len(eligible_cids)} candidate(s) with multi-term filings, generated {len(all_results)} intervals.")
         logger.info("==========================================================")
         return all_results
 

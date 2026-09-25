@@ -47,11 +47,11 @@ class TestAnonRoleRuntime(unittest.IsolatedAsyncioTestCase):
                 f"{self.rest_url}/affidavits?select=raw_payload&limit=1",
                 headers=headers,
             )
-            # PostgREST returns 400 or 403 when a column is not selectable by the requesting role
+            # PostgREST returns 400, 401, or 403 when a column is not selectable by the requesting role
             self.assertIn(
                 resp_raw.status_code,
-                [400, 403, 404],
-                f"Expected denial (400/403) when anon requests raw_payload, got {resp_raw.status_code}: {resp_raw.text}",
+                [400, 401, 403, 404],
+                f"Expected denial (400/401/403) when anon requests raw_payload, got {resp_raw.status_code}: {resp_raw.text}",
             )
 
             # 2. Attempt to query select=* on affidavits table

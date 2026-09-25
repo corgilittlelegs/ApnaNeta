@@ -19,10 +19,10 @@ class R2StorageClient:
         secret_key: Optional[str] = None,
         bucket_name: Optional[str] = None,
     ):
-        self.account_id = account_id or settings.R2_ACCOUNT_ID
-        self.access_key = access_key or settings.R2_ACCESS_KEY_ID
-        self.secret_key = secret_key or settings.R2_SECRET_ACCESS_KEY
-        self.bucket_name = bucket_name or settings.R2_BUCKET_NAME or "apnaneta-affidavits"
+        self.account_id = settings.R2_ACCOUNT_ID if account_id is None else account_id
+        self.access_key = settings.R2_ACCESS_KEY_ID if access_key is None else access_key
+        self.secret_key = settings.R2_SECRET_ACCESS_KEY if secret_key is None else secret_key
+        self.bucket_name = (settings.R2_BUCKET_NAME or "apnaneta-affidavits") if bucket_name is None else bucket_name
         self._s3_client = None
 
     @property

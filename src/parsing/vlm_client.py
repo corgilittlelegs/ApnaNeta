@@ -14,8 +14,8 @@ class GeminiVLMClient:
     """
 
     def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
-        self.api_key = api_key or settings.GEMINI_API_KEY
-        self.model_name = model or settings.GEMINI_MODEL
+        self.api_key = settings.GEMINI_API_KEY if api_key is None else api_key
+        self.model_name = settings.GEMINI_MODEL if model is None else model
 
     @property
     def is_configured(self) -> bool:
@@ -55,7 +55,7 @@ class GeminiVLMClient:
             )
 
             models_to_try = []
-            for m in [self.model_name, "gemini-3.8-flash", "gemini-3.6-flash"]:
+            for m in ["gemini-3.6-flash", self.model_name, "gemini-3.5-flash-lite", "gemini-3.8-flash"]:
                 if m and m not in models_to_try:
                     models_to_try.append(m)
 
@@ -173,7 +173,7 @@ class GeminiVLMClient:
             )
 
             models_to_try = []
-            for m in [self.model_name, "gemini-3.8-flash", "gemini-3.6-flash"]:
+            for m in ["gemini-3.6-flash", self.model_name, "gemini-3.5-flash-lite", "gemini-3.8-flash"]:
                 if m and m not in models_to_try:
                     models_to_try.append(m)
 

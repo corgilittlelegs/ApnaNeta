@@ -50,6 +50,18 @@ class PoliticalMobilityTracker:
                 year2 = a2.get("filing_year", 2024)
 
                 if p1_party and p2_party and p1_party.strip().lower() != p2_party.strip().lower():
+                    # Deduplicate: check if this transition has already been persisted
+                    existing = await supabase.select(
+                        "political_mobility_records",
+                        {
+                            "candidate_id": f"eq.{candidate_id}",
+                            "transition_year": f"eq.{int(year2)}",
+                            "to_party": f"eq.{p2_party.strip()}",
+                        },
+                    )
+                    if existing:
+                        continue
+
                     record = {
                         "candidate_id": candidate_id,
                         "from_party": p1_party.strip(),
@@ -83,18 +95,20 @@ class PoliticalMobilityTracker:
         logger.info("Starting Political Mobility & Defection Dynamics Engine")
         logger.info("==========================================================")
 
-        candidates = await supabase.select_all("candidates")
-        logger.info(f"Loaded {len(candidates)} candidates for political mobility analysis.")
+        from collections import Counter
+        affidavits = await supabase.select_all("affidavits", params={"select": "candidate_id,filing_year"})
+        cand_counts = Counter(a.get("candidate_id") for a in affidavits if a.get("candidate_id"))
+        eligible_cids = [cid for cid, count in cand_counts.items() if count >= 2]
+
+        logger.info(f"Loaded {len(affidavits)} total affidavit(s). Found {len(eligible_cids)} candidate(s) with multi-term filings.")
         all_detected = []
 
-        for cand in candidates:
-            cand_id = cand.get("id")
-            if cand_id:
-                res = await self.detect_transitions_for_candidate(cand_id)
-                all_detected.extend(res)
+        for cand_id in eligible_cids:
+            res = await self.detect_transitions_for_candidate(cand_id)
+            all_detected.extend(res)
 
         logger.info("==========================================================")
-        logger.info(f"✅ Mobility Analysis Complete! Audited {len(candidates)} candidate(s), detected {len(all_detected)} party transitions.")
+        logger.info(f"✅ Mobility Analysis Complete! Audited {len(eligible_cids)} candidate(s), detected {len(all_detected)} party transitions.")
         logger.info("==========================================================")
         return all_detected
 

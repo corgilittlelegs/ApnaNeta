@@ -16,7 +16,7 @@ class TestIngestion(unittest.IsolatedAsyncioTestCase):
         self.assertGreaterEqual(elapsed, 0.09, f"Limiter slept for {elapsed}s, expected at least 0.1s")
 
     def test_r2_client_key_generation(self):
-        client = R2StorageClient(bucket_name="test-bucket")
+        client = R2StorageClient(account_id="", access_key="", secret_key="", bucket_name="test-bucket")
         self.assertFalse(client.is_configured)
 
         fake_pdf = b"%PDF-1.4 Mock Candidate Affidavit Content"
@@ -29,7 +29,7 @@ class TestIngestion(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(crop_key, "crops/test_crop_1.jpg")
 
     def test_r2_upload_candidate_photo(self):
-        client = R2StorageClient(bucket_name="test-bucket")
+        client = R2StorageClient(account_id="", access_key="", secret_key="", bucket_name="test-bucket")
         url = client.upload_candidate_photo(b"fake_webp", candidate_id="cand_123", extension="webp")
         self.assertIn("avatars/cand_123.webp", url)
 

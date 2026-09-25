@@ -3,6 +3,7 @@ import logging
 from typing import List, Dict, Any, Optional, Tuple
 from src.storage.supabase_client import supabase
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("GISVerifier")
 
 # India National Bounding Box [lat_min, lon_min, lat_max, lon_max]
@@ -241,26 +242,50 @@ class MPLADSGISVerifier:
             "high_risk_count": high_count,
         }
 
+    async def run(self) -> Dict[str, Any]:
+        """
+        Scans database and executes GIS geolocation and ghost-project risk audit.
+        Optimized to batch query candidate works rather than looping over 8,000+ candidates sequentially.
+        """
+        logger.info("==========================================================")
+        logger.info("Starting MPLADS Satellite & GIS Geolocation Ghost Project Audit")
+        logger.info("==========================================================")
+
+        works = await supabase.select_all("mplads_works", params={"select": "candidate_id"})
+        if not works:
+            logger.info("No granular works found in mplads_works. Skipping GIS audit.")
+            return {"total_audited": 0, "total_works": 0}
+
+        candidate_ids = list({w["candidate_id"] for w in works if w.get("candidate_id")})
+        logger.info(f"Loaded {len(works)} total works across {len(candidate_ids)} candidate(s) for GIS audit.")
+
+        total_audited = 0
+        total_works = 0
+
+        for cand_id in candidate_ids:
+            candidates = await supabase.select("candidates", {"id": f"eq.{cand_id}"})
+            if candidates:
+                cand = candidates[0]
+                c_const = cand.get("constituency", "")
+                c_name = cand.get("name", "")
+                res = await self.audit_candidate_works(cand_id, c_const)
+                if res.get("total_works", 0) > 0:
+                    logger.info(f"Audited {c_name} ({c_const}): {res}")
+                    total_audited += 1
+                    total_works += res["total_works"]
+
+        logger.info("==========================================================")
+        logger.info(f"GIS Geolocation Audit Complete for {total_audited} candidate(s), {total_works} works.")
+        logger.info("==========================================================")
+        return {"total_audited": total_audited, "total_works": total_works}
+
 
 gis_verifier = MPLADSGISVerifier()
 
 if __name__ == "__main__":
     import asyncio
 
-    async def main():
-        logger.info("Starting MPLADS Satellite & GIS Geolocation Ghost Project Audit...")
-        candidates = await supabase.select_all("candidates")
-        logger.info(f"Loaded {len(candidates)} candidates for GIS geolocation audit.")
-        for cand in candidates:
-            c_id = cand.get("id")
-            c_const = cand.get("constituency", "")
-            if c_id and c_const:
-                res = await gis_verifier.audit_candidate_works(c_id, c_const)
-                if res.get("total_works", 0) > 0:
-                    logger.info(f"Audited {cand.get('name')} ({c_const}): {res}")
-        logger.info(f"GIS Geolocation Audit Complete for {len(candidates)} candidates.")
-
     try:
-        asyncio.run(main())
+        asyncio.run(gis_verifier.run())
     except Exception as e:
         logger.error(f"GIS verifier error: {e}")

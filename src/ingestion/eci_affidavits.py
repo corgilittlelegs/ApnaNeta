@@ -167,37 +167,29 @@ STATE_LOK_SABHA_SEATS: Dict[str, int] = {
 
 # Master registry of ECI State Assembly Election Cycles (AC-GENERAL)
 STATE_ASSEMBLY_ELECTIONS: Dict[str, str] = {
-    "Maharashtra": "24-AC-GENERAL-1-2024",
-    "Jharkhand": "24-AC-GENERAL-2-2024",
-    "Haryana": "24-AC-GENERAL-3-2024",
-    "Jammu and Kashmir": "24-AC-GENERAL-4-2024",
-    "Andhra Pradesh": "24-AC-GENERAL-5-2024",
-    "Odisha": "24-AC-GENERAL-6-2024",
-    "Arunachal Pradesh": "24-AC-GENERAL-7-2024",
-    "Sikkim": "24-AC-GENERAL-8-2024",
-    "Karnataka": "23-AC-GENERAL-1-2023",
-    "Madhya Pradesh": "23-AC-GENERAL-2-2023",
-    "Rajasthan": "23-AC-GENERAL-3-2023",
-    "Chhattisgarh": "23-AC-GENERAL-4-2023",
-    "Telangana": "23-AC-GENERAL-5-2023",
-    "Gujarat": "22-AC-GENERAL-1-2022",
-    "Himachal Pradesh": "22-AC-GENERAL-2-2022",
-    "Uttar Pradesh": "22-AC-GENERAL-1-2022",
-    "Punjab": "22-AC-GENERAL-2-2022",
-    "Uttarakhand": "22-AC-GENERAL-3-2022",
-    "Goa": "22-AC-GENERAL-4-2022",
-    "Manipur": "22-AC-GENERAL-5-2022",
-    "West Bengal": "21-AC-GENERAL-1-2021",
-    "Tamil Nadu": "21-AC-GENERAL-2-2021",
-    "Kerala": "21-AC-GENERAL-3-2021",
-    "Assam": "21-AC-GENERAL-4-2021",
-    "Tripura": "23-AC-GENERAL-1-2023",
-    "Meghalaya": "23-AC-GENERAL-2-2023",
-    "Nagaland": "23-AC-GENERAL-3-2023",
-    "Mizoram": "23-AC-GENERAL-4-2023",
-    "Puducherry": "21-AC-GENERAL-1-2021",
-    "Delhi": "20-AC-GENERAL-1-2020",
-    "Bihar": "20-AC-GENERAL-1-2020",
+    "Maharashtra": "27-AC-GENERAL-3-51",
+    "Jharkhand": "27-AC-GENERAL-3-51",
+    "Haryana": "26-AC-GENERAL-3-50",
+    "Jammu and Kashmir": "26-AC-GENERAL-3-50",
+    "Delhi": "8-AC-GENERAL-3-12",
+    "Karnataka": "20-AC-GENERAL-3-37",
+    "Madhya Pradesh": "22-AC-GENERAL-3-43",
+    "Rajasthan": "22-AC-GENERAL-3-43",
+    "Chhattisgarh": "22-AC-GENERAL-3-43",
+    "Telangana": "22-AC-GENERAL-3-43",
+    "Gujarat": "18-AC-GENERAL-3-31",
+    "Himachal Pradesh": "18-AC-GENERAL-3-31",
+    "Uttar Pradesh": "13-AC-GENERAL-3-23",
+    "Punjab": "13-AC-GENERAL-3-23",
+    "Uttarakhand": "13-AC-GENERAL-3-23",
+    "Goa": "13-AC-GENERAL-3-23",
+    "Manipur": "13-AC-GENERAL-3-23",
+    "West Bengal": "10-AC-GENERAL-3-16",
+    "Tamil Nadu": "10-AC-GENERAL-3-16",
+    "Kerala": "10-AC-GENERAL-3-16",
+    "Assam": "10-AC-GENERAL-3-16",
+    "Puducherry": "10-AC-GENERAL-3-16",
+    "Bihar": "9-AC-GENERAL-3-13",
 }
 
 # Regional clusters for daily rotation (prevents exceeding GitHub Actions timeouts)
@@ -390,6 +382,17 @@ class ECIAffidavitScraper:
                             return None
                         current_url = urljoin(current_url, loc)
                         continue
+                    if "/show-profile/" in current_url and response.status_code == 200:
+                        from bs4 import BeautifulSoup
+                        soup = BeautifulSoup(response.text, "html.parser")
+                        pdf_token = None
+                        for inp in soup.find_all("input", {"type": "hidden"}):
+                            if inp.get("id", "").startswith("pdfUrl") and inp.get("value"):
+                                pdf_token = inp["value"]
+                                break
+                        if pdf_token:
+                            current_url = f"{ECI_AFFIDAVIT_BASE}/affidavit-pdf-download/{pdf_token}"
+                            continue
                     if response.status_code == 200 and len(response.content) > 1000 and response.content.startswith(b"%PDF"):
                         logger.info(f"Successfully downloaded live affidavit PDF ({len(response.content):,} bytes)")
                         return response.content
@@ -423,7 +426,7 @@ class ECIAffidavitScraper:
 
     async def discover_constituency_candidates(
         self,
-        election_type: str = "24-PC-GENERAL-1-2024",
+        election_type: str = "24-PC-GENERAL-1-46",
         state_name: str = "Uttar Pradesh",
         constituency_no: int = 77,
         house: Optional[str] = None,
@@ -436,11 +439,6 @@ class ECIAffidavitScraper:
         """
         resolved_house = house or ("Vidhan Sabha" if ("AC" in election_type.upper() or "VIDHAN" in election_type.upper()) else "Lok Sabha")
         state_code = ECI_STATE_CODES.get(state_name, "U07")
-        params = {
-            "electionType": election_type,
-            "state": state_code,
-            "constituency": str(constituency_no),
-        }
         url = f"{ECI_FILTER_ENDPOINT}?electionType={election_type}&state={state_code}&constituency={constituency_no}"
         logger.info(f"Querying ECI dynamic nomination feed ({resolved_house}): {url}")
 
@@ -463,14 +461,53 @@ class ECIAffidavitScraper:
             resolved_constituency = constituency_name or f"Constituency {constituency_no}"
             for row in table.find_all("tr")[1:]:
                 cols = row.find_all("td")
+                
+                # Check for modern 2-column card layout
+                details = row.find("div", class_="details-name")
+                if details:
+                    h4 = details.find("h4")
+                    cand_name = h4.get_text(strip=True) if h4 else ""
+                    party_name = None
+                    for p in details.find_all("p"):
+                        text = p.get_text(strip=True)
+                        if "Party :" in text:
+                            party_name = text.split("Party :", 1)[-1].strip()
+                        elif "Constituency :" in text:
+                            resolved_constituency = text.split("Constituency :", 1)[-1].strip()
+
+                    profile_link = None
+                    for a_tag in row.find_all("a", href=True):
+                        href = a_tag["href"]
+                        if "show-profile" in href or ".pdf" in href.lower() or "affidavit" in href.lower():
+                            profile_link = href if href.startswith("http") else f"{ECI_AFFIDAVIT_BASE}/{href.lstrip('/')}"
+                            break
+
+                    photo_url = None
+                    img = row.find("img")
+                    if img and img.get("src") and "candprofile" in img["src"]:
+                        photo_url = img["src"]
+
+                    if cand_name and profile_link:
+                        nominations.append({
+                            "name": cand_name,
+                            "party": party_name,
+                            "state": state_name,
+                            "constituency": resolved_constituency,
+                            "house": resolved_house,
+                            "filing_year": 2024,
+                            "pdf_url": profile_link,
+                            "photo_url": photo_url,
+                        })
+                    continue
+
+                # Fallback: legacy 4+ column table layout
                 if len(cols) >= 4:
                     cand_name = cols[1].get_text(strip=True)
                     party_name = cols[2].get_text(strip=True)
-                    # Find affidavit PDF link
                     pdf_link = None
                     for a_tag in row.find_all("a", href=True):
                         href = a_tag["href"]
-                        if ".pdf" in href.lower() or "download" in href.lower() or "affidavit" in href.lower():
+                        if ".pdf" in href.lower() or "download" in href.lower() or "affidavit" in href.lower() or "show-profile" in href.lower():
                             pdf_link = href if href.startswith("http") else f"{ECI_AFFIDAVIT_BASE}/{href.lstrip('/')}"
                             break
 

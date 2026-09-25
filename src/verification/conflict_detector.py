@@ -166,17 +166,21 @@ class ConflictDetector:
         logger.info("Starting Section 9A RPA Commercial Conflict of Interest Engine")
         logger.info("==========================================================")
 
-        candidates = await supabase.select_all("candidates")
+        all_corps = await supabase.select_all("corporate_associations")
         all_tenders = await supabase.select_all("procurement_tenders")
-        logger.info(f"Loaded {len(candidates)} candidates and {len(all_tenders)} procurement tenders for comprehensive audit.")
+        logger.info(f"Loaded {len(all_corps)} corporate associations and {len(all_tenders)} procurement tenders for audit.")
 
+        if not all_tenders or not all_corps:
+            logger.info("No corporate associations or procurement tenders in database. Conflict audit complete.")
+            return []
+
+        cand_ids = list({c["candidate_id"] for c in all_corps if c.get("candidate_id")})
+        logger.info(f"Auditing {len(cand_ids)} candidate(s) with active directorships against {len(all_tenders)} tenders...")
         all_conflicts = []
 
-        for c in candidates:
-            c_id = c.get("id")
-            if c_id:
-                res = await self.audit_candidate_conflicts(c_id, all_tenders=all_tenders)
-                all_conflicts.extend(res)
+        for c_id in cand_ids:
+            res = await self.audit_candidate_conflicts(c_id, all_tenders=all_tenders)
+            all_conflicts.extend(res)
 
         logger.info("==========================================================")
         logger.info(
