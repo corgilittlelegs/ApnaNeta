@@ -12,6 +12,7 @@ except ImportError:
     httpx = None
 
 from src.storage.supabase_client import supabase
+from src.ingestion.eci_affidavits import is_allowed_pdf_url
 
 logger = logging.getLogger("OfficialDocuments")
 
@@ -21,6 +22,24 @@ def is_allowed_public_source(url: str, allowed_domains: Set[str]) -> bool:
     parsed = urlparse(url)
     host = (parsed.hostname or "").lower()
     return parsed.scheme == "https" and any(host == domain or host.endswith(f".{domain}") for domain in allowed_domains)
+
+
+async def get_allowed_source_document(client, url: str, allowed_domains: Set[str]):
+    """Fetch an allowlisted government index, validating redirects before each request."""
+    current_url = url
+    for _ in range(6):
+        if not is_allowed_public_source(current_url, allowed_domains):
+            raise ValueError("Rejected document URL outside the approved HTTPS source allowlist")
+        if "eci.gov.in" in allowed_domains and not is_allowed_pdf_url(current_url):
+            raise ValueError("Rejected document URL outside the approved ECI allowlist")
+        response = await client.get(current_url, follow_redirects=False)
+        if response.status_code not in (301, 302, 303, 307, 308):
+            return response
+        location = response.headers.get("location")
+        if not location:
+            raise ValueError("ECI document redirect has no location")
+        current_url = urljoin(current_url, location)
+    raise ValueError("ECI document exceeded the redirect limit")
 
 
 class OfficialDocumentDiscovery:
@@ -37,8 +56,8 @@ class OfficialDocumentDiscovery:
 
         from bs4 import BeautifulSoup
 
-        async with httpx.AsyncClient(timeout=45.0, follow_redirects=True) as client:
-            response = await client.get(index_url)
+        async with httpx.AsyncClient(timeout=45.0, follow_redirects=False) as client:
+            response = await get_allowed_source_document(client, index_url, self.allowed_domains)
             response.raise_for_status()
         soup = BeautifulSoup(response.text, "html.parser")
         links: List[str] = []

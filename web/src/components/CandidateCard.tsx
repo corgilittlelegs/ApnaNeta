@@ -27,7 +27,6 @@ import {
   CIVIC_THRESHOLDS,
   WEALTH_TIERS,
 } from '../utils/civicConstants';
-import { useCandidatePhoto } from '../utils/wikidataPhoto';
 
 interface CandidateCardProps {
   candidate: Candidate;
@@ -54,10 +53,8 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
 }) => {
   const { isCitizenMode } = useViewMode();
   const { t, isHindi } = useLanguage();
-  const { photoUrl: dynamicPhotoUrl, attribution: photoAttribution } = useCandidatePhoto(
-    candidate.name,
-    candidate.photo_url
-  );
+  const photoUrl = candidate.photo_url;
+  const photoAttribution = candidate.photo_attribution;
   const [showImpactMethodology, setShowImpactMethodology] = useState(false);
 
   const cleanName =
@@ -93,13 +90,15 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
       const parts: string[] = [];
 
       if (candidate.is_rpa_section_8_disqualified) {
-        parts.push('न्यायालय द्वारा दोषी सिद्ध व अयोग्य घोषित');
+        parts.push('धारा 8 समीक्षा का संकेत दर्ज है; न्यायालय का आदेश देखें');
       } else if (candidate.serious_criminal_cases_count > 0) {
         parts.push(`${candidate.serious_criminal_cases_count} गंभीर मुकदमों का सामना कर रहे हैं`);
       } else if (candidate.criminal_cases_count > 0) {
-        parts.push(`${candidate.criminal_cases_count} प्रदर्शन/आंदोलन से जुड़े मामले दर्ज हैं`);
+        parts.push(`${candidate.criminal_cases_count} घोषित मामले दर्ज हैं`);
+      } else if (candidate.criminal_record_status === 'unavailable') {
+        parts.push('आपराधिक मामलों का सत्यापित विवरण उपलब्ध नहीं है');
       } else {
-        parts.push('आपराधिक रिकॉर्ड पूर्णतः स्वच्छ है');
+        parts.push('इस शपथपत्र में कोई मामला दर्ज नहीं है');
       }
 
       if (candidate.attendance_rate !== undefined) {
@@ -127,13 +126,15 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
 
     // 1. Criminal record assessment
     if (candidate.is_rpa_section_8_disqualified) {
-      parts.push('Barred by court conviction');
+      parts.push('Section 8 review flag recorded; check the court order');
     } else if (candidate.serious_criminal_cases_count > 0) {
       parts.push(`Faces ${candidate.serious_criminal_cases_count} serious court charge(s)`);
     } else if (candidate.criminal_cases_count > 0) {
-      parts.push(`Has ${candidate.criminal_cases_count} protest/agitation FIR(s)`);
+      parts.push(`Has ${candidate.criminal_cases_count} declared case(s)`);
+    } else if (candidate.criminal_record_status === 'unavailable') {
+      parts.push('Criminal case disclosure unavailable');
     } else {
-      parts.push('Clean criminal record');
+      parts.push('No cases recorded in this filing');
     }
 
     // 2. Attendance
@@ -167,9 +168,9 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
           <div className="flex items-start gap-2.5 sm:gap-3 flex-1 min-w-0">
             {/* Candidate Avatar */}
             <div className="relative flex-shrink-0">
-              {dynamicPhotoUrl ? (
+              {photoUrl ? (
                 <img
-                  src={dynamicPhotoUrl}
+                  src={photoUrl}
                   alt={candidate.name}
                   title={photoAttribution || `Photo of ${candidate.name}`}
                   loading="lazy"
@@ -185,7 +186,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
               ) : null}
               <div
                 className={`w-12 h-12 sm:w-13 sm:h-13 rounded-full items-center justify-center font-bold text-xs text-sovereign-700 bg-dholpur-100 border-2 border-dholpur-300 shadow-xs ${
-                  dynamicPhotoUrl ? 'hidden' : 'flex'
+                  photoUrl ? 'hidden' : 'flex'
                 }`}
               >
                 {cleanInitials}
@@ -222,14 +223,14 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                 )}
               </p>
 
-              {/* Voter-Ink Verified ECI Seal */}
+              {/* Filing and audit coverage */}
               <div className="mt-1 flex items-center gap-1.5">
                 <span
                   className="inline-flex items-center gap-1 text-[9.5px] font-semibold px-1.5 py-0.5 rounded bg-voter-ink-50 text-voter-ink-700 border border-voter-ink-200/80"
-                  title="Verified Form 26 Sworn Disclosures under RPA 1951"
+                  title="Status of the indexed Form 26 filing"
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-voter-ink-600"></span>
-                  <span>{t.verifiedForm26}</span>
+                  <span>{candidate.affidavit_status === 'audited' ? 'Form 26 audit recorded' : candidate.affidavit_status === 'source_only' ? 'Form 26 source indexed' : 'Form 26 unavailable'}</span>
                 </span>
               </div>
             </div>
@@ -260,7 +261,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
               </button>
             )}
             <span className="text-[10px] sm:text-[11px] font-semibold px-2 sm:px-2.5 py-1 bg-dholpur-100 text-sovereign-800 border border-dholpur-300 rounded-lg max-w-[90px] sm:max-w-none truncate">
-              {candidate.party || 'Independent'}
+              {candidate.party || 'Party unavailable'}
             </span>
           </div>
         </div>
@@ -287,6 +288,8 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                     ? 'bg-rose-50/80 border-rose-200 text-rose-900'
                     : candidate.criminal_cases_count > 0
                     ? 'bg-kesariya-50/80 border-kesariya-200 text-kesariya-900'
+                    : candidate.criminal_record_status === 'unavailable'
+                    ? 'bg-dholpur-50 border-dholpur-200 text-sovereign-700'
                     : 'bg-harit-50/80 border-harit-200 text-harit-900'
                 }`}
               >
@@ -296,23 +299,23 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                     <span>{t.cardCrime}</span>
                   </span>
                   <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-white/70">
-                    {candidate.serious_criminal_cases_count > 0 ? t.statusMajor : candidate.criminal_cases_count > 0 ? t.statusAgitation : t.statusClean}
+                    {candidate.serious_criminal_cases_count > 0 ? t.statusMajor : candidate.criminal_cases_count > 0 ? 'Cases' : candidate.criminal_record_status === 'unavailable' ? 'Unknown' : 'None declared'}
                   </span>
                 </div>
                 <div className="my-0.5">
                   <span className="font-bold text-sm block">
                     {candidate.is_rpa_section_8_disqualified
-                      ? t.barredByLaw
+                      ? (isHindi ? 'धारा 8 समीक्षा' : 'Section 8 review flag')
                       : candidate.criminal_cases_count > 0
                       ? t.casesCount(candidate.criminal_cases_count)
-                      : t.zeroCharges}
+                      : candidate.criminal_record_status === 'unavailable' ? 'Unavailable' : t.zeroCharges}
                   </span>
                   <span className="text-[10px] text-sovereign-600 block mt-0.5">
                     {candidate.serious_criminal_cases_count > 0
                       ? t.seriousCases(candidate.serious_criminal_cases_count)
                       : candidate.criminal_cases_count > 0
-                      ? t.protestCases
-                      : t.cleanRecord}
+                      ? 'Case type shown in source'
+                      : candidate.criminal_record_status === 'unavailable' ? 'Disclosure not reviewed' : 'No cases in this filing'}
                   </span>
                 </div>
               </div>
@@ -343,7 +346,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                     {!candidate.mplads ? (isHindi ? 'विवरण नहीं' : 'No Data') : `${formatINR(candidate.mplads.expenditure_amount || 0)}`}
                   </span>
                   <span className="text-[10px] text-sovereign-600 block mt-0.5 truncate">
-                    {!candidate.mplads ? t.notAnMp : t.unspentBalance(formatINR(candidate.mplads.unspent_balance))}
+                    {!candidate.mplads ? (isHindi ? 'निधि रिकॉर्ड उपलब्ध नहीं' : 'Fund record unavailable') : t.unspentBalance(formatINR(candidate.mplads.unspent_balance))}
                   </span>
                 </div>
               </div>
@@ -404,11 +407,11 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                 </div>
                 <div className="my-0.5">
                   <span className="font-bold text-sm block font-mono">
-                    {candidate.election_expense_report?.declared_expenditure == null ? (isHindi ? 'विवरण नहीं' : 'Not disclosed') : formatINR(candidate.election_expense_report.declared_expenditure)}
+                    {candidate.election_expense_report?.declared_expenditure == null ? (isHindi ? 'राशि उपलब्ध नहीं' : 'Amount unavailable') : formatINR(candidate.election_expense_report.declared_expenditure)}
                   </span>
                   <span className="text-[10px] text-sovereign-600 block mt-0.5 truncate">
                     {!candidate.election_expense_report
-                      ? (isHindi ? 'कोई आधिकारिक रिकॉर्ड नहीं' : 'No official account on record')
+                      ? (isHindi ? 'खर्च रिकॉर्ड उपलब्ध नहीं' : 'Expense record unavailable')
                       : candidate.election_expense_report.ceiling_status === 'over_limit'
                       ? (isHindi ? 'घोषित राशि सीमा से अधिक है' : 'Declared amount exceeds recorded ceiling')
                       : `${isHindi ? 'अंतिम तिथि' : 'Due'}: ${candidate.election_expense_report.filing_due_on}`}
@@ -421,6 +424,8 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                 className={`p-2.5 rounded-xl border flex flex-col justify-between transition-all ${
                   candidate.has_anomalous_wealth_ratio || (latestWealthGrowth && latestWealthGrowth.is_rapid_accumulation)
                     ? 'bg-rose-50/80 border-rose-200 text-rose-900'
+                    : !latestWealthGrowth && candidate.affidavit_status !== 'audited'
+                    ? 'bg-dholpur-50 border-dholpur-200 text-sovereign-700'
                     : candidate.wealth_discrepancy_ratio && candidate.wealth_discrepancy_ratio > CIVIC_THRESHOLDS.WEALTH_DISCREPANCY_RATIO_MODERATE
                     ? 'bg-kesariya-50/80 border-kesariya-200 text-kesariya-900'
                     : 'bg-harit-50/80 border-harit-200 text-harit-900'
@@ -437,10 +442,10 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                 </div>
                 <div className="my-0.5">
                   <span className="font-bold text-sm block font-mono">
-                    {formatINR(candidate.total_net_worth)}
+                    {candidate.affidavit_status === 'audited' ? formatINR(candidate.total_net_worth) : 'Unavailable'}
                   </span>
                   <span className="text-[10px] text-sovereign-600 block mt-0.5">
-                    {latestWealthGrowth?.is_rapid_accumulation ? t.wealthSurgeAlert : t.wealthStable}
+                    {latestWealthGrowth ? (latestWealthGrowth.is_rapid_accumulation ? t.wealthSurgeAlert : t.wealthStable) : (isHindi ? 'वृद्धि विवरण उपलब्ध नहीं' : 'Growth record unavailable')}
                   </span>
                 </div>
               </div>
@@ -455,10 +460,10 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
               {t.labelNetWorthCard}
             </span>
             <span className="text-base sm:text-lg font-bold font-mono tabular-nums text-sovereign-950">
-              {formatINR(candidate.total_net_worth)}
+              {candidate.affidavit_status === 'audited' ? formatINR(candidate.total_net_worth) : 'Unavailable'}
             </span>
             <span className="text-[10px] text-sovereign-500 block mt-0.5 font-mono">
-              {isHindi ? 'चल संपत्ति' : 'Movable'}: {formatINR(candidate.total_movable_assets)}
+              {isHindi ? 'चल संपत्ति' : 'Movable'}: {candidate.affidavit_status === 'audited' ? formatINR(candidate.total_movable_assets) : 'Unavailable'}
             </span>
           </div>
 
@@ -469,7 +474,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
             {candidate.is_rpa_section_8_disqualified ? (
               <span className="inline-flex items-center gap-1 font-bold text-rose-900 bg-rose-100 border border-rose-300 px-2 py-0.5 rounded-md">
                 <WarningOctagon size={15} weight="fill" className="text-rose-700" />
-                {isCitizenMode ? 'Barred from Office' : 'Disqualified (RPA Sec 8)'}
+                {isCitizenMode ? 'Section 8 Review Flag' : 'RPA Section 8 Review Flag'}
               </span>
             ) : candidate.serious_criminal_cases_count > 0 ? (
               <span className="inline-flex items-center gap-1 font-bold text-rose-800 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-md">
@@ -479,16 +484,20 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
             ) : candidate.criminal_cases_count > 0 ? (
               <span className="inline-flex items-center gap-1 font-medium text-kesariya-900 bg-kesariya-50 border border-kesariya-200 px-2 py-0.5 rounded-md">
                 <Scales size={15} weight="duotone" className="text-kesariya-600" />
-                {candidate.criminal_cases_count} Protest Case(s)
+                {candidate.criminal_cases_count} Declared Case(s)
+              </span>
+            ) : candidate.criminal_record_status === 'unavailable' ? (
+              <span className="inline-flex items-center gap-1 font-medium text-sovereign-700 bg-dholpur-100 border border-dholpur-300 px-2 py-0.5 rounded-md">
+                Disclosure unavailable
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
                 <ShieldCheck size={15} weight="duotone" className="text-emerald-600" />
-                0 Charges Filed
+                No cases in this filing
               </span>
             )}
             <span className="text-[10px] text-sovereign-500 block mt-0.5 flex items-center gap-1">
-              {candidate.filing_year}{' '}
+              {candidate.filing_year || 'Year unavailable'}{' '}
               {isCitizenMode ? (
                 <CivicTerm term="FORM_26">Affidavit</CivicTerm>
               ) : (
@@ -516,7 +525,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
               )}
             </span>
             <span className="text-[10px] bg-rose-600 text-white font-bold px-1.5 py-0.5 rounded">
-              Active Govt Tender
+              Review source
             </span>
           </div>
         )}
@@ -725,7 +734,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                 <span>Geotagged Public Works</span>
               </span>
               <span className="font-mono font-semibold text-harit-700">
-                {candidate.mplads_works.length} Verified
+                {candidate.mplads_works.filter((work) => work.gis_verified === true).length} GIS verified
               </span>
             </div>
           ) : null}
@@ -739,26 +748,26 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
           }
         />
 
-        {/* Verified Civic Stamp (Matching Mockup 1) */}
+        {/* Record coverage stamp */}
         <div className="mt-3 pt-2.5 border-t border-dholpur-200/80 flex items-center justify-between text-[10.5px]">
           <div className="flex items-center gap-1.5">
-            <span className="w-4 h-4 rounded-full bg-harit-50 border border-harit-400 flex items-center justify-center text-harit-700 font-bold text-[9px] shadow-2xs">
-              ✓
+            <span className="w-4 h-4 rounded-full bg-dholpur-50 border border-dholpur-400 flex items-center justify-center text-sovereign-700 font-bold text-[9px] shadow-2xs">
+              i
             </span>
             <span className="font-semibold text-sovereign-800">
-              {t.verifiedCivicStamp}
+              {candidate.affidavit_status === 'audited' ? 'Arithmetic audit recorded' : 'Source coverage varies'}
             </span>
           </div>
           <span className="font-mono text-[9.5px] text-sovereign-500 font-medium bg-dholpur-100/80 px-1.5 py-0.5 rounded border border-dholpur-200">
-            ECI RPA §29
+            Record status
           </span>
         </div>
       </div>
 
-      {/* Card Footer with Court-Ready PDF and Proof Inspection */}
+      {/* Card footer with printable summary and source inspection */}
       <div className="px-4 sm:px-5 py-2.5 sm:py-3 bg-dholpur-100/70 border-t border-dholpur-200/80 flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 text-xs text-sovereign-500">
         <span className="font-mono text-[10.5px] sm:text-[11px] flex-shrink-0">
-          {isHindi ? 'नामांकन वर्ष' : 'Filing'}: {candidate.filing_year}
+          {isHindi ? 'नामांकन वर्ष' : 'Filing'}: {candidate.filing_year || 'Unavailable'}
         </span>
         <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end">
           {onOpenShareCard && (
@@ -773,7 +782,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
           )}
           <button
             onClick={() => exportCandidateDossierPdf(candidate)}
-            title="Download Court-Ready 1-Page Forensic Audit Dossier PDF"
+            title="Print a source-attributed candidate summary"
             className="inline-flex items-center gap-1 text-sovereign-700 hover:text-sovereign-950 font-semibold bg-white hover:bg-dholpur-50 border border-dholpur-300 px-2 sm:px-2.5 py-1 rounded-lg shadow-2xs transition-all active:scale-95 text-[11px] sm:text-xs"
           >
             <FilePdf size={13} weight="duotone" className="text-ashoka-700" />

@@ -22,6 +22,7 @@ import {
 
 import { CivicEmblem } from './CivicEmblem';
 import { useLanguage } from '../context/LanguageContext';
+import { useDialogAccessibility } from '../utils/useDialogAccessibility';
 
 interface ReportCardModalProps {
   isOpen: boolean;
@@ -39,6 +40,7 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
   const [copiedImage, setCopiedImage] = useState(false);
   const [copiedText, setCopiedText] = useState(false);
   const { isHindi } = useLanguage();
+  const dialogRef = useDialogAccessibility(isOpen && Boolean(candidate), onClose);
 
   useEffect(() => {
     if (!isOpen || !candidate) {
@@ -113,7 +115,7 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-sovereign-950/80 backdrop-blur-md overflow-y-auto">
-      <div className="bg-dholpur-50 rounded-2xl shadow-2xl border border-kesariya-600/30 w-full max-w-2xl max-h-[92dvh] sm:max-h-[92vh] flex flex-col overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Citizen report card" tabIndex={-1} className="bg-dholpur-50 rounded-2xl shadow-2xl border border-kesariya-600/30 w-full max-w-2xl max-h-[92dvh] sm:max-h-[92vh] flex flex-col overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200 outline-none">
         
         {/* Top Tiranga Accent Line */}
         <div className="tiranga-accent-bar" />
@@ -241,4 +243,3 @@ export const ReportCardModal: React.FC<ReportCardModalProps> = ({
     </div>
   );
 };
-

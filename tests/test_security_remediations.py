@@ -64,6 +64,9 @@ class TestSecurityRemediations(unittest.TestCase):
         self.assertIn("GRANT SELECT (id, candidate_id, filing_year, source_url, sha256_hash, r2_storage_key, created_at)", content)
         self.assertIn("CREATE OR REPLACE VIEW public_affidavits AS", content)
         self.assertNotIn("GRANT SELECT (raw_payload)", content)
+        self.assertIn("REVOKE SELECT ON source_documents, identity_resolution_links, expense_report_extractions,", content)
+        self.assertNotIn('CREATE POLICY "Public Read Access" ON identity_resolution_links', content)
+        self.assertNotIn('CREATE POLICY "Public Read Access" ON expense_report_extractions', content)
         # Ensure service_role has ALL
         self.assertIn("GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, service_role;", content)
         # Ensure updated_at trigger exists

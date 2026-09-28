@@ -23,6 +23,7 @@ import { CivicTerm } from './CivicTerm';
 
 interface LeaderboardsViewProps {
   candidates: Candidate[];
+  totalDatabaseCount: number;
   onVerifyProof: (candidateName: string, fieldLabel: string, value: string, pdfUrl: string, candidate?: Candidate) => void;
   onOpenShareCard: (candidate: Candidate) => void;
   selectedForComparison: Candidate[];
@@ -33,6 +34,7 @@ type LeaderboardTab = 'wealth_growth' | 'discrepancy' | 'sansad' | 'mplads' | 'a
 
 export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
   candidates,
+  totalDatabaseCount,
   onVerifyProof,
   onOpenShareCard,
   selectedForComparison,
@@ -94,7 +96,7 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
   // Tab 2: Forensic Discrepancy Watchlist (Sorted by total variance)
   const discrepancyWatchlist = useMemo(() => {
     const flagged = filteredCandidates.filter(
-      (c) => c.has_arithmetic_discrepancy || (c.delta_movable + c.delta_immovable > 0)
+      (c) => c.affidavit_status === 'audited' && (c.has_arithmetic_discrepancy || (c.delta_movable + c.delta_immovable > 0))
     );
     return flagged.sort((a, b) => {
       const deltaA = Math.abs(a.delta_movable) + Math.abs(a.delta_immovable);
@@ -131,6 +133,9 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
         groupKey: string;
         count: number;
         totalNetWorth: number;
+        wealthCount: number;
+        auditCount: number;
+        caseDisclosureCount: number;
         totalAttendance: number;
         attendanceCount: number;
         discrepancyCount: number;
@@ -139,13 +144,16 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
     >();
 
     filteredCandidates.forEach((c) => {
-      const key = averagesGrouping === 'party' ? (c.party || 'Independent') : (c.state || 'Other');
+      const key = averagesGrouping === 'party' ? (c.party || 'Party unavailable') : (c.state || 'State unavailable');
       let entry = map.get(key);
       if (!entry) {
         entry = {
           groupKey: key,
           count: 0,
           totalNetWorth: 0,
+          wealthCount: 0,
+          auditCount: 0,
+          caseDisclosureCount: 0,
           totalAttendance: 0,
           attendanceCount: 0,
           discrepancyCount: 0,
@@ -155,26 +163,31 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
       }
 
       entry.count += 1;
-      entry.totalNetWorth += c.total_net_worth || 0;
+      if (c.affidavit_status === 'audited') {
+        entry.totalNetWorth += c.total_net_worth;
+        entry.wealthCount += 1;
+      }
       if (c.attendance_rate !== undefined) {
         entry.totalAttendance += c.attendance_rate;
         entry.attendanceCount += 1;
       }
-      if (c.has_arithmetic_discrepancy) {
-        entry.discrepancyCount += 1;
+      if (c.affidavit_status === 'audited') {
+        entry.auditCount += 1;
+        if (c.has_arithmetic_discrepancy) entry.discrepancyCount += 1;
       }
-      if (c.serious_criminal_cases_count > 0) {
-        entry.seriousCrimeCount += 1;
+      if (c.criminal_record_status === 'declared') {
+        entry.caseDisclosureCount += 1;
+        if (c.serious_criminal_cases_count > 0) entry.seriousCrimeCount += 1;
       }
     });
 
     const results = Array.from(map.values()).map((e) => ({
       groupKey: e.groupKey,
       count: e.count,
-      avgNetWorth: e.count > 0 ? e.totalNetWorth / e.count : 0,
+      avgNetWorth: e.wealthCount > 0 ? e.totalNetWorth / e.wealthCount : null,
       avgAttendance: e.attendanceCount > 0 ? e.totalAttendance / e.attendanceCount : null,
-      discrepancyRate: e.count > 0 ? (e.discrepancyCount / e.count) * 100 : 0,
-      seriousCrimeRate: e.count > 0 ? (e.seriousCrimeCount / e.count) * 100 : 0,
+      discrepancyRate: e.auditCount > 0 ? (e.discrepancyCount / e.auditCount) * 100 : null,
+      seriousCrimeRate: e.caseDisclosureCount > 0 ? (e.seriousCrimeCount / e.caseDisclosureCount) * 100 : null,
     }));
 
     // Sort by count descending
@@ -183,10 +196,11 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
 
   // Summary Metrics Banner
   const totalAnalyzed = candidates.length;
-  const totalDiscrepancies = candidates.filter((c) => c.has_arithmetic_discrepancy).length;
+  const totalAudited = candidates.filter((candidate) => candidate.affidavit_status === 'audited').length;
+  const totalDiscrepancies = candidates.filter((candidate) => candidate.affidavit_status === 'audited' && candidate.has_arithmetic_discrepancy).length;
   const avgAttendanceOverall = useMemo(() => {
     const list = candidates.filter((c) => c.attendance_rate !== undefined);
-    if (list.length === 0) return 0;
+    if (list.length === 0) return 'N/A';
     return (list.reduce((acc, c) => acc + (c.attendance_rate || 0), 0) / list.length).toFixed(1);
   }, [candidates]);
 
@@ -201,10 +215,10 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
           <div>
             <div className="flex items-center gap-2 mb-2 flex-wrap">
               <span className="text-xs px-2.5 py-0.5 bg-kesariya-500/20 text-kesariya-300 border border-kesariya-500/30 rounded-full font-semibold">
-                {isHindi ? 'राष्ट्रीय नागरिक सूचकांक' : 'NATIONAL CIVIC INDEX'}
+                {isHindi ? 'लोड की गई प्रोफ़ाइल' : 'LOADED PROFILES'}
               </span>
               <span className="text-xs text-dholpur-300">
-                • {isHindi ? 'सत्यापित पारदर्शिता रैंकिंग' : 'Sworn Transparency Rankings'}
+                • {candidates.length}{totalDatabaseCount ? ` / ${totalDatabaseCount}` : ''} profiles loaded
               </span>
             </div>
             <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight">
@@ -218,15 +232,15 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                   ? 'सरल राष्ट्रीय रैंकिंग: जानें कौन से सांसद सबसे अधिक सक्रिय हैं, स्थानीय निधि कैसे खर्च हुई, और संपत्ति में कितना इज़ाफा हुआ।'
                   : 'सांसदों की संपत्ति वृद्धि, हलफ़नामे की विसंगतियों और संसद में सक्रियता का व्यापक विश्लेषण।')
                 : (isCitizenMode
-                  ? 'Plain language national rankings: discover the most active MPs, fund utilization, and asset trajectories.'
-                  : 'Real-time forensic aggregations identifying exponential wealth surges, affidavit arithmetic discrepancies, legislative participation, and public fund velocities.')}
+                  ? 'Rankings among currently loaded profiles. Load more directory records to broaden this comparison.'
+                  : 'Forensic rankings among currently loaded profiles. This view is incomplete until the full directory has been loaded.')}
             </p>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <div className="bg-white/10 backdrop-blur-md px-4 py-3 rounded-xl border border-white/10">
               <span className="text-[11px] text-dholpur-300 block">
-                {isHindi ? 'विश्लेषित सांसद' : 'Analyzed Profiles'}
+                {isHindi ? 'लोड की गई प्रोफ़ाइल' : 'Loaded Profiles'}
               </span>
               <span className="text-xl font-mono font-bold">{totalAnalyzed.toLocaleString()}</span>
             </div>
@@ -235,7 +249,7 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                 {isHindi ? 'दर्ज विसंगतियां' : 'Flagged Discrepancies'}
               </span>
               <span className="text-xl font-mono font-bold text-terracotta-400">
-                {totalDiscrepancies} ({((totalDiscrepancies / (totalAnalyzed || 1)) * 100).toFixed(1)}%)
+                {totalDiscrepancies} ({totalAudited ? `${((totalDiscrepancies / totalAudited) * 100).toFixed(1)}% of ${totalAudited} audited` : 'no audits loaded'})
               </span>
             </div>
             <div className="bg-white/10 backdrop-blur-md px-4 py-3 rounded-xl border border-white/10 col-span-2 sm:col-span-1">
@@ -408,7 +422,7 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                             {row.candidate.name}
                           </h4>
                           <p className="text-[11px] text-sovereign-600 truncate">
-                            {row.candidate.party || 'Independent'} • {row.candidate.constituency}
+                            {row.candidate.party || 'Party unavailable'} • {row.candidate.constituency}
                           </p>
                         </div>
                       </div>
@@ -515,7 +529,7 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                             <div>
                               <div className="font-serif font-bold text-sovereign-950">{row.candidate.name}</div>
                               <div className="text-[11px] text-sovereign-600">
-                                {row.candidate.party || 'Independent'} • {row.candidate.constituency}, {row.candidate.state}
+                                {row.candidate.party || 'Party unavailable'} • {row.candidate.constituency}, {row.candidate.state}
                               </div>
                             </div>
                           </div>
@@ -604,7 +618,7 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
           <div className="md:hidden divide-y divide-dholpur-200">
             {discrepancyWatchlist.length === 0 ? (
               <div className="py-8 text-center text-sovereign-400 text-xs">
-                Zero discrepancies detected in the active dataset.
+                No recorded discrepancies among the currently loaded audited profiles.
               </div>
             ) : (
               discrepancyWatchlist.map((cand, idx) => {
@@ -623,7 +637,7 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                             {cand.name}
                           </h4>
                           <p className="text-[11px] text-sovereign-600 truncate">
-                            {cand.party || 'Independent'} • {cand.constituency}
+                            {cand.party || 'Party unavailable'} • {cand.constituency}
                           </p>
                         </div>
                       </div>
@@ -697,7 +711,7 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                 {discrepancyWatchlist.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="py-12 text-center text-sovereign-400">
-                      Zero discrepancies detected in the active dataset. All mathematical declarations reconciled!
+                      No recorded discrepancies among the currently loaded audited profiles.
                     </td>
                   </tr>
                 ) : (
@@ -713,11 +727,11 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                         <td className="py-3 px-4">
                           <div className="font-serif font-bold text-sovereign-950">{cand.name}</div>
                           <div className="text-[11px] text-sovereign-600">
-                            {cand.party || 'Independent'} • {cand.constituency}, {cand.state}
+                            {cand.party || 'Party unavailable'} • {cand.constituency}, {cand.state}
                           </div>
                         </td>
                         <td className="py-3 px-4 font-mono font-bold text-sovereign-950">
-                          {formatINR(cand.total_net_worth)}
+                          {cand.affidavit_status === 'audited' ? formatINR(cand.total_net_worth) : 'N/A'}
                         </td>
                         <td className="py-3 px-4 font-mono text-sovereign-600">
                           {formatINR(cand.delta_movable)}
@@ -827,7 +841,7 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                           {cand.name}
                         </h4>
                         <p className="text-[11px] text-sovereign-600 truncate">
-                          {cand.party || 'Independent'} • {cand.constituency} ({cand.house})
+                          {cand.party || 'Party unavailable'} • {cand.constituency} ({cand.house})
                         </p>
                       </div>
                     </div>
@@ -904,7 +918,7 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                         <div className="text-[11px] text-sovereign-600">{cand.constituency} ({cand.house})</div>
                       </td>
                       <td className="py-3 px-4">
-                        <span className="font-medium text-sovereign-800">{cand.party || 'Independent'}</span>
+                        <span className="font-medium text-sovereign-800">{cand.party || 'Party unavailable'}</span>
                         <span className="text-[11px] text-sovereign-500 block">{cand.state}</span>
                       </td>
                       <td className="py-3 px-4">
@@ -1206,7 +1220,7 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                 <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
                   <div>
                     <span className="text-[10px] text-sovereign-500 block">Avg Net Worth</span>
-                    <span className="font-mono font-bold text-sovereign-950">{formatINR(row.avgNetWorth)}</span>
+                    <span className="font-mono font-bold text-sovereign-950">{row.avgNetWorth == null ? 'N/A' : formatINR(row.avgNetWorth)}</span>
                   </div>
                   <div>
                     <span className="text-[10px] text-sovereign-500 block">Avg Attendance</span>
@@ -1218,20 +1232,20 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                     <span className="text-[10px] text-sovereign-500 block">Discrepancy Rate</span>
                     <span
                       className={`font-mono font-bold ${
-                        row.discrepancyRate > 15 ? 'text-terracotta-700' : 'text-harit-700'
+                        (row.discrepancyRate ?? 0) > 15 ? 'text-terracotta-700' : 'text-harit-700'
                       }`}
                     >
-                      {row.discrepancyRate.toFixed(1)}%
+                      {row.discrepancyRate == null ? 'N/A' : `${row.discrepancyRate.toFixed(1)}%`}
                     </span>
                   </div>
                   <div>
                     <span className="text-[10px] text-sovereign-500 block">Serious Crime Rate</span>
                     <span
                       className={`font-mono font-bold ${
-                        row.seriousCrimeRate > 20 ? 'text-terracotta-700' : 'text-sovereign-800'
+                        (row.seriousCrimeRate ?? 0) > 20 ? 'text-terracotta-700' : 'text-sovereign-800'
                       }`}
                     >
-                      {row.seriousCrimeRate.toFixed(1)}%
+                      {row.seriousCrimeRate == null ? 'N/A' : `${row.seriousCrimeRate.toFixed(1)}%`}
                     </span>
                   </div>
                 </div>
@@ -1264,7 +1278,7 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                       {row.count}
                     </td>
                     <td className="py-3 px-4 font-mono font-bold text-sovereign-950">
-                      {formatINR(row.avgNetWorth)}
+                      {row.avgNetWorth == null ? 'N/A' : formatINR(row.avgNetWorth)}
                     </td>
                     <td className="py-3 px-4 font-mono text-sovereign-700">
                       {row.avgAttendance !== null ? `${row.avgAttendance.toFixed(1)}%` : '—'}
@@ -1272,25 +1286,25 @@ export const LeaderboardsView: React.FC<LeaderboardsViewProps> = ({
                     <td className="py-3 px-4">
                       <span
                         className={`font-mono font-bold px-2 py-0.5 rounded text-[11px] ${
-                          row.discrepancyRate > 15
+                          (row.discrepancyRate ?? 0) > 15
                             ? 'bg-terracotta-100 text-terracotta-800 border border-terracotta-300'
-                            : row.discrepancyRate > 0
+                            : (row.discrepancyRate ?? 0) > 0
                             ? 'bg-kesariya-100 text-kesariya-800 border border-kesariya-300'
                             : 'bg-harit-100 text-harit-800 border border-harit-300'
                         }`}
                       >
-                        {row.discrepancyRate.toFixed(1)}%
+                        {row.discrepancyRate == null ? 'N/A' : `${row.discrepancyRate.toFixed(1)}%`}
                       </span>
                     </td>
                     <td className="py-3 px-4">
                       <span
                         className={`font-mono font-bold px-2 py-0.5 rounded text-[11px] ${
-                          row.seriousCrimeRate > 20
+                          (row.seriousCrimeRate ?? 0) > 20
                             ? 'bg-terracotta-100 text-terracotta-800 border border-terracotta-300'
                             : 'bg-dholpur-100 text-sovereign-700 border border-dholpur-300'
                         }`}
                       >
-                        {row.seriousCrimeRate.toFixed(1)}%
+                        {row.seriousCrimeRate == null ? 'N/A' : `${row.seriousCrimeRate.toFixed(1)}%`}
                       </span>
                     </td>
                   </tr>

@@ -209,14 +209,14 @@ export const translations: Record<Language, Translations> = {
     overviewSubtitleCitizen: 'Parliamentary Transparency & Public Fund Audit',
     overviewTitleForensic: 'Empirical Political Accountability & Forensic Audits',
     overviewDescCitizen:
-      'Inspect your Member of Parliament (MP): their local development fund (MPLADS) utilization, declared wealth growth rate, and parliamentary attendance & questions. Every fact is verified against official sworn affidavits.',
+      'Explore indexed candidate records, Form 26 disclosures, parliamentary activity, and MPLADS data. Check each profile for its source and audit coverage.',
     overviewDescForensic:
-      'Automated civic intelligence cross-referencing ECI affidavits, Sansad parliamentary participation, and MoSPI public fund flows. Every metric is bound to cryptographic PDF coordinates.',
+      'Compare indexed ECI affidavits, Sansad participation, and MoSPI public fund records. Source and audit coverage varies by candidate and metric.',
 
     // Telemetry Cards
-    telemetryTotalMps: 'Total MPs Tracked',
+    telemetryTotalMps: 'Candidate Records',
     telemetryLiveSupabase: 'Live Database',
-    telemetryVerifiedOpenRecords: 'Verified Records',
+    telemetryVerifiedOpenRecords: 'Database unavailable',
     telemetryAssetsTotal: 'Declared Assets Total',
     telemetryAssetsSubtitle: 'Movable + Immovable',
     telemetryCriminalCases: 'Pending Criminal Cases',
@@ -225,11 +225,11 @@ export const translations: Record<Language, Translations> = {
 
     // Constituency & Forensic Filter Dock
     filterDockTitle: 'Constituency & Forensic Filter Dock',
-    filterDockSubtitle: "Audit across India's 543 Lok Sabha seats, sworn Form 26 disclosures, and algorithmic checks",
-    matchingMps: (count: number) => `${count.toLocaleString()} matching MP${count === 1 ? '' : 's'}`,
+    filterDockSubtitle: 'Filter the profiles currently loaded from the public database',
+    matchingMps: (count: number) => `${count.toLocaleString()} matching profile${count === 1 ? '' : 's'}`,
     resetAllFilters: 'Reset All',
     quickFilterLabel: 'Quick Filters:',
-    pillAllSeats: 'All 543 Lok Sabha',
+    pillAllSeats: 'All loaded profiles',
     pillDiscrepancies: 'Discrepancies',
     pillWealthSurge: 'Wealth Surge (≥300%)',
     pillDeclaredCharges: 'Declared Charges',
@@ -254,7 +254,7 @@ export const translations: Record<Language, Translations> = {
     optWealthUnder1Cr: 'Under ₹1 Cr',
 
     // Candidate Directory Feed
-    profilesHeading: (count: number) => `Parliamentary Profiles & Audited Declarations (${count.toLocaleString()})`,
+    profilesHeading: (count: number) => `Candidate Profiles (${count.toLocaleString()})`,
     inspectHint: 'Click any card to inspect photo proof or export dossier',
     searchingDatabase: 'Searching database...',
     connecting: 'Connecting...',
@@ -308,7 +308,7 @@ export const translations: Record<Language, Translations> = {
     labelAttendanceCard: 'Sansad Attendance:',
     verifiedCivicStamp: 'Verified Civic Record • RPA 1951 Sworn Affidavit',
     viewAffidavitBtn: 'Form 26 Proof',
-    dossierPdfBtn: 'Dossier PDF',
+    dossierPdfBtn: 'Print / Save PDF',
     reportCardBtn: 'Report Card',
 
     // Comparison & Drawers
@@ -388,14 +388,14 @@ export const translations: Record<Language, Translations> = {
     overviewSubtitleCitizen: 'संसदीय पारदर्शिता एवं सार्वजनिक कोष लेखापरीक्षण',
     overviewTitleForensic: 'संसदीय जवाबदेही एवं विधि सम्मत विश्लेषण',
     overviewDescCitizen:
-      'अपने सांसद (MP) का विवरण देखें: उनके स्थानीय क्षेत्र विकास कोष (सांसद निधि) का उपयोग, घोषित संपत्ति की वृद्धि दर, और संसद में उपस्थिति व प्रश्न। हर तथ्य आधिकारिक शपथपत्रों से सत्यापित है।',
+      'उम्मीदवारों के उपलब्ध रिकॉर्ड, प्रपत्र 26 विवरण, संसद गतिविधि और सांसद निधि का डेटा देखें। हर प्रोफ़ाइल में स्रोत और जांच की स्थिति देखें।',
     overviewDescForensic:
-      'चुनाव आयोग के शपथपत्रों, संसद में भागीदारी और सांसद निधि के आधिकारिक आंकड़ों का स्वचालित विश्लेषण। प्रत्येक तथ्य मूल सरकारी दस्तावेज़ से प्रमाणित है।',
+      'चुनाव आयोग, संसद और सांसद निधि के उपलब्ध रिकॉर्ड की तुलना करें। स्रोत और जांच की उपलब्धता हर व्यक्ति और माप के लिए अलग हो सकती है।',
 
     // Telemetry Cards
-    telemetryTotalMps: 'कुल सांसद',
+    telemetryTotalMps: 'उम्मीदवार रिकॉर्ड',
     telemetryLiveSupabase: 'लाइव डेटाबेस',
-    telemetryVerifiedOpenRecords: 'सत्यापित रिकॉर्ड्स',
+    telemetryVerifiedOpenRecords: 'डेटाबेस अनुपलब्ध',
     telemetryAssetsTotal: 'कुल घोषित संपत्ति',
     telemetryAssetsSubtitle: 'चल + अचल संपत्ति',
     telemetryCriminalCases: 'लंबित आपराधिक मामले',
@@ -404,11 +404,11 @@ export const translations: Record<Language, Translations> = {
 
     // Constituency & Forensic Filter Dock
     filterDockTitle: 'संसदीय क्षेत्र एवं जांच फ़िल्टर',
-    filterDockSubtitle: 'देश की 543 लोकसभा सीटों, प्रपत्र 26 शपथपत्रों एवं आधिकारिक रिकॉर्ड्स की पड़ताल',
-    matchingMps: (count: number) => `${count.toLocaleString()} संबंधित सांसद`,
+    filterDockSubtitle: 'सार्वजनिक डेटाबेस से लोड की गई प्रोफ़ाइल छांटें',
+    matchingMps: (count: number) => `${count.toLocaleString()} संबंधित प्रोफ़ाइल`,
     resetAllFilters: 'पुनः सेट करें',
     quickFilterLabel: 'त्वरित फ़िल्टर:',
-    pillAllSeats: 'सभी 543 सीटें',
+    pillAllSeats: 'सभी लोड प्रोफ़ाइल',
     pillDiscrepancies: 'विसंगतियाँ',
     pillWealthSurge: 'त्वरित संपत्ति वृद्धि (≥300%)',
     pillDeclaredCharges: 'आपराधिक आरोप',
@@ -433,7 +433,7 @@ export const translations: Record<Language, Translations> = {
     optWealthUnder1Cr: '₹1 करोड़ से कम',
 
     // Candidate Directory Feed
-    profilesHeading: (count: number) => `संसदीय प्रोफ़ाइल एवं सत्यापित घोषणाएं (${count.toLocaleString()})`,
+    profilesHeading: (count: number) => `उम्मीदवार प्रोफ़ाइल (${count.toLocaleString()})`,
     inspectHint: 'प्रमाण देखने या रिपोर्ट डाउनलोड करने के लिए किसी भी कार्ड पर क्लिक करें',
     searchingDatabase: 'डेटाबेस में खोज जारी...',
     connecting: 'कनेक्ट हो रहा है...',
@@ -487,7 +487,7 @@ export const translations: Record<Language, Translations> = {
     labelAttendanceCard: 'संसद हाजिरी:',
     verifiedCivicStamp: 'सत्यापित नागरिक रिकॉर्ड • जनप्रतिनिधित्व कानून 1951',
     viewAffidavitBtn: 'शपथपत्र प्रमाण',
-    dossierPdfBtn: 'दस्तावेज़ PDF',
+    dossierPdfBtn: 'प्रिंट / PDF सहेजें',
     reportCardBtn: 'रिपोर्ट कार्ड',
 
     // Comparison & Drawers

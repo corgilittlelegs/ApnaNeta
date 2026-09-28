@@ -2,13 +2,41 @@ import unittest
 from datetime import date
 from decimal import Decimal
 from unittest.mock import AsyncMock, patch
+from types import SimpleNamespace
 
 from src.verification.election_expense import evaluate_expense_compliance, filing_due_date
 from src.ingestion.election_expense_reports import ElectionExpenseReportDiscovery, EXPENDITURE_INDEXES
 from src.ingestion.election_expense_extractor import parse_expense_report_text
+from src.ingestion.official_documents import get_allowed_source_document
 
 
 class TestElectionExpenseCompliance(unittest.IsolatedAsyncioTestCase):
+    async def test_document_redirect_cannot_leave_eci_allowlist(self):
+        client = SimpleNamespace(get=AsyncMock(return_value=SimpleNamespace(
+            status_code=302, headers={"location": "http://169.254.169.254/latest/meta-data/"}
+        )))
+        with self.assertRaises(ValueError):
+            await get_allowed_source_document(client, "https://www.eci.gov.in/report.pdf", {"eci.gov.in"})
+        client.get.assert_awaited_once_with("https://www.eci.gov.in/report.pdf", follow_redirects=False)
+
+    async def test_document_redirect_within_eci_is_allowed(self):
+        client = SimpleNamespace(get=AsyncMock(side_effect=[
+            SimpleNamespace(status_code=302, headers={"location": "/files/report.pdf"}),
+            SimpleNamespace(status_code=200, headers={}, content=b"%PDF-source"),
+        ]))
+        response = await get_allowed_source_document(client, "https://www.eci.gov.in/report", {"eci.gov.in"})
+        self.assertEqual(response.content, b"%PDF-source")
+        self.assertEqual(client.get.await_count, 2)
+
+    async def test_mospi_index_redirect_remains_on_its_allowlist(self):
+        client = SimpleNamespace(get=AsyncMock(side_effect=[
+            SimpleNamespace(status_code=302, headers={"location": "/reports"}),
+            SimpleNamespace(status_code=200, headers={}, text="<html></html>"),
+        ]))
+        response = await get_allowed_source_document(client, "https://www.mospi.gov.in/", {"mospi.gov.in"})
+        self.assertEqual(response.text, "<html></html>")
+        self.assertEqual(client.get.await_count, 2)
+
     def test_due_date_excludes_result_declaration_date(self):
         self.assertEqual(filing_due_date(date(2024, 6, 4)), date(2024, 7, 4))
 

@@ -16,6 +16,7 @@ import {
 import { Candidate } from '../types/candidate';
 import { exportCandidateDossierPdf } from '../utils/DossierPdfExport';
 import { useLanguage } from '../context/LanguageContext';
+import { useDialogAccessibility } from '../utils/useDialogAccessibility';
 
 interface ComparisonModalProps {
   isOpen: boolean;
@@ -36,6 +37,7 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
 }) => {
   const [activeMobileIndex, setActiveMobileIndex] = useState(0);
   const { isHindi } = useLanguage();
+  const dialogRef = useDialogAccessibility(isOpen, onClose);
 
   if (!isOpen || candidates.length === 0) return null;
 
@@ -54,7 +56,7 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
       />
 
       {/* Modal Container */}
-      <div className="relative w-full max-w-6xl max-h-[90vh] bg-white rounded-2xl shadow-2xl z-10 flex flex-col overflow-hidden border border-dholpur-300">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Candidate comparison" tabIndex={-1} className="relative w-full max-w-6xl max-h-[90vh] bg-white rounded-2xl shadow-2xl z-10 flex flex-col overflow-hidden border border-dholpur-300 outline-none">
         
         {/* Top Tiranga Accent Line */}
         <div className="tiranga-accent-bar" />
@@ -104,7 +106,7 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
                     : 'text-sovereign-700 hover:text-sovereign-950'
                 }`}
               >
-                {cand.name.split(' ')[0]} ({cand.party || 'IND'})
+                {cand.name.split(' ')[0]} ({cand.party || 'Party unavailable'})
               </button>
             ))}
           </div>
@@ -140,7 +142,7 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
                     <div className="p-5 border-b border-dholpur-200/80 bg-gradient-to-b from-dholpur-100/80 to-dholpur-50">
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <span className="text-[11px] font-bold px-2.5 py-0.5 bg-dholpur-100 text-sovereign-800 border border-dholpur-300 rounded-md">
-                          {cand.party || 'Independent'}
+                          {cand.party || 'Party unavailable'}
                         </span>
                         <button
                           onClick={() => onRemoveCandidate(cand.id)}
@@ -182,7 +184,9 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
                         <span className="text-[10px] font-bold uppercase tracking-wider text-sovereign-500 block mb-1.5">
                           Audit Verdict
                         </span>
-                        {cand.has_arithmetic_discrepancy ? (
+                        {cand.affidavit_status !== 'audited' ? (
+                          <div className="rounded-xl border border-dholpur-300 bg-dholpur-50 p-2.5 text-sovereign-700">Arithmetic audit unavailable</div>
+                        ) : cand.has_arithmetic_discrepancy ? (
                           <div className="p-2.5 bg-terracotta-50 border border-terracotta-200 rounded-xl text-terracotta-800">
                             <div className="flex items-center gap-1.5 font-bold text-xs">
                               <AlertTriangle className="w-4 h-4 text-terracotta-600 flex-shrink-0" />
@@ -211,31 +215,31 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
                       {/* 2. Balance Sheet Breakdown */}
                       <div>
                         <span className="text-[10px] font-bold uppercase tracking-wider text-sovereign-500 block mb-1.5">
-                          Sworn Balance Sheet ({cand.filing_year})
+                          Sworn Balance Sheet ({cand.filing_year || 'year unavailable'})
                         </span>
                         <div className="bg-dholpur-50 p-3 rounded-xl border border-dholpur-200 space-y-2">
                           <div className="flex justify-between items-center">
                             <span className="text-sovereign-700">Declared Net Worth</span>
                             <span className="font-mono font-bold text-sm text-sovereign-950">
-                              {formatINR(cand.total_net_worth)}
+                              {cand.affidavit_status === 'audited' ? formatINR(cand.total_net_worth) : 'Unavailable'}
                             </span>
                           </div>
                           <div className="flex justify-between items-center text-[11px]">
                             <span className="text-sovereign-600">Movable Assets</span>
                             <span className="font-mono text-sovereign-800 font-medium">
-                              {formatINR(cand.total_movable_assets)}
+                              {cand.affidavit_status === 'audited' ? formatINR(cand.total_movable_assets) : 'Unavailable'}
                             </span>
                           </div>
                           <div className="flex justify-between items-center text-[11px]">
                             <span className="text-sovereign-600">Immovable Assets</span>
                             <span className="font-mono text-sovereign-800 font-medium">
-                              {formatINR(cand.total_immovable_assets)}
+                              {cand.affidavit_status === 'audited' ? formatINR(cand.total_immovable_assets) : 'Unavailable'}
                             </span>
                           </div>
                           <div className="flex justify-between items-center text-[11px] pt-1 border-t border-dholpur-200">
                             <span className="text-sovereign-600">Total Liabilities</span>
                             <span className="font-mono text-terracotta-700 font-medium">
-                              {formatINR(cand.total_liabilities)}
+                              {cand.affidavit_status === 'audited' ? formatINR(cand.total_liabilities) : 'Unavailable'}
                             </span>
                           </div>
                         </div>
@@ -255,8 +259,10 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
                           ) : cand.criminal_cases_count > 0 ? (
                             <div className="flex items-center gap-2 text-kesariya-800 font-medium">
                               <Scale className="w-4 h-4 text-kesariya-600" />
-                              <span>{cand.criminal_cases_count} Protest/Demonstration Citation(s)</span>
+                              <span>{cand.criminal_cases_count} Declared Case(s)</span>
                             </div>
+                          ) : cand.criminal_record_status === 'unavailable' ? (
+                            <div className="text-sovereign-700">Case disclosure unavailable</div>
                           ) : (
                             <div className="flex items-center gap-2 text-harit-800 font-bold">
                               <CheckCircle2 className="w-4 h-4 text-harit-600" />
@@ -264,7 +270,7 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
                             </div>
                           )}
                           <span className="text-[10px] text-sovereign-500 block mt-1">
-                            Verified from Form 26 Item 5 & 6 Disclosures
+                            {cand.criminal_record_status === 'declared' ? 'Recorded from Form 26 Items 5 and 6' : 'No reviewed case disclosure available'}
                           </span>
                         </div>
                       </div>

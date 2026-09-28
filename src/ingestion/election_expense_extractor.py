@@ -13,7 +13,7 @@ try:
 except ImportError:
     httpx = None
 
-from src.ingestion.official_documents import is_allowed_public_source
+from src.ingestion.official_documents import get_allowed_source_document, is_allowed_public_source
 from src.storage.r2_client import r2_storage
 from src.storage.supabase_client import supabase
 from src.verification.election_expense import evaluate_expense_compliance
@@ -72,8 +72,8 @@ class ElectionExpenseReportExtractor:
             raise ImportError("httpx is required for expense report extraction")
         if not is_allowed_public_source(url, {"eci.gov.in"}):
             raise ValueError("Rejected non-ECI expense report URL")
-        async with httpx.AsyncClient(timeout=60.0, follow_redirects=True) as client:
-            response = await client.get(url)
+        async with httpx.AsyncClient(timeout=60.0, follow_redirects=False) as client:
+            response = await get_allowed_source_document(client, url, {"eci.gov.in"})
             response.raise_for_status()
         if not response.content.startswith(b"%PDF"):
             raise ValueError("Official source did not return a PDF document")

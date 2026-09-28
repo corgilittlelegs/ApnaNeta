@@ -23,7 +23,12 @@ export const DiscrepancyBadge: React.FC<DiscrepancyBadgeProps> = ({ candidate, o
   return (
     <div className="space-y-2">
       {/* 1. Double-Entry Arithmetic Check */}
-      {candidate.has_arithmetic_discrepancy ? (
+      {candidate.affidavit_status !== 'audited' ? (
+        <div className="flex items-center gap-2 rounded-xl border border-dholpur-300 bg-dholpur-50 p-2.5 text-xs text-sovereign-700">
+          <WarningCircle size={16} />
+          {isHindi ? 'गणितीय ऑडिट उपलब्ध नहीं है।' : 'Arithmetic audit unavailable for this filing.'}
+        </div>
+      ) : candidate.has_arithmetic_discrepancy ? (
         <div className="flex items-center justify-between p-2.5 bg-terracotta-50 border border-terracotta-200 rounded-xl text-xs">
           <div className="flex items-center gap-2 text-terracotta-900">
             <WarningCircle size={18} weight="duotone" className="text-terracotta-600 flex-shrink-0" />
@@ -122,7 +127,7 @@ export const DiscrepancyBadge: React.FC<DiscrepancyBadgeProps> = ({ candidate, o
       )}
 
       {/* 2. Wealth Discrepancy Ratio (WDR) */}
-      {candidate.wealth_discrepancy_ratio && (
+      {candidate.affidavit_status === 'audited' && candidate.wealth_discrepancy_ratio != null && (
         <div
           className={`flex items-center justify-between p-2.5 rounded-xl border text-xs ${
             candidate.has_anomalous_wealth_ratio

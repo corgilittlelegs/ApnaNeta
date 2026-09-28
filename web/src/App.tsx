@@ -1,15 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useMemo, useRef } from 'react';
 import { Navbar } from './components/Navbar';
 import { CandidateCard } from './components/CandidateCard';
-import { AffidavitProofViewer } from './components/AffidavitProofViewer';
 import { ConstituencyFilter, FilterState } from './components/ConstituencyFilter';
-import { ComparisonModal } from './components/ComparisonModal';
-import { ReportCardModal } from './components/ReportCardModal';
-import { LeaderboardsView } from './components/LeaderboardsView';
 import { Candidate, BoundingBox, MPLADSRecord, HistoricalWealthRecord, ElectionExpenseReport } from './types/candidate';
 import { ViewModeProvider, useViewMode } from './context/ViewModeContext';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
-import { CivicFaqDrawer } from './components/CivicFaqDrawer';
 import {
   Cpu,
   Database,
@@ -25,8 +20,12 @@ import {
   CheckCircle,
 } from '@phosphor-icons/react';
 
-import { PROMINENT_PARTY_MAP } from './data/politicianLookup';
-import { CIVIC_IMPACT_BENCHMARKS } from './utils/civicConstants';
+
+const AffidavitProofViewer = lazy(() => import('./components/AffidavitProofViewer').then((module) => ({ default: module.AffidavitProofViewer })));
+const ComparisonModal = lazy(() => import('./components/ComparisonModal').then((module) => ({ default: module.ComparisonModal })));
+const ReportCardModal = lazy(() => import('./components/ReportCardModal').then((module) => ({ default: module.ReportCardModal })));
+const LeaderboardsView = lazy(() => import('./components/LeaderboardsView').then((module) => ({ default: module.LeaderboardsView })));
+const CivicFaqDrawer = lazy(() => import('./components/CivicFaqDrawer').then((module) => ({ default: module.CivicFaqDrawer })));
 
 const formatINR = (val: number) => {
   const num = Number(val || 0);
@@ -36,7 +35,36 @@ const formatINR = (val: number) => {
 };
 
 const CANDIDATE_SELECT_QUERY =
-  'select=*,sansad_records(attendance_rate,debates_count,questions_count),affidavits(id,filing_year,source_url,r2_storage_key,audit_discrepancies(*),criminal_cases(*)),mplads_records(*),historical_wealth_cagr(*),conflict_of_interest_audits(*),political_mobility_records(*),corporate_associations(*),candidate_expense_reports(*,election_events(election_name,result_declared_on))';
+  'select=id,name,alias,state,constituency,house,party,photo_url,photo_source,photo_attribution,photo_license_url,total_movable_assets,total_immovable_assets,total_liabilities,total_net_worth,total_five_year_income,criminal_cases_count,serious_criminal_cases_count,protest_cases_count,has_arithmetic_discrepancy,delta_movable,delta_immovable,wealth_discrepancy_ratio,has_anomalous_wealth_ratio,sansad_records(attendance_rate,debates_count,questions_count),affidavits(id,filing_year,source_url,r2_storage_key,sha256_hash,audit_discrepancies(part_b_movable_total,part_b_immovable_total,total_net_worth,total_five_year_declared_income,delta_movable,delta_immovable,has_arithmetic_discrepancy,wealth_discrepancy_ratio,has_anomalous_wealth_ratio,variance_proof_coordinates),criminal_cases(id,case_type,fir_or_case_number,police_station,court_name,statutory_charges,charges_framed,charges_framed_date,is_serious_category,category_justification,cnr_number,ecourts_verified,ecourts_stage,is_rpa_section_8_disqualified)),mplads_records(entitled_amount,released_amount,expenditure_amount,unspent_balance,utilization_rate,works_recommended,works_completed,term_years),historical_wealth_cagr(from_year,to_year,initial_assets,final_assets,absolute_increase,percentage_increase,cagr_percent,is_rapid_accumulation),conflict_of_interest_audits(id,conflict_type,section_9a_flag,disqualification_risk,determination_status,evidence_details),political_mobility_records(id,from_party,to_party,transition_year),corporate_associations(id,company_name,designation,status),candidate_expense_reports(filing_due_on,filed_on,declared_expenditure,expenditure_ceiling,filing_status,ceiling_status,source_url,election_events(election_name,result_declared_on))';
+
+function getPublicApiConfig() {
+  const env = import.meta.env;
+  const rawUrl = String(env.VITE_SUPABASE_URL || '').trim();
+  const key = String(env.VITE_SUPABASE_ANON_KEY || '').trim();
+  return { url: rawUrl.replace(/\/+$/, '').replace(/\/rest\/v1$/, ''), key };
+}
+
+function searchFilter(query: string): string {
+  const tokens = query.trim().split(/\s+/).map((token) => token.replace(/[(),]/g, '')).filter(Boolean);
+  const clauses = tokens.map((token) => {
+    const encoded = encodeURIComponent(token);
+    return `or(name.ilike.*${encoded}*,alias.ilike.*${encoded}*,constituency.ilike.*${encoded}*,party.ilike.*${encoded}*)`;
+  });
+  return clauses.length === 1 ? clauses[0].replace(/^or/, 'or=') : `and=(${clauses.join(',')})`;
+}
+
+async function fetchSearchPage(query: string, offset: number, signal?: AbortSignal) {
+  const { url, key } = getPublicApiConfig();
+  if (!url || !key) throw new Error('Public database is not configured');
+  const response = await fetch(
+    `${url}/rest/v1/candidates?${CANDIDATE_SELECT_QUERY}&${searchFilter(query)}&order=name.asc,id.asc&offset=${offset}&limit=100`,
+    { headers: { apikey: key, Authorization: `Bearer ${key}`, Prefer: 'count=exact' }, signal }
+  );
+  if (!response.ok) throw new Error(`Search request failed: ${response.status}`);
+  const rows = await response.json();
+  const total = Number(response.headers.get('content-range')?.split('/')[1]);
+  return { rows: Array.isArray(rows) ? rows : [], total: Number.isFinite(total) ? total : null };
+}
 
 function parseCandidateRow(row: any): Candidate {
   const sansad = Array.isArray(row.sansad_records) && row.sansad_records.length > 0 ? row.sansad_records[0] : null;
@@ -44,7 +72,9 @@ function parseCandidateRow(row: any): Candidate {
   const debates = sansad?.debates_count != null ? Number(sansad.debates_count) : undefined;
   const questions = sansad?.questions_count != null ? Number(sansad.questions_count) : undefined;
 
-  const aff = Array.isArray(row.affidavits) && row.affidavits.length > 0 ? row.affidavits[0] : null;
+  const aff = Array.isArray(row.affidavits) && row.affidavits.length > 0
+    ? [...row.affidavits].sort((a, b) => Number(b.filing_year || 0) - Number(a.filing_year || 0))[0]
+    : null;
   const audit = aff?.audit_discrepancies && Array.isArray(aff.audit_discrepancies) && aff.audit_discrepancies.length > 0
     ? aff.audit_discrepancies[0]
     : (aff?.audit_discrepancies && !Array.isArray(aff.audit_discrepancies) ? aff.audit_discrepancies : null);
@@ -102,7 +132,7 @@ function parseCandidateRow(row: any): Candidate {
   const corpList = Array.isArray(row.corporate_associations) ? row.corporate_associations : [];
 
   const expenseRaw = Array.isArray(row.candidate_expense_reports) && row.candidate_expense_reports.length > 0
-    ? row.candidate_expense_reports[0]
+    ? [...row.candidate_expense_reports].sort((a, b) => String(b.election_events?.result_declared_on || '').localeCompare(String(a.election_events?.result_declared_on || '')))[0]
     : null;
   const electionExpenseReport: ElectionExpenseReport | undefined = expenseRaw
     ? {
@@ -120,19 +150,24 @@ function parseCandidateRow(row: any): Candidate {
 
   const pdfSourceUrl = aff?.source_url || row.pdf_source_url || '';
   const r2Key = aff?.r2_storage_key || row.r2_storage_key || '';
+  const varianceBbox = Array.isArray(audit?.variance_proof_coordinates)
+    ? audit.variance_proof_coordinates[0]
+    : undefined;
 
   // Parse MPLADS Summary Record
-  const mpladsRaw = Array.isArray(row.mplads_records) && row.mplads_records.length > 0 ? row.mplads_records[0] : null;
+  const mpladsRaw = Array.isArray(row.mplads_records) && row.mplads_records.length > 0
+    ? [...row.mplads_records].sort((a, b) => String(b.term_years || '').localeCompare(String(a.term_years || '')))[0]
+    : null;
   const mpladsRecord: MPLADSRecord | undefined = mpladsRaw
     ? {
-        entitled_amount: Number(mpladsRaw.entitled_amount ?? mpladsRaw.allocated_amount ?? CIVIC_IMPACT_BENCHMARKS.DEFAULT_5YR_MPLADS_ENTITLEMENT),
+        entitled_amount: Number(mpladsRaw.entitled_amount ?? mpladsRaw.allocated_amount ?? 0),
         released_amount: Number(mpladsRaw.released_amount ?? mpladsRaw.sanctioned_amount ?? 0.0),
         expenditure_amount: Number(mpladsRaw.expenditure_amount ?? 0.0),
         unspent_balance: Number(mpladsRaw.unspent_balance ?? 0.0),
         utilization_rate: Number(mpladsRaw.utilization_rate ?? 0.0),
         works_recommended: Number(mpladsRaw.works_recommended ?? mpladsRaw.num_recommended_works ?? 0),
         works_completed: Number(mpladsRaw.works_completed ?? mpladsRaw.num_completed_works ?? 0),
-        term_years: mpladsRaw.term_years || '2019-2024',
+        term_years: mpladsRaw.term_years || undefined,
       }
     : undefined;
 
@@ -141,8 +176,8 @@ function parseCandidateRow(row: any): Candidate {
   const cagrRecords: HistoricalWealthRecord[] | undefined =
     cagrRawList.length > 0
       ? cagrRawList.map((c: any) => ({
-          from_year: Number(c.from_year ?? c.filing_year_start ?? 2019),
-          to_year: Number(c.to_year ?? c.filing_year_end ?? 2024),
+          from_year: Number(c.from_year ?? c.filing_year_start ?? 0),
+          to_year: Number(c.to_year ?? c.filing_year_end ?? 0),
           initial_assets: Number(c.initial_assets),
           final_assets: Number(c.final_assets),
           absolute_increase: Number(c.absolute_increase),
@@ -155,23 +190,23 @@ function parseCandidateRow(row: any): Candidate {
   const resolvedParty =
     row.party && row.party !== 'Parliamentarian' && row.party !== 'None' && row.party !== 'null' && row.party !== 'Unknown'
       ? row.party
-      : 'Independent';
+      : undefined;
   const resolvedState =
     row.state && row.state !== 'India' && row.state !== 'National'
       ? row.state
-      : (row.state || 'India');
+      : 'Unavailable';
   const resolvedConstituency =
     row.constituency && row.constituency !== 'Parliament of India' && row.constituency !== 'National'
       ? row.constituency
-      : (row.constituency || 'National');
+      : 'Unavailable';
 
   const rawHouse = row.house ? String(row.house).trim() : '';
-  let resolvedHouse: 'Lok Sabha' | 'Rajya Sabha' | 'Vidhan Sabha' = 'Lok Sabha';
+  let resolvedHouse: Candidate['house'] = 'Unknown';
   if (rawHouse === 'Rajya Sabha') {
     resolvedHouse = 'Rajya Sabha';
   } else if (rawHouse.includes('Vidhan')) {
     resolvedHouse = 'Vidhan Sabha';
-  } else {
+  } else if (rawHouse === 'Lok Sabha') {
     resolvedHouse = 'Lok Sabha';
   }
 
@@ -212,7 +247,9 @@ function parseCandidateRow(row: any): Candidate {
     state: resolvedState,
     house: resolvedHouse,
     party: resolvedParty,
-    filing_year: aff?.filing_year || 2024,
+    filing_year: Number(aff?.filing_year || 0),
+    affidavit_status: audit ? 'audited' : aff ? 'source_only' : 'unavailable',
+    criminal_record_status: audit || parsedDockets.length > 0 ? 'declared' : 'unavailable',
     total_movable_assets: totalMovable,
     total_immovable_assets: totalImmovable,
     total_liabilities: totalLiabilities,
@@ -242,6 +279,9 @@ function parseCandidateRow(row: any): Candidate {
     has_anomalous_wealth_ratio: hasAnomalousWdr,
     pdf_source_url: pdfSourceUrl,
     r2_storage_key: r2Key,
+    affidavit_sha256: aff?.sha256_hash || undefined,
+    variance_proof_bbox: varianceBbox,
+    proof_bbox: varianceBbox,
     photo_url: row.photo_url || undefined,
     photo_source: row.photo_source || undefined,
     photo_attribution: row.photo_attribution || undefined,
@@ -264,15 +304,15 @@ function mergeCandidatesIntoMap(map: Map<string, Candidate>, newCandidates: Cand
       const merged: Candidate = {
         ...existing,
         constituency:
-          existing.constituency !== 'Parliament of India' && existing.constituency !== 'National'
+          existing.constituency !== 'Unavailable' && existing.constituency !== 'Parliament of India' && existing.constituency !== 'National'
             ? existing.constituency
             : cand.constituency,
         state:
-          existing.state !== 'India' && existing.state !== 'National'
+          existing.state !== 'Unavailable' && existing.state !== 'India' && existing.state !== 'National'
             ? existing.state
             : cand.state,
         party:
-          existing.party !== 'Independent' && existing.party !== 'Parliamentarian'
+          existing.party && existing.party !== 'Independent' && existing.party !== 'Parliamentarian'
             ? existing.party
             : cand.party,
         attendance_rate: existing.attendance_rate ?? cand.attendance_rate,
@@ -305,6 +345,11 @@ const AppContent: React.FC = () => {
   const [displayLimit, setDisplayLimit] = useState<number>(50);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSearching, setIsSearching] = useState<boolean>(false);
+  const [searchError, setSearchError] = useState<boolean>(false);
+  const searchGeneration = useRef(0);
+  const [searchResults, setSearchResults] = useState<Candidate[]>([]);
+  const [searchTotal, setSearchTotal] = useState<number | null>(null);
+  const [searchOffset, setSearchOffset] = useState<number>(0);
   const [isLiveConnected, setIsLiveConnected] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedHouse, setSelectedHouse] = useState('ALL');
@@ -314,11 +359,13 @@ const AppContent: React.FC = () => {
   const [sharingCandidate, setSharingCandidate] = useState<Candidate | null>(null);
 
   const totalAssetsSum = useMemo(() => {
-    return candidates.reduce((acc, c) => acc + (c.total_net_worth || 0), 0);
+    return candidates.filter((candidate) => candidate.affidavit_status === 'audited').reduce((acc, candidate) => acc + candidate.total_net_worth, 0);
   }, [candidates]);
+  const auditedProfileCount = candidates.filter((candidate) => candidate.affidavit_status === 'audited').length;
+  const caseDisclosureCount = candidates.filter((candidate) => candidate.criminal_record_status === 'declared').length;
 
   const totalCriminalCasesSum = useMemo(() => {
-    return candidates.reduce((acc, c) => acc + (c.criminal_cases_count || 0), 0);
+    return candidates.filter((candidate) => candidate.criminal_record_status === 'declared').reduce((acc, candidate) => acc + candidate.criminal_cases_count, 0);
   }, [candidates]);
 
   const averageMpladsRate = useMemo(() => {
@@ -383,7 +430,7 @@ const AppContent: React.FC = () => {
       setIsLoading(true);
       try {
         const res = await fetch(
-          `${cleanUrl}/rest/v1/candidates?${CANDIDATE_SELECT_QUERY}&order=name.asc&limit=100`,
+          `${cleanUrl}/rest/v1/candidates?${CANDIDATE_SELECT_QUERY}&order=name.asc,id.asc&limit=100`,
           {
             headers: {
               apikey: rawKey,
@@ -406,7 +453,7 @@ const AppContent: React.FC = () => {
         }
 
         const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           const dbCandidates: Candidate[] = data.map(parseCandidateRow);
           const candidateMap = new Map<string, Candidate>();
           mergeCandidatesIntoMap(candidateMap, dbCandidates);
@@ -443,7 +490,7 @@ const AppContent: React.FC = () => {
 
     try {
       const res = await fetch(
-        `${cleanUrl}/rest/v1/candidates?${CANDIDATE_SELECT_QUERY}&order=name.asc&offset=${directoryOffset}&limit=${BATCH_SIZE}`,
+        `${cleanUrl}/rest/v1/candidates?${CANDIDATE_SELECT_QUERY}&order=name.asc,id.asc&offset=${directoryOffset}&limit=${BATCH_SIZE}`,
         {
           headers: {
             apikey: rawKey,
@@ -479,77 +526,64 @@ const AppContent: React.FC = () => {
 
   // Debounced Remote Search across the full database
   useEffect(() => {
+    const generation = ++searchGeneration.current;
     const q = searchQuery.trim();
     if (!q || q.length < 2) {
       setIsSearching(false);
+      setSearchError(false);
+      setSearchResults([]);
+      setSearchTotal(null);
+      setSearchOffset(0);
       return;
     }
-
-    const metaEnv = (import.meta as any).env || {};
-    const rawUrl = String(metaEnv.VITE_SUPABASE_URL || '').trim();
-    const rawKey = String(metaEnv.VITE_SUPABASE_ANON_KEY || '').trim();
-
-    if (!rawUrl || !rawKey) return;
-
-    const cleanUrl = rawUrl.replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
-
+    const controller = new AbortController();
+    setIsSearching(true);
+    setSearchError(false);
+    setSearchResults([]);
+    setSearchTotal(null);
+    setSearchOffset(0);
+    setDisplayLimit(50);
     const timer = setTimeout(async () => {
-      setIsSearching(true);
       try {
-        const tokens = q
-          .split(/\s+/)
-          .map((t) => t.trim().replace(/[(),]/g, ''))
-          .filter(Boolean);
-
-        if (tokens.length === 0) {
-          setIsSearching(false);
-          return;
-        }
-
-        let filterParam = '';
-        if (tokens.length === 1) {
-          const enc = encodeURIComponent(tokens[0]);
-          filterParam = `or=(name.ilike.*${enc}*,alias.ilike.*${enc}*,constituency.ilike.*${enc}*,party.ilike.*${enc}*)`;
-        } else {
-          const tokenClauses = tokens.map((t) => {
-            const enc = encodeURIComponent(t);
-            return `or(name.ilike.*${enc}*,alias.ilike.*${enc}*,constituency.ilike.*${enc}*,party.ilike.*${enc}*)`;
-          });
-          filterParam = `and=(${tokenClauses.join(',')})`;
-        }
-
-        const searchUrl = `${cleanUrl}/rest/v1/candidates?${CANDIDATE_SELECT_QUERY}&${filterParam}&limit=100`;
-
-        const res = await fetch(searchUrl, {
-          headers: {
-            apikey: rawKey,
-            Authorization: `Bearer ${rawKey}`,
-          },
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data) && data.length > 0) {
-            const newCands = data.map(parseCandidateRow);
-            setCandidates((prev) => {
-              const map = new Map<string, Candidate>();
-              for (const c of prev) {
-                map.set(getCandidateIdentityKey(c), c);
-              }
-              mergeCandidatesIntoMap(map, newCands);
-              return Array.from(map.values());
-            });
-          }
+        const { rows, total } = await fetchSearchPage(q, 0, controller.signal);
+        if (searchGeneration.current === generation) {
+          setSearchResults(rows.map(parseCandidateRow));
+          setSearchTotal(total);
+          setSearchOffset(rows.length);
         }
       } catch (err) {
-        console.error('Remote candidate search error:', err);
+        if (!controller.signal.aborted && searchGeneration.current === generation) {
+          console.error('Remote candidate search error:', err);
+          setSearchError(true);
+        }
       } finally {
-        setIsSearching(false);
+        if (!controller.signal.aborted && searchGeneration.current === generation) setIsSearching(false);
       }
     }, 300);
 
-    return () => clearTimeout(timer);
+    return () => { clearTimeout(timer); controller.abort(); };
   }, [searchQuery]);
+
+  const loadMoreSearchResults = async () => {
+    if (isSearching || (searchTotal !== null && searchOffset >= searchTotal)) return;
+    const generation = searchGeneration.current;
+    setIsSearching(true);
+    try {
+      const { rows, total } = await fetchSearchPage(searchQuery.trim(), searchOffset);
+      if (searchGeneration.current !== generation) return;
+      setSearchResults((previous) => [...previous, ...rows.map(parseCandidateRow)]);
+      setSearchOffset((previous) => previous + rows.length);
+      setSearchTotal(total ?? (rows.length < 100 ? searchOffset + rows.length : null));
+      setDisplayLimit((previous) => previous + 100);
+    } catch (err) {
+      if (searchGeneration.current === generation) {
+        console.error('Could not load more search results:', err);
+        setSearchError(true);
+      }
+    } finally {
+      if (searchGeneration.current === generation) setIsSearching(false);
+    }
+  };
 
   // Proof Viewer Modal State
   const [proofModal, setProofModal] = useState<{
@@ -568,64 +602,21 @@ const AppContent: React.FC = () => {
     pdfUrl: '',
   });
 
-  const handleOpenProof = async (
+  const handleOpenProof = (
     candidateName: string,
     fieldLabel: string,
     value: string,
     pdfUrl: string,
     candidate?: Candidate
   ) => {
-    let activeCand = candidate;
-    if (candidate?.id && candidate.mplads_works === undefined) {
-      try {
-        const metaEnv = (import.meta as any).env || {};
-        const rawUrl = String(metaEnv.VITE_SUPABASE_URL || '').trim();
-        const rawKey = String(metaEnv.VITE_SUPABASE_ANON_KEY || '').trim();
-        if (rawUrl && rawKey) {
-          const cleanUrl = rawUrl.replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
-          const res = await fetch(
-            `${cleanUrl}/rest/v1/candidates?id=eq.${candidate.id}&select=*,mplads_works(*)`,
-            {
-              headers: {
-                apikey: rawKey,
-                Authorization: `Bearer ${rawKey}`,
-              },
-            }
-          );
-          if (res.ok) {
-            const data = await res.json();
-            if (Array.isArray(data) && data.length > 0 && Array.isArray(data[0].mplads_works)) {
-              const fullWorks = data[0].mplads_works.map((w: any) => ({
-                work_id: String(w.work_id || w.id),
-                work_title: String(w.work_title || 'Community Development Work'),
-                sector: w.sector || undefined,
-                cost_inr: Number(w.cost_inr || w.sanctioned_amount || 0),
-                status: w.status || 'Completed',
-                latitude: w.latitude != null ? Number(w.latitude) : undefined,
-                longitude: w.longitude != null ? Number(w.longitude) : undefined,
-                contractor_name: w.contractor_name || undefined,
-                gis_audit_notes: w.gis_audit_notes || undefined,
-              }));
-              activeCand = {
-                ...candidate,
-                mplads_works: fullWorks,
-              };
-            }
-          }
-        }
-      } catch (e) {
-        console.warn('Could not fetch on-demand candidate dossier:', e);
-      }
-    }
-
     setProofModal({
       isOpen: true,
       candidateName,
       fieldLabel,
       value,
       pdfUrl,
-      bbox: activeCand?.proof_bbox,
-      candidate: activeCand,
+      bbox: candidate?.proof_bbox,
+      candidate,
     });
   };
 
@@ -646,43 +637,47 @@ const AppContent: React.FC = () => {
     setActiveView(view);
   };
 
-  // Derive unique options for filters
+  const isRemoteSearch = searchQuery.trim().length >= 2;
+  const candidatePool = isRemoteSearch ? searchResults : candidates;
+  const searchHasMore = searchTotal !== null
+    ? searchOffset < searchTotal
+    : searchOffset > 0 && searchOffset % 100 === 0;
+
+  // Derive unique options from records currently available in this view.
   const availableStates = useMemo(() => {
     const states = new Set<string>();
-    candidates.forEach((c) => {
-      if (c.state && c.state !== 'India' && c.state !== 'National') states.add(c.state);
+    candidatePool.forEach((c) => {
+      if (c.state && c.state !== 'Unavailable' && c.state !== 'India' && c.state !== 'National') states.add(c.state);
     });
     return Array.from(states).sort();
-  }, [candidates]);
+  }, [candidatePool]);
 
   const availableConstituencies = useMemo(() => {
     const constits = new Set<string>();
-    candidates.forEach((c) => {
+    candidatePool.forEach((c) => {
       if (filterState.state === 'ALL' || c.state === filterState.state) {
-        if (c.constituency && c.constituency !== 'National') constits.add(c.constituency);
+        if (c.constituency && c.constituency !== 'Unavailable' && c.constituency !== 'National') constits.add(c.constituency);
       }
     });
     return Array.from(constits).sort();
-  }, [candidates, filterState.state]);
+  }, [candidatePool, filterState.state]);
 
   const availableParties = useMemo(() => {
     const parties = new Set<string>();
-    candidates.forEach((c) => {
+    candidatePool.forEach((c) => {
       if (c.party) parties.add(c.party);
     });
     return Array.from(parties).sort();
-  }, [candidates]);
+  }, [candidatePool]);
 
   // Comprehensive multi-factor candidate filter
   const filteredCandidates = useMemo(() => {
-    return candidates.filter((c) => {
+    return candidatePool.filter((c) => {
       // 1. Text Search Query (supports tokenized multi-word search & aliases)
       const q = searchQuery.toLowerCase().trim();
       if (q) {
         const tokens = q.split(/\s+/).filter(Boolean);
-        const knownAliases = PROMINENT_PARTY_MAP[c.name.toLowerCase().trim()];
-        const aliasString = knownAliases ? `${knownAliases.party} ${knownAliases.constituency || ''} ${knownAliases.state || ''}` : '';
-        const searchable = `${c.name} ${c.alias || ''} ${aliasString} ${c.constituency} ${c.state} ${c.party || ''}`.toLowerCase();
+        const searchable = `${c.name} ${c.alias || ''} ${c.constituency} ${c.state} ${c.party || ''}`.toLowerCase();
         const matchesQuery = tokens.every((token) => searchable.includes(token));
         if (!matchesQuery) return false;
       }
@@ -736,7 +731,7 @@ const AppContent: React.FC = () => {
 
       return true;
     });
-  }, [candidates, searchQuery, selectedHouse, filterState]);
+  }, [candidatePool, searchQuery, selectedHouse, filterState]);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FAF7F2] text-sovereign-950 font-sans pb-20 md:pb-0">
@@ -816,11 +811,11 @@ const AppContent: React.FC = () => {
                   {t.telemetryAssetsTotal}
                 </span>
                 <p className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-sovereign-950 mt-1">
-                  {totalAssetsSum > 0 ? formatINR(totalAssetsSum) : '—'}
+                  {auditedProfileCount > 0 ? formatINR(totalAssetsSum) : 'N/A'}
                 </p>
               </div>
               <div className="mt-3 flex items-end justify-between">
-                <span className="text-[9.5px] text-sovereign-500">{t.telemetryAssetsSubtitle}</span>
+                <span className="text-[9.5px] text-sovereign-500">{auditedProfileCount} audited loaded profiles</span>
                 {/* Mini bar chart in gold */}
                 <div className="flex items-end gap-0.5 h-4">
                   <div className="w-1.5 bg-kesariya-300 rounded-t h-1.5" />
@@ -837,11 +832,11 @@ const AppContent: React.FC = () => {
                   {t.telemetryCriminalCases}
                 </span>
                 <p className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-terracotta-700 mt-1">
-                  {totalCriminalCasesSum}
+                  {caseDisclosureCount > 0 ? totalCriminalCasesSum : 'N/A'}
                 </p>
               </div>
               <div className="mt-3 flex items-end justify-between">
-                <span className="text-[9.5px] text-terracotta-700 font-medium">{t.telemetryCriminalSubtitle}</span>
+                <span className="text-[9.5px] text-terracotta-700 font-medium">{caseDisclosureCount} reviewed loaded profiles</span>
                 {/* Mini red bar chart */}
                 <div className="flex items-end gap-0.5 h-4">
                   <div className="w-1.5 bg-terracotta-300 rounded-t h-2" />
@@ -878,13 +873,14 @@ const AppContent: React.FC = () => {
       {/* Main Candidate Feed / Leaderboards */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeView === 'leaderboards' ? (
-          <LeaderboardsView
+          <Suspense fallback={<p className="p-8 text-center">Loading rankings…</p>}><LeaderboardsView
             candidates={candidates}
+            totalDatabaseCount={totalDatabaseCount}
             onVerifyProof={handleOpenProof}
             onOpenShareCard={handleOpenShareCard}
             selectedForComparison={selectedForComparison}
             onToggleComparison={handleToggleComparison}
-          />
+          /></Suspense>
         ) : (
           <>
             {/* Interactive Constituency & Forensic Filter Dock */}
@@ -896,6 +892,11 @@ const AppContent: React.FC = () => {
               availableParties={availableParties}
               totalMatches={filteredCandidates.length}
             />
+            <p className="-mt-4 mb-6 text-xs text-sovereign-600" role="status">
+              {isRemoteSearch
+                ? isSearching && searchOffset === 0 ? 'Searching the database…' : searchError ? 'Database search failed. Please retry.' : `Search returned ${searchTotal ?? 'at least ' + searchOffset} database matches; filters currently cover ${searchResults.length} loaded results.`
+                : `Filters currently cover ${candidates.length} loaded profiles${totalDatabaseCount ? ` of ${totalDatabaseCount} in the database` : ''}.`}
+            </p>
 
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
@@ -914,7 +915,11 @@ const AppContent: React.FC = () => {
 
             {filteredCandidates.length === 0 ? (
               <div className="p-12 text-center bg-white rounded-2xl border border-dholpur-300 shadow-xs">
-                {!isLiveConnected && !isLoading ? (
+                {isSearching ? (
+                  <p className="text-sovereign-600 text-sm font-medium">Searching the database…</p>
+                ) : searchError ? (
+                  <p className="text-sovereign-600 text-sm font-medium">Database search failed. Please retry.</p>
+                ) : !isLiveConnected && !isLoading ? (
                   <div className="space-y-2 max-w-md mx-auto">
                     <p className="text-sovereign-800 text-sm font-bold">{t.dbNotConnectedTitle}</p>
                     <p className="text-sovereign-500 text-xs leading-relaxed">
@@ -940,20 +945,21 @@ const AppContent: React.FC = () => {
                   ))}
                 </div>
 
-                {(filteredCandidates.length > displayLimit || directoryOffset < totalDatabaseCount) && (
+                {(filteredCandidates.length > displayLimit || (isRemoteSearch ? searchHasMore : directoryOffset < totalDatabaseCount)) && (
                   <div className="mt-10 text-center">
                     <button
                       onClick={() => {
                         if (filteredCandidates.length > displayLimit) {
                           setDisplayLimit((prev) => prev + 50);
                         } else {
-                          loadMoreCandidates();
+                          if (isRemoteSearch) loadMoreSearchResults();
+                          else loadMoreCandidates();
                         }
                       }}
-                      disabled={isLoadingMore}
+                      disabled={isLoadingMore || isSearching}
                       className="px-8 py-3.5 bg-white hover:bg-dholpur-50 border border-dholpur-300 hover:border-dholpur-400 text-sovereign-800 text-sm font-semibold rounded-2xl shadow-xs hover:shadow transition-all duration-200 cursor-pointer active:scale-95 disabled:opacity-50"
                     >
-                      {isLoadingMore ? (
+                      {isLoadingMore || isSearching ? (
                         <span className="flex items-center gap-2 justify-center">
                           <SpinnerGap size={16} className="animate-spin text-ashoka-600" />
                           {t.loadingMore}
@@ -961,7 +967,7 @@ const AppContent: React.FC = () => {
                       ) : filteredCandidates.length > displayLimit ? (
                         t.loadMoreRemaining(filteredCandidates.length - displayLimit)
                       ) : (
-                        t.loadMoreTotal(candidates.length, totalDatabaseCount)
+                        isRemoteSearch ? `Load more database matches (${searchOffset}${searchTotal === null ? '+' : ` of ${searchTotal}`})` : t.loadMoreTotal(candidates.length, totalDatabaseCount)
                       )}
                     </button>
                   </div>
@@ -1060,24 +1066,24 @@ const AppContent: React.FC = () => {
       </nav>
 
       {/* Comparison Modal */}
-      <ComparisonModal
+      <Suspense fallback={null}><ComparisonModal
         isOpen={isComparisonOpen}
         onClose={() => setIsComparisonOpen(false)}
         candidates={selectedForComparison}
         onRemoveCandidate={handleRemoveFromComparison}
         onVerifyProof={handleOpenProof}
         onOpenShareCard={handleOpenShareCard}
-      />
+      /></Suspense>
 
       {/* Social Report Card Graphic Modal */}
-      <ReportCardModal
+      <Suspense fallback={null}><ReportCardModal
         isOpen={!!sharingCandidate}
         onClose={() => setSharingCandidate(null)}
         candidate={sharingCandidate}
-      />
+      /></Suspense>
 
       {/* Affidavit Proof Viewer Modal */}
-      <AffidavitProofViewer
+      <Suspense fallback={null}><AffidavitProofViewer
         isOpen={proofModal.isOpen}
         onClose={() => setProofModal((prev) => ({ ...prev, isOpen: false }))}
         candidateName={proofModal.candidateName}
@@ -1086,13 +1092,13 @@ const AppContent: React.FC = () => {
         claimedValue={proofModal.value}
         bbox={proofModal.bbox}
         candidate={proofModal.candidate}
-      />
+      /></Suspense>
 
       {/* Civic Guide FAQ Drawer */}
-      <CivicFaqDrawer
+      <Suspense fallback={null}><CivicFaqDrawer
         isOpen={isCivicGuideOpen}
         onClose={() => setIsCivicGuideOpen(false)}
-      />
+      /></Suspense>
 
       {/* Footer */}
       <footer className="bg-[#FCFAF6] border-t border-dholpur-300/80 py-6 text-center text-xs text-sovereign-600 font-sans">
@@ -1104,8 +1110,8 @@ const AppContent: React.FC = () => {
           </p>
           <p className="text-[11px] text-sovereign-500">
             {isHindi
-              ? 'सभी घोषणाएं डिजिटल व्यक्तिगत डेटा संरक्षण अधिनियम 2023 की धारा 3(c)(ii) के तहत आधिकारिक प्रपत्र 26 से ली गई हैं।'
-              : 'All declarations are reproduced verbatim from sworn ECI Form 26 filings under Section 3(c)(ii) of the Digital Personal Data Protection Act, 2023.'}
+              ? 'रिकॉर्ड की उपलब्धता और जांच की स्थिति हर प्रोफ़ाइल में दी गई है। मूल स्रोत को देखें।'
+              : 'Source availability and audit status are shown per profile. Inspect the original record before relying on a figure.'}
           </p>
         </div>
       </footer>

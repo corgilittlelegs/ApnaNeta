@@ -12,6 +12,7 @@ import {
   CheckCircle,
 } from '@phosphor-icons/react';
 import { useLanguage } from '../context/LanguageContext';
+import { useDialogAccessibility } from '../utils/useDialogAccessibility';
 
 interface CivicFaqDrawerProps {
   isOpen: boolean;
@@ -62,12 +63,12 @@ const FAQ_ITEMS: FaqItem[] = [
     keyPoints: [
       'Constitutional right: Established by Supreme Court in ADR vs Union of India (2002) to guarantee voters have the right to know who they are voting for.',
       'Criminal penalty: Concealing assets or lying in Form 26 is punishable with up to 6 months imprisonment and fines under Section 125A of the Representation of the People Act, 1951.',
-      'Apna Neta verification: We match the declared figures directly with the scanned government papers with pixel-accurate bounding box proof.',
+      'Apna Neta shows indexed source links and marks whether an arithmetic audit is available. Open the original Form 26 PDF to inspect a disclosure.',
     ],
     hindiKeyPoints: [
       'संवैधानिक अधिकार: सुप्रीम कोर्ट ने ADR बनाम भारत संघ (2002) मामले में मतदाताओं के जानने के अधिकार को मौलिक अधिकार माना।',
       'आपराधिक दंड: प्रपत्र 26 में संपत्ति छिपाना या झूठ बोलना जनप्रतिनिधित्व कानून 1951 की धारा 125A के तहत 6 माह तक के कारावास व जुर्माने से दंडनीय है।',
-      'सत्यापन: अपना नेता पर प्रत्येक आंकड़े को मूल सरकारी स्कैन कॉपी से सत्यापित कर दिखाया जाता है।',
+      'स्रोत: अपना नेता मूल प्रपत्र 26 का लिंक और उपलब्ध ऑडिट की स्थिति दिखाता है। किसी घोषणा को जांचने के लिए मूल PDF खोलें।',
     ],
   },
   {
@@ -135,6 +136,7 @@ const FAQ_ITEMS: FaqItem[] = [
 export const CivicFaqDrawer: React.FC<CivicFaqDrawerProps> = ({ isOpen, onClose }) => {
   const [expandedId, setExpandedId] = useState<string | null>('mplads');
   const { isHindi } = useLanguage();
+  const dialogRef = useDialogAccessibility(isOpen, onClose);
 
   if (!isOpen) return null;
 
@@ -147,7 +149,7 @@ export const CivicFaqDrawer: React.FC<CivicFaqDrawerProps> = ({ isOpen, onClose 
       />
 
       {/* Drawer Panel */}
-      <div className="relative w-full max-w-lg bg-dholpur-50 h-full shadow-2xl z-10 flex flex-col overflow-hidden animate-in slide-in-from-right duration-200 border-l border-kesariya-600/30">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Civic guide" tabIndex={-1} className="relative w-full max-w-lg bg-dholpur-50 h-full shadow-2xl z-10 flex flex-col overflow-hidden animate-in slide-in-from-right duration-200 border-l border-kesariya-600/30 outline-none">
         {/* Top Tiranga Accent Line */}
         <div className="tiranga-accent-bar" />
 
@@ -256,4 +258,3 @@ export const CivicFaqDrawer: React.FC<CivicFaqDrawerProps> = ({ isOpen, onClose 
     </div>
   );
 };
-

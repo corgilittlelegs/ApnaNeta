@@ -267,15 +267,15 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
   // Designation & Constituency Subtitle in Warm Kesariya Gold
   ctx.font = '600 18px "Newsreader", "Noto Serif Devanagari", Georgia, serif';
   ctx.fillStyle = '#E5B842';
-  const houseLabel = candidate.house || 'Lok Sabha';
-  const subTitle = `${houseLabel} (${candidate.constituency || 'Seat'}, ${candidate.state || 'India'}) • संसद सदस्य`;
+  const houseLabel = candidate.house;
+  const subTitle = `${houseLabel} (${candidate.constituency}, ${candidate.state})`;
   ctx.fillText(subTitle, candTextX, curY + 82);
 
   // Party Tag & Sworn Filing Pill
   ctx.font = 'bold 13px "Plus Jakarta Sans", sans-serif';
   ctx.fillStyle = '#94A3B8';
   ctx.fillText(
-    `${(candidate.party || 'Independent').toUpperCase()} • SWORN ECI FORM 26 DISCLOSURES (${candidate.filing_year})`,
+    `${(candidate.party || 'PARTY UNAVAILABLE').toUpperCase()} • FORM 26 STATUS: ${candidate.affidavit_status.toUpperCase()} (${candidate.filing_year || 'YEAR UNAVAILABLE'})`,
     candTextX,
     curY + 116
   );
@@ -352,30 +352,31 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
     curY,
     'कुल संपत्ति • Declared Net Worth',
     '#FF9933', // Kesariya Accent
-    formatINR(candidate.total_net_worth),
+    candidate.affidavit_status === 'audited' ? formatINR(candidate.total_net_worth) : 'Unavailable',
     '#FEF08A', // Warm Gold
-    `चल (Movable): ${formatINR(candidate.total_movable_assets)} | अचल: ${formatINR(candidate.total_immovable_assets)}`,
+    candidate.affidavit_status === 'audited' ? `चल (Movable): ${formatINR(candidate.total_movable_assets)} | अचल: ${formatINR(candidate.total_immovable_assets)}` : 'Arithmetic audit unavailable',
     '#93C5FD',
-    `देयता: ${formatINR(candidate.total_liabilities)}`
+    candidate.affidavit_status === 'audited' ? `देयता: ${formatINR(candidate.total_liabilities)}` : 'Original ECI source: see Apna Neta'
   );
 
   // Card 2: Criminal Proceedings (Top-Right)
   const m2X = pad + tileW + 24;
   const hasSerious = candidate.serious_criminal_cases_count > 0;
-  const hasProtest = candidate.criminal_cases_count > 0 && !hasSerious;
+  const hasOtherCases = candidate.criminal_cases_count > 0 && !hasSerious;
+  const casesUnavailable = candidate.criminal_record_status === 'unavailable';
   const crimTitle = 'आपराधिक मामले • Crime Record';
   const crimText = hasSerious
     ? `${candidate.serious_criminal_cases_count} Serious Charges`
-    : hasProtest
-    ? `${candidate.criminal_cases_count} Protest Cases`
-    : '0 Charges Declared';
-  const crimColor = hasSerious ? '#F87171' : hasProtest ? '#FBBF24' : '#34D399';
-  const crimAccent = hasSerious ? '#DC2626' : hasProtest ? '#D97706' : '#138808';
+    : hasOtherCases
+    ? `${candidate.criminal_cases_count} Declared Cases`
+    : casesUnavailable ? 'Unavailable' : '0 Cases in Filing';
+  const crimColor = hasSerious ? '#F87171' : hasOtherCases ? '#FBBF24' : casesUnavailable ? '#CBD5E1' : '#34D399';
+  const crimAccent = hasSerious ? '#DC2626' : hasOtherCases ? '#D97706' : casesUnavailable ? '#64748B' : '#138808';
   const crimSub = hasSerious
     ? '⚠️ गंभीर गैर-जमानती मामले • Heinous IPC charges filed'
-    : hasProtest
-    ? 'राजनीतिक प्रदर्शन मामले • Protest/Agitation charges'
-    : '✓ स्वच्छ छवि • Clean Form 26 Sworn Affidavit on Record';
+    : hasOtherCases
+    ? 'Case category: consult source filing'
+    : casesUnavailable ? 'Case disclosure not reviewed' : 'No cases recorded in this filing';
 
   drawMetricCard(
     m2X,
@@ -385,8 +386,8 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
     crimText,
     crimColor,
     crimSub,
-    hasSerious ? '#FECDD3' : hasProtest ? '#FEF08A' : '#A7F3D0',
-    candidate.is_rpa_section_8_disqualified ? 'DISQUALIFIED' : hasSerious ? 'HEINOUS' : 'CLEAN'
+    hasSerious ? '#FECDD3' : hasOtherCases ? '#FEF08A' : casesUnavailable ? '#CBD5E1' : '#A7F3D0',
+    candidate.is_rpa_section_8_disqualified ? 'SEC 8 FLAG' : hasSerious ? 'SERIOUS' : casesUnavailable ? 'UNKNOWN' : 'DECLARED'
   );
 
   // Row 2
@@ -446,7 +447,7 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
     ctx.font = 'bold 22px "Noto Serif Devanagari", "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = '#FFFFFF';
     ctx.textAlign = 'center';
-    ctx.fillText('⚠️ अयोग्य घोषित • DISQUALIFIED CANDIDATE UNDER SECTION 8 RPA 1951', size / 2, bannerY + 43);
+    ctx.fillText('⚠️ धारा 8 समीक्षा • SECTION 8 REVIEW FLAG — CHECK COURT ORDER', size / 2, bannerY + 43);
   } else if (candidate.has_section_9a_conflict) {
     ctx.fillStyle = '#991B1B'; // Terracotta Red
     ctx.fill();
@@ -456,8 +457,8 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
     ctx.font = 'bold 22px "Noto Serif Devanagari", "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = '#FFFFFF';
     ctx.textAlign = 'center';
-    ctx.fillText('⚠️ सरकारी अनुबंध विवाद • SECTION 9A RPA COMMERCIAL CONFLICT OF INTEREST DETECTED', size / 2, bannerY + 43);
-  } else if (candidate.has_arithmetic_discrepancy) {
+    ctx.fillText('⚠️ धारा 9A संकेत • REVIEW THE RECORDED SECTION 9A FINDING', size / 2, bannerY + 43);
+  } else if (candidate.affidavit_status === 'audited' && candidate.has_arithmetic_discrepancy) {
     ctx.fillStyle = '#991B1B'; // Terracotta Red
     ctx.fill();
     ctx.strokeStyle = '#F87171';
@@ -468,11 +469,11 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
     ctx.textAlign = 'center';
     ctx.fillText('⚠️ अंकगणितीय विसंगति • ARITHMETIC DISCREPANCY DETECTED IN SWORN FORM 26', size / 2, bannerY + 43);
   } else {
-    // Clean Reconciled Audit: Deep Harit Green with Royal Gold Border
+    // Show a recorded arithmetic result or an explicit unavailable state.
     const greenGrad = ctx.createLinearGradient(pad, bannerY, pad + candCardW, bannerY);
-    greenGrad.addColorStop(0, '#064E3B');
-    greenGrad.addColorStop(0.5, '#0A5C36');
-    greenGrad.addColorStop(1, '#064E3B');
+    greenGrad.addColorStop(0, candidate.affidavit_status === 'audited' ? '#064E3B' : '#334155');
+    greenGrad.addColorStop(0.5, candidate.affidavit_status === 'audited' ? '#0A5C36' : '#475569');
+    greenGrad.addColorStop(1, candidate.affidavit_status === 'audited' ? '#064E3B' : '#334155');
     ctx.fillStyle = greenGrad;
     ctx.fill();
     ctx.strokeStyle = '#D4AF37'; // Royal Gold Border
@@ -482,7 +483,7 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
     ctx.font = 'bold 21px "Noto Serif Devanagari", "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = '#FFFFFF';
     ctx.textAlign = 'center';
-    ctx.fillText('✓ द्वि-प्रविष्टि सत्यापन: शपथपत्र सत्यापित • DOUBLE-ENTRY AUDIT RECONCILED', size / 2, bannerY + 43);
+    ctx.fillText(candidate.affidavit_status === 'audited' ? 'ARITHMETIC AUDIT RECORDED • NO DISCREPANCY FOUND' : 'ARITHMETIC AUDIT UNAVAILABLE • CHECK ORIGINAL SOURCE', size / 2, bannerY + 43);
   }
   ctx.textAlign = 'left';
 
@@ -500,7 +501,7 @@ export async function generateReportCardCanvas(candidate: Candidate): Promise<HT
   ctx.font = '600 13px "Noto Serif Devanagari", "Plus Jakarta Sans", sans-serif';
   ctx.fillStyle = '#D4AF37';
   ctx.textAlign = 'right';
-  ctx.fillText('भारत का संप्रभु नागरिक बहीखाता • Verified Government Open Records', size - pad, footY);
+  ctx.fillText('भारत का नागरिक बहीखाता • Source coverage varies by record', size - pad, footY);
   ctx.textAlign = 'left';
 
   return canvas;
@@ -569,7 +570,7 @@ export async function shareReportCardViaNative(candidate: Candidate): Promise<Na
 
     const shareData = {
       title: `${cleanName} Civic Report Card • नागरिक रिपोर्ट कार्ड`,
-      text: `🇮🇳 Apna Neta Audit Report Card for ${cleanName} (${candidate.party || 'IND'}, ${candidate.constituency}). Verified against sworn ECI Form 26 disclosures under RPA 1951.`,
+      text: `🇮🇳 Apna Neta record summary for ${cleanName} (${candidate.party || 'Party unavailable'}, ${candidate.constituency}). Check source and audit status before relying on figures.`,
       url: getAppBaseUrl(),
       files: [file],
     };
@@ -632,42 +633,42 @@ export function getReportCardFactSheet(candidate: Candidate): string {
     `━━━━━━━━━━━━━━━━━━━━━━━━━`,
     `👤 *Name / नाम:* ${cleanName}`,
     `🏛️ *Seat / निर्वाचन क्षेत्र:* ${candidate.constituency}, ${candidate.state} (${candidate.house})`,
-    `🗳️ *Party / राजनीतिक दल:* ${candidate.party || 'Independent'}`,
-    `📅 *Filing Year / शपथपत्र वर्ष:* ${candidate.filing_year}`,
+    `🗳️ *Party / राजनीतिक दल:* ${candidate.party || 'Unavailable'}`,
+    `📅 *Filing Year / शपथपत्र वर्ष:* ${candidate.filing_year || 'Unavailable'}`,
     ``,
-    `💰 *Declared Net Worth / कुल संपत्ति:* ${formatVal(candidate.total_net_worth)}`,
-    `   • चल संपत्ति (Movable): ${formatVal(candidate.total_movable_assets)}`,
-    `   • अचल संपत्ति (Immovable): ${formatVal(candidate.total_immovable_assets)}`,
-    `   • देयताएं (Liabilities): ${formatVal(candidate.total_liabilities)}`,
+    `💰 *Declared Net Worth / कुल संपत्ति:* ${candidate.affidavit_status === 'audited' ? formatVal(candidate.total_net_worth) : 'Unavailable'}`,
+    `   • चल संपत्ति (Movable): ${candidate.affidavit_status === 'audited' ? formatVal(candidate.total_movable_assets) : 'Unavailable'}`,
+    `   • अचल संपत्ति (Immovable): ${candidate.affidavit_status === 'audited' ? formatVal(candidate.total_immovable_assets) : 'Unavailable'}`,
+    `   • देयताएं (Liabilities): ${candidate.affidavit_status === 'audited' ? formatVal(candidate.total_liabilities) : 'Unavailable'}`,
     ``,
     `⚖️ *Criminal Charges / आपराधिक मामले:* ${
       candidate.serious_criminal_cases_count > 0
         ? `⚠️ ${candidate.serious_criminal_cases_count} गंभीर गैर-जमानती मामले (Serious IPC Cases)`
         : candidate.criminal_cases_count > 0
-        ? `⚖️ ${candidate.criminal_cases_count} राजनीतिक प्रदर्शन मामले (Protest Cases)`
-        : `✅ 0 मामले (Clean Sworn Affidavit on ECI Record)`
+        ? `⚖️ ${candidate.criminal_cases_count} घोषित मामले (Declared Cases)`
+        : candidate.criminal_record_status === 'unavailable' ? 'Unavailable' : '0 cases recorded in this filing'
     }`,
     ``,
     candidate.attendance_rate !== undefined
       ? `🏛️ *Sansad Attendance / संसद हाजिरी:* ${candidate.attendance_rate}% (${candidate.debates_count ?? 0} Debates, ${candidate.questions_count ?? 0} Questions)`
-      : `🏛️ *Sansad Attendance / संसद हाजिरी:* N/A (Candidate / Non-MP)`,
+      : `🏛️ *Sansad Attendance / संसद हाजिरी:* Unavailable`,
     ``,
     candidate.mplads
       ? `🏗️ *MPLADS Velocity / सांसद निधि:* ${candidate.mplads.utilization_rate.toFixed(1)}% Spent (बकाया: ${formatVal(candidate.mplads.unspent_balance)})`
-      : `🏗️ *MPLADS Velocity / सांसद निधि:* N/A (No central quota)`,
+      : `🏗️ *MPLADS Velocity / सांसद निधि:* Unavailable`,
     ``,
     `🔍 *Audit Verdict / सत्यापन निष्कर्ष:* ${
       candidate.is_rpa_section_8_disqualified
-        ? `⚠️ DISQUALIFIED UNDER SECTION 8 RPA 1951`
+        ? `⚠️ SECTION 8 REVIEW FLAG — CHECK COURT ORDER`
         : candidate.has_section_9a_conflict
-        ? `⚠️ SECTION 9A RPA COMMERCIAL CONFLICT OF INTEREST FLAGGED`
-        : candidate.has_arithmetic_discrepancy
+        ? `⚠️ SECTION 9A FLAG RECORDED — REVIEW SOURCE`
+        : candidate.affidavit_status === 'audited' && candidate.has_arithmetic_discrepancy
         ? `⚠️ ARITHMETIC DISCREPANCY FLAGGED (Delta: ${formatVal((candidate.delta_movable || 0) + (candidate.delta_immovable || 0))})`
-        : `✅ CLEAN AUDIT (Part A & Part B disclosures match)`
+        : candidate.affidavit_status === 'audited' ? 'Arithmetic audit recorded without a discrepancy' : 'Arithmetic audit unavailable'
     }`,
     candidate.defection_count ? `🔄 *Political Mobility:* ${candidate.defection_count} Career Party Transitions` : '',
     `━━━━━━━━━━━━━━━━━━━━━━━━━`,
-    `Verified against sworn ECI Form 26 disclosures at ${getAppBaseUrl()}`,
+    `Check indexed sources and audit coverage at ${getAppBaseUrl()}`,
   ].filter(Boolean);
 
   return lines.join('\n');
@@ -684,16 +685,16 @@ export function getTwitterShareUrl(candidate: Candidate): string {
     .replace(/\s+/g, ' ')
     .trim() || candidate.name;
   const safeParty = candidate.party ? ` (${candidate.party})` : '';
-  const netWorth = formatINR(candidate.total_net_worth);
+  const netWorth = candidate.affidavit_status === 'audited' ? formatINR(candidate.total_net_worth) : 'Unavailable';
   const auditVerdict = candidate.is_rpa_section_8_disqualified
-    ? '⚠️ Disqualified (RPA Sec 8)'
+    ? '⚠️ Section 8 review flag; check court order'
     : candidate.has_section_9a_conflict
     ? '⚠️ Conflict Flagged (RPA Sec 9A)'
-    : candidate.has_arithmetic_discrepancy
+    : candidate.affidavit_status === 'audited' && candidate.has_arithmetic_discrepancy
     ? '⚠️ Discrepancy Flagged'
-    : '✅ 100% Clean Audit';
+    : candidate.affidavit_status === 'audited' ? 'Arithmetic audit recorded without a discrepancy' : 'Arithmetic audit unavailable';
   
-  const text = `Official ECI sworn affidavit audit report for ${cleanName}${safeParty} from ${candidate.constituency}, ${candidate.state}.\n\n💰 Declared Net Worth: ${netWorth}\n⚖️ Audit Verdict: ${auditVerdict}\n\nInspect verified court proofs on Apna Neta:`;
+  const text = `Apna Neta record summary for ${cleanName}${safeParty} from ${candidate.constituency}, ${candidate.state}.\n\n💰 Declared Net Worth: ${netWorth}\n⚖️ Audit Status: ${auditVerdict}\n\nInspect the original source on Apna Neta:`;
   const url = getAppBaseUrl();
   return `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}&hashtags=ApnaNeta,Transparency,ECI`;
 }

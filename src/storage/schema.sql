@@ -523,15 +523,12 @@ CREATE POLICY "Public Read Access" ON audit_discrepancies FOR SELECT USING (true
 DROP POLICY IF EXISTS "Public Read Access" ON sansad_records;
 CREATE POLICY "Public Read Access" ON sansad_records FOR SELECT USING (true);
 DROP POLICY IF EXISTS "Public Read Access" ON source_documents;
-CREATE POLICY "Public Read Access" ON source_documents FOR SELECT USING (true);
 DROP POLICY IF EXISTS "Public Read Access" ON identity_resolution_links;
-CREATE POLICY "Public Read Access" ON identity_resolution_links FOR SELECT USING (true);
 DROP POLICY IF EXISTS "Public Read Access" ON election_events;
 CREATE POLICY "Public Read Access" ON election_events FOR SELECT USING (true);
 DROP POLICY IF EXISTS "Public Read Access" ON candidate_expense_reports;
 CREATE POLICY "Public Read Access" ON candidate_expense_reports FOR SELECT USING (true);
 DROP POLICY IF EXISTS "Public Read Access" ON expense_report_extractions;
-CREATE POLICY "Public Read Access" ON expense_report_extractions FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Public Read Access" ON mplads_records;
 CREATE POLICY "Public Read Access" ON mplads_records FOR SELECT USING (true);
@@ -574,6 +571,12 @@ REVOKE ALL ON ALL ROUTINES IN SCHEMA public FROM anon;
 -- Anonymous public clients are strictly limited to read-only queries
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon, authenticated;
 GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
+
+-- Review queues and ingestion provenance can contain unapproved matches,
+-- extracted fields, and reviewer notes. Keep them private even if a previous
+-- deployment granted broad SELECT on public tables.
+REVOKE SELECT ON source_documents, identity_resolution_links, expense_report_extractions,
+    ingestion_runs FROM anon, authenticated;
 
 -- PRIVACY HARDENING: Revoke full table SELECT on affidavits from anon and authenticated to protect raw_payload
 REVOKE SELECT ON affidavits FROM anon, authenticated;

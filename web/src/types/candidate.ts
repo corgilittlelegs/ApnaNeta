@@ -151,9 +151,11 @@ export interface Candidate {
   alias?: string;
   constituency: string;
   state: string;
-  house: 'Lok Sabha' | 'Rajya Sabha' | 'Vidhan Sabha';
+  house: 'Lok Sabha' | 'Rajya Sabha' | 'Vidhan Sabha' | 'Unknown';
   party?: string;
   filing_year: number;
+  affidavit_status: 'unavailable' | 'source_only' | 'audited';
+  criminal_record_status: 'unavailable' | 'declared';
 
   // Profile Photo & Creative Commons / Statutory Legal Attribution
   photo_url?: string;
@@ -228,6 +230,7 @@ export interface Candidate {
   // Document proofs
   pdf_source_url: string;
   r2_storage_key?: string;
+  affidavit_sha256?: string;
   r2_url?: string;
   proof_bbox?: BoundingBox;
   variance_proof_bbox?: BoundingBox;

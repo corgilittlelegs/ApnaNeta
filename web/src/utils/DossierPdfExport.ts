@@ -1,11 +1,9 @@
 import { Candidate } from '../types/candidate';
 
-/**
- * HTML Entity Sanitizer to prevent Stored / DOM Cross-Site Scripting (SEC-01).
- */
-export function escapeHtml(str: unknown): string {
-  if (str === null || str === undefined) return '';
-  return String(str)
+/** Escape database text before inserting it into a printable HTML document. */
+export function escapeHtml(value: unknown): string {
+  if (value === null || value === undefined) return '';
+  return String(value)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -13,693 +11,77 @@ export function escapeHtml(str: unknown): string {
     .replace(/'/g, '&#039;');
 }
 
-/**
- * Client-Side Court-Ready 1-Page Forensic Audit Dossier PDF Exporter.
- * Operates with $0.00 compute cost by rendering an authentic high-resolution
- * A4 legal audit document directly in a printable browser context.
- */
-export function exportCandidateDossierPdf(candidate: Candidate): void {
-  const formatINR = (val: number) => {
-    if (val >= 10000000) return `₹${(val / 10000000).toFixed(2)} Cr`;
-    if (val >= 100000) return `₹${(val / 100000).toFixed(2)} Lakh`;
-    return `₹${val.toLocaleString('en-IN')}`;
-  };
+const formatINR = (amount: number) => `₹${amount.toLocaleString('en-IN')}`;
 
-  const cleanName = (candidate.name || '')
-    .replace(/^[\s.·•\-_]+/, '')
-    .replace(/\s+/g, ' ')
-    .trim() || candidate.name;
-
-  const generatedDate = new Date().toLocaleDateString('en-IN', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
-
-  const generatedTime = new Date().toLocaleTimeString('en-IN', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-
-  // Unique verification checksum placeholder based on candidate details
-  const auditRef = `AN-AUDIT-${candidate.filing_year}-${candidate.id.slice(0, 8).toUpperCase()}`;
-
-  // Build HTML content
-  const html = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Apna Neta Forensic Audit Dossier - ${escapeHtml(cleanName)}</title>
-  <!-- Google Fonts: Newsreader, Plus Jakarta Sans, JetBrains Mono, Noto Serif Devanagari -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Newsreader:ital,opsz,wght@0,6..72,600;0,6..72,700;1,6..72,500&family=Noto+Serif+Devanagari:wght@600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    @page {
-      size: A4 portrait;
-      margin: 8mm 10mm 8mm 10mm;
-    }
-    * {
-      box-sizing: border-box;
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-    }
-    body {
-      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-      color: #0A192F;
-      background: #FAF7F2;
-      margin: 0;
-      padding: 0;
-      font-size: 10.5px;
-      line-height: 1.4;
-    }
-    .dossier-page {
-      max-width: 800px;
-      margin: 0 auto;
-      background: white;
-      padding: 14px 18px;
-      border: 1px solid #E2D9CC;
-      border-radius: 4px;
-    }
-    .tiranga-line {
-      height: 4px;
-      display: flex;
-      width: 100%;
-      margin-bottom: 8px;
-      border-radius: 2px;
-      overflow: hidden;
-    }
-    .tiranga-saffron { flex: 1; background: #FF9933; }
-    .tiranga-white { flex: 1; background: #FFFFFF; border-top: 0.5px solid #E2D9CC; border-bottom: 0.5px solid #E2D9CC; }
-    .tiranga-green { flex: 1; background: #138808; }
-    .header-bar {
-      border-bottom: 2px solid #0A192F;
-      padding-bottom: 10px;
-      margin-bottom: 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .emblem-title {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .emblem-svg {
-      width: 44px;
-      height: 44px;
-      flex-shrink: 0;
-    }
-    .title-group h1 {
-      font-family: 'Newsreader', Georgia, serif;
-      font-size: 19px;
-      font-weight: 700;
-      margin: 0;
-      letter-spacing: -0.2px;
-      color: #0A192F;
-    }
-    .title-group p {
-      margin: 2px 0 0 0;
-      font-size: 9px;
-      color: #475569;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-    }
-    .audit-meta {
-      text-align: right;
-      font-size: 8.5px;
-      font-family: 'JetBrains Mono', monospace;
-      color: #475569;
-      line-height: 1.5;
-    }
-    .audit-meta .ref {
-      font-weight: 700;
-      color: #0A192F;
-    }
-
-    /* Candidate Identity Banner */
-    .identity-card {
-      background: #FAF7F2;
-      border: 1px solid #E2D9CC;
-      border-left: 4px solid #0A192F;
-      border-radius: 8px;
-      padding: 10px 14px;
-      margin-bottom: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .cand-name {
-      font-family: 'Newsreader', Georgia, serif;
-      font-size: 18px;
-      font-weight: 700;
-      color: #0A192F;
-      margin: 0;
-    }
-    .cand-sub {
-      font-size: 10px;
-      color: #475569;
-      margin-top: 2px;
-      font-family: 'Plus Jakarta Sans', sans-serif;
-    }
-    .party-tag {
-      background: #0A192F;
-      color: #ffffff;
-      padding: 5px 12px;
-      border-radius: 6px;
-      font-size: 9.5px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    /* Section Grid */
-    .section-title {
-      font-family: 'Newsreader', Georgia, serif;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      color: #0A192F;
-      background: #FAF7F2;
-      border: 1px solid #E2D9CC;
-      border-left: 3.5px solid #0A192F;
-      padding: 4px 8px;
-      border-radius: 4px;
-      margin: 12px 0 6px 0;
-      text-transform: uppercase;
-    }
-
-    .seal-badge {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .seal-circle {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      border: 2px dashed #059669;
-      padding: 2px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .seal-circle.flagged {
-      border-color: #E11D48;
-    }
-    .seal-inner {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      background: #ECFDF5;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      border: 1px solid #A7F3D0;
-    }
-    .seal-inner.flagged {
-      background: #FFF1F2;
-      border-color: #FECDD3;
-    }
-    .seal-num {
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 800;
-      font-size: 13px;
-      line-height: 1;
-      color: #065F46;
-    }
-    .seal-num.flagged {
-      color: #9F1239;
-    }
-    .seal-lbl {
-      font-size: 6px;
-      font-weight: 800;
-      letter-spacing: 0.3px;
-      color: #047857;
-      text-transform: uppercase;
-    }
-    .seal-lbl.flagged {
-      color: #E11D48;
-    }
-
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-bottom: 6px;
-    }
-    .grid-3 {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 8px;
-      margin-bottom: 6px;
-    }
-
-    /* Metric Boxes */
-    .metric-box {
-      border: 1px solid #E2D9CC;
-      border-radius: 6px;
-      padding: 6px 10px;
-      background: #ffffff;
-    }
-    .metric-label {
-      font-size: 8px;
-      text-transform: uppercase;
-      color: #64748B;
-      font-weight: 700;
-      letter-spacing: 0.3px;
-    }
-    .metric-val {
-      font-size: 13.5px;
-      font-weight: 700;
-      font-family: 'JetBrains Mono', monospace;
-      color: #0A192F;
-      margin-top: 2px;
-    }
-    .metric-sub {
-      font-size: 8px;
-      color: #94A3B8;
-      margin-top: 1px;
-    }
-
-    /* Forensic Audit Flag Banner */
-    .audit-status-banner {
-      border-radius: 6px;
-      padding: 7px 12px;
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .status-clear {
-      background: #ECFDF5;
-      border: 1px solid #A7F3D0;
-      border-left: 4px solid #059669;
-      color: #065F46;
-    }
-    .status-flagged {
-      background: #FFF1F2;
-      border: 1px solid #FECDD3;
-      border-left: 4px solid #E11D48;
-      color: #9F1239;
-    }
-    .status-title {
-      font-size: 10.5px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .status-desc {
-      font-size: 8.5px;
-      margin-top: 1px;
-      opacity: 0.95;
-    }
-
-    /* Tables */
-    table.dossier-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 9px;
-      margin-top: 4px;
-      margin-bottom: 8px;
-    }
-    table.dossier-table th {
-      background: #FAF7F2;
-      color: #0A192F;
-      text-align: left;
-      padding: 5px 8px;
-      font-weight: 700;
-      border: 1px solid #E2D9CC;
-      font-size: 8.5px;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-    }
-    table.dossier-table td {
-      padding: 5px 8px;
-      border: 1px solid #E2D9CC;
-      color: #1E293B;
-    }
-    table.dossier-table tr:nth-child(even) {
-      background: #FAF7F2;
-    }
-    .mono {
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 700;
-    }
-    .text-right {
-      text-align: right;
-    }
-
-    /* Progress bar */
-    .progress-track {
-      background: #E2D9CC;
-      height: 5px;
-      border-radius: 3px;
-      overflow: hidden;
-      margin-top: 4px;
-    }
-    .progress-fill {
-      height: 100%;
-      background: #059669;
-      border-radius: 3px;
-    }
-
-    /* Footer / Safe harbor */
-    .dossier-footer {
-      border-top: 1.5px solid #0A192F;
-      padding-top: 6px;
-      margin-top: 8px;
-      font-size: 7.5px;
-      color: #64748B;
-      line-height: 1.35;
-    }
-    .footer-flex {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-    }
-    .safe-harbor-tag {
-      font-weight: 800;
-      color: #0A192F;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-  </style>
-</head>
-<body>
-  <div class="dossier-page">
-    <!-- Top Tiranga Line -->
-    <div class="tiranga-line">
-      <div class="tiranga-saffron"></div>
-      <div class="tiranga-white"></div>
-      <div class="tiranga-green"></div>
-    </div>
-
-    <!-- Header -->
-    <div class="header-bar">
-      <div class="emblem-title">
-        <!-- 24-Spoke Ashoka Chakra Vector Emblem with Gold & Tiranga Rings -->
-        <svg class="emblem-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="50" cy="50" r="47" fill="#0A192F" stroke="#D4AF37" stroke-width="2.5" />
-          <circle cx="50" cy="50" r="41" fill="none" stroke="#FF9933" stroke-width="1.8" />
-          <circle cx="50" cy="50" r="28" fill="none" stroke="#000080" stroke-width="1.5" />
-          <circle cx="50" cy="50" r="10" fill="#138808" />
-          <g stroke="#D4AF37" stroke-width="1.2">
-            <line x1="50" y1="12" x2="50" y2="88" />
-            <line x1="12" y1="50" x2="88" y2="50" />
-            <line x1="23" y1="23" x2="77" y2="77" />
-            <line x1="23" y1="77" x2="77" y2="23" />
-            <line x1="32" y1="17" x2="68" y2="83" />
-            <line x1="68" y1="17" x2="32" y2="83" />
-            <line x1="17" y1="32" x2="83" y2="68" />
-            <line x1="17" y1="68" x2="83" y2="32" />
-          </g>
-          <circle cx="50" cy="50" r="3.5" fill="#FFFFFF" />
-        </svg>
-        <div class="title-group">
-          <h1>National Forensic Audit Dossier • राष्ट्रीय लेखापरीक्षा</h1>
-          <p>The Sovereign Civic Ledger of India • Form 26 Sworn Verification</p>
-        </div>
-      </div>
-      <div class="audit-meta">
-        <div>Ref: <span class="ref">${escapeHtml(auditRef)}</span></div>
-        <div>Audited: ${escapeHtml(generatedDate)} ${escapeHtml(generatedTime)}</div>
-        <div>Standard: Rule 4A, Conduct of Elections Rules 1961</div>
-      </div>
-    </div>
-
-    <!-- Identity Banner -->
-    <div class="identity-card">
-      <div style="display: flex; align-items: center; gap: 14px;">
-        ${candidate.photo_url && (candidate.photo_url.startsWith('https://') || candidate.photo_url.startsWith('http://')) ? `
-          <img src="${escapeHtml(candidate.photo_url)}" alt="${escapeHtml(cleanName)}" style="width: 52px; height: 52px; border-radius: 50%; object-fit: cover; border: 2px solid #D4AF37;" />
-        ` : ''}
-        <div>
-          <h2 class="cand-name">${escapeHtml(cleanName)} ${candidate.alias ? `("${escapeHtml(candidate.alias)}")` : ''}</h2>
-          <div class="cand-sub">
-            <strong>${escapeHtml(candidate.house)}</strong> • ${escapeHtml(candidate.constituency)} Constituency, ${escapeHtml(candidate.state)} • Election Year: <strong>${escapeHtml(candidate.filing_year)}</strong>
-          </div>
-        </div>
-      </div>
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <div class="party-tag">${escapeHtml(candidate.party || 'Independent')}</div>
-        <div class="seal-circle ${candidate.serious_criminal_cases_count > 0 ? 'flagged' : ''}">
-          <div class="seal-inner ${candidate.serious_criminal_cases_count > 0 ? 'flagged' : ''}">
-            <span class="seal-num ${candidate.serious_criminal_cases_count > 0 ? 'flagged' : ''}">${candidate.serious_criminal_cases_count}</span>
-            <span class="seal-lbl ${candidate.serious_criminal_cases_count > 0 ? 'flagged' : ''}">CHARGES</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Forensic Status Banner -->
-    <div class="audit-status-banner ${candidate.has_arithmetic_discrepancy ? 'status-flagged' : 'status-clear'}">
-      <div>
-        <div class="status-title">
-          ${candidate.has_arithmetic_discrepancy ? '⚠️ Forensic Arithmetic Discrepancy Detected' : '✓ Sworn Disclosures Reconciled & Mathematically Verified'}
-        </div>
-        <div class="status-desc">
-          ${
-            candidate.has_arithmetic_discrepancy
-              ? `Part B summary differs from sworn Part A itemized schedule by ${formatINR(candidate.delta_movable || candidate.delta_immovable)}. Audit coordinates recorded.`
-              : 'Cross-tabulation check between Part A schedule totals and Part B abstract summary produced exact 0-delta match.'
-          }
-        </div>
-      </div>
-      <div class="mono" style="font-size: 11px;">
-        WDR: ${candidate.wealth_discrepancy_ratio ? candidate.wealth_discrepancy_ratio.toFixed(2) : '1.00'}x
-      </div>
-    </div>
-
-    <!-- Financial Disclosures -->
-    <div class="section-title">1. Sworn Assets & Liabilities (Form 26 Affidavit)</div>
-    <div class="grid-3">
-      <div class="metric-box">
-        <div class="metric-label">Declared Net Worth</div>
-        <div class="metric-val">${formatINR(candidate.total_net_worth)}</div>
-        <div class="metric-sub">Assets less liabilities</div>
-      </div>
-      <div class="metric-box">
-        <div class="metric-label">Movable Assets (Table 7)</div>
-        <div class="metric-val">${formatINR(candidate.total_movable_assets)}</div>
-        <div class="metric-sub">Bank, Cash, Gold, Shares</div>
-      </div>
-      <div class="metric-box">
-        <div class="metric-label">Immovable Assets (Table 8)</div>
-        <div class="metric-val">${formatINR(candidate.total_immovable_assets)}</div>
-        <div class="metric-sub">Land, Buildings, Properties</div>
-      </div>
-    </div>
-    <div class="grid-2">
-      <div class="metric-box">
-        <div class="metric-label">Total Sworn Liabilities</div>
-        <div class="metric-val">${formatINR(candidate.total_liabilities)}</div>
-        <div class="metric-sub">Bank loans & statutory dues</div>
-      </div>
-      <div class="metric-box">
-        <div class="metric-label">5-Year Declared Income (ITR Table 4)</div>
-        <div class="metric-val">${formatINR(candidate.total_five_year_income)}</div>
-        <div class="metric-sub">Cumulative sworn income</div>
-      </div>
-    </div>
-
-    <!-- MoSPI MPLADS Fund Tracking -->
-    <div class="section-title">2. MoSPI MPLADS Constituency Fund Velocity (₹5 Cr/Year)</div>
-    ${
-      candidate.mplads
-        ? `
-      <div class="grid-3">
-        <div class="metric-box">
-          <div class="metric-label">Entitled / Released</div>
-          <div class="metric-val">${formatINR(candidate.mplads.released_amount)}</div>
-          <div class="metric-sub">Of ${formatINR(candidate.mplads.entitled_amount)} entitlement</div>
-        </div>
-        <div class="metric-box">
-          <div class="metric-label">Utilized / Spent</div>
-          <div class="metric-val">${formatINR(candidate.mplads.expenditure_amount)}</div>
-          <div class="metric-sub">${candidate.mplads.works_completed} works completed</div>
-        </div>
-        <div class="metric-box">
-          <div class="metric-label">Expenditure Velocity</div>
-          <div class="metric-val" style="color: ${candidate.mplads.utilization_rate < 60 ? '#b91c1c' : '#047857'};">
-            ${candidate.mplads.utilization_rate.toFixed(1)}%
-          </div>
-          <div class="progress-track">
-            <div class="progress-fill" style="width: ${Math.min(100, candidate.mplads.utilization_rate)}%; background: ${
-            candidate.mplads.utilization_rate < 60 ? '#ef4444' : '#10b981'
-          };"></div>
-          </div>
-        </div>
-      </div>
-      `
-        : `
-      <div class="metric-box" style="background: #f8fafc; color: #64748b; font-size: 9px; padding: 6px 10px;">
-        MPLADS records currently syncing for this seat from MoSPI central portal.
-      </div>
-      `
-    }
-
-    <!-- Multi-Term Historical Wealth CAGR -->
-    <div class="section-title">3. Longitudinal Wealth Growth & Compound Annual Growth (CAGR)</div>
-    ${
-      candidate.historical_wealth && candidate.historical_wealth.length > 0
-        ? `
-      <table class="dossier-table">
-        <thead>
-          <tr>
-            <th>Election Interval</th>
-            <th class="text-right">Initial Assets</th>
-            <th class="text-right">Final Assets</th>
-            <th class="text-right">Absolute Increase</th>
-            <th class="text-right">% Growth</th>
-            <th class="text-right">Annual CAGR</th>
-            <th>Anomaly Flag</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${candidate.historical_wealth
-            .map(
-              (h) => `
-            <tr>
-              <td><strong>${h.from_year} &rarr; ${h.to_year}</strong></td>
-              <td class="text-right mono">${formatINR(h.initial_assets)}</td>
-              <td class="text-right mono">${formatINR(h.final_assets)}</td>
-              <td class="text-right mono">${formatINR(h.absolute_increase)}</td>
-              <td class="text-right mono">+${h.percentage_increase}%</td>
-              <td class="text-right mono">${h.cagr_percent ? `${h.cagr_percent}%` : 'N/A'}</td>
-              <td>
-                ${
-                  h.is_rapid_accumulation
-                    ? '<span style="color:#b91c1c; font-weight:800;">⚠️ Rapid Surge (&ge;300%)</span>'
-                    : '<span style="color:#047857; font-weight:700;">Normal Trajectory</span>'
-                }
-              </td>
-            </tr>
-          `
-            )
-            .join('')}
-        </tbody>
-      </table>
-      `
-        : `
-      <div class="metric-box" style="background: #f8fafc; color: #64748b; font-size: 9px; padding: 6px 10px;">
-        Single-term candidate or preliminary archival matching active.
-      </div>
-      `
-    }
-
-    <!-- Criminal & Legislative Record -->
-    <div class="section-title">4. Criminal Proceedings & Parliamentary Record</div>
-    <div class="grid-3">
-      <div class="metric-box">
-        <div class="metric-label">Declared Criminal Cases</div>
-        <div class="metric-val" style="color: ${candidate.serious_criminal_cases_count > 0 ? '#b91c1c' : '#0f172a'};">
-          ${candidate.criminal_cases_count} Case(s)
-        </div>
-        <div class="metric-sub">${candidate.serious_criminal_cases_count} heinous/serious IPC charges</div>
-      </div>
-      <div class="metric-box">
-        <div class="metric-label">Sansad Attendance</div>
-        <div class="metric-val">${candidate.attendance_rate !== undefined ? `${candidate.attendance_rate}%` : 'N/A'}</div>
-        <div class="metric-sub">Parliamentary sittings</div>
-      </div>
-      <div class="metric-box">
-        <div class="metric-label">Questions & Debates</div>
-        <div class="metric-val mono">${candidate.questions_count ?? 0} Qs / ${candidate.debates_count ?? 0} Debates</div>
-        <div class="metric-sub">${candidate.starred_questions_count !== undefined ? `${candidate.starred_questions_count} Starred, ${candidate.unstarred_questions_count ?? 0} Written` : 'Sansad legislative participation'}</div>
-      </div>
-    </div>
-
-    <!-- Section 5: Commercial Conflicts (Sec 9A RPA) & Judicial Dockets (eCourts) -->
-    <div class="section-title">5. Commercial Conflicts (Sec 9A RPA) & Judicial Dockets (eCourts)</div>
-    <div class="grid-2">
-      <div class="metric-box" style="${candidate.has_section_9a_conflict ? 'border-color: #fecdd3; background: #fff1f2;' : ''}">
-        <div class="metric-label">Section 9A RPA Procurement Conflict</div>
-        <div class="metric-val" style="font-size: 11px; color: ${candidate.has_section_9a_conflict ? '#b91c1c' : '#047857'};">
-          ${candidate.has_section_9a_conflict ? '⚠️ Subsisting Govt Tender Flagged' : '✓ No Subsisting Govt Tenders'}
-        </div>
-        <div class="metric-sub">
-          ${candidate.conflicts_of_interest && candidate.conflicts_of_interest.length > 0
-            ? `${escapeHtml(candidate.conflicts_of_interest[0].tender_title || 'Tender')} (${escapeHtml(candidate.conflicts_of_interest[0].awarding_authority || 'Govt')})`
-            : 'Audited against Central CPPP GePNIC registry & MCA21 directorships'}
-        </div>
-      </div>
-      <div class="metric-box" style="${candidate.is_rpa_section_8_disqualified ? 'border-color: #fecdd3; background: #fff1f2;' : ''}">
-        <div class="metric-label">National Judicial Grid (NJDG) / RPA Sec 8</div>
-        <div class="metric-val" style="font-size: 11px; color: ${candidate.is_rpa_section_8_disqualified ? '#b91c1c' : '#0f172a'};">
-          ${candidate.is_rpa_section_8_disqualified ? '⚠️ Disqualified (RPA Section 8)' : (candidate.dockets?.some(d => d.ecourts_verified) ? '✓ eCourts CNR Verified' : 'Standard ECI Disclosures')}
-        </div>
-        <div class="metric-sub">
-          ${candidate.defection_count ? `${candidate.defection_count} Career Party Transitions (Mobility Tracked)` : 'Criminal and disqualification records verified'}
-        </div>
-      </div>
-    </div>
-
-    <!-- Statutory Section 79 Safe Harbor Disclaimer -->
-    <div class="dossier-footer">
-      <div class="footer-flex">
-        <div style="max-width: 82%;">
-          <div class="safe-harbor-tag">STATUTORY NOTICE UNDER SECTION 79 INFORMATION TECHNOLOGY ACT, 2000</div>
-          <div>
-            This audit dossier compiles verified sworn public filings submitted under oath to the Election Commission of India (ECI Form 26) and official development fund records from the Ministry of Statistics and Programme Implementation (MoSPI). Apna Neta acts solely as an automated civic research and document indexing utility under Section 79 intermediary protections. All data is cryptographically traceable to official gazettes. Suitable for RTI inquiries, public interest research, and civic awareness.
-          </div>
-        </div>
-        <div style="text-align: right; font-family: ui-monospace, monospace; font-size: 7.5px;">
-          <div>Source: affidavit.eci.gov.in</div>
-          ${candidate.photo_attribution ? `<div>Photo: ${escapeHtml(candidate.photo_attribution)}</div>` : ''}
-          <div>Portal: apnaneta.in</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    window.addEventListener('load', () => {
-      setTimeout(() => {
-        window.print();
-      }, 250);
-    });
-  </script>
-</body>
-</html>
-`;
-
-  // Open printable window
-  const printWindow = window.open('', '_blank');
-  if (printWindow) {
-    printWindow.document.open();
-    printWindow.document.write(html);
-    printWindow.document.close();
-  } else {
-    // Fallback if popups are blocked: use invisible iframe
-    if (typeof document !== 'undefined' && document.body) {
-      const iframe = document.createElement('iframe');
-      iframe.style.position = 'fixed';
-      iframe.style.right = '0';
-      iframe.style.bottom = '0';
-      iframe.style.width = '0';
-      iframe.style.height = '0';
-      iframe.style.border = '0';
-      document.body.appendChild(iframe);
-
-      const doc = iframe.contentWindow?.document || iframe.contentDocument;
-      if (doc) {
-        doc.open();
-        doc.write(html);
-        doc.close();
-        setTimeout(() => {
-          iframe.contentWindow?.focus();
-          iframe.contentWindow?.print();
-          setTimeout(() => {
-            if (iframe.parentNode) {
-              iframe.parentNode.removeChild(iframe);
-            }
-          }, 1000);
-        }, 300);
-      }
-    }
+function eciSourceUrl(rawUrl: string): string | null {
+  try {
+    const url = new URL(rawUrl);
+    const host = url.hostname.toLowerCase();
+    return url.protocol === 'https:' && (host === 'eci.gov.in' || host.endsWith('.eci.gov.in')) ? url.href : null;
+  } catch {
+    return null;
   }
+}
+
+/** Create a source-attributed summary that the browser can print or save as PDF. */
+export function exportCandidateDossierPdf(candidate: Candidate): void {
+  const sourceUrl = eciSourceUrl(candidate.pdf_source_url);
+  const financialValue = (amount: number) => candidate.affidavit_status === 'audited' ? formatINR(amount) : 'Unavailable';
+  const auditStatus = candidate.affidavit_status === 'audited'
+    ? candidate.has_arithmetic_discrepancy ? 'Arithmetic discrepancy recorded' : 'Arithmetic audit recorded without a discrepancy'
+    : candidate.affidavit_status === 'source_only' ? 'Source indexed; arithmetic audit unavailable' : 'Affidavit unavailable';
+  const caseStatus = candidate.criminal_record_status === 'declared'
+    ? `${candidate.criminal_cases_count} case(s) recorded in this filing; ${candidate.serious_criminal_cases_count} marked serious`
+    : 'Case disclosure unavailable';
+  const conflictStatus = candidate.has_section_9a_conflict
+    ? 'Reviewed Section 9A finding recorded; inspect the underlying source'
+    : 'No reviewed finding recorded. This does not establish that no contracts exist.';
+  const date = new Date().toLocaleDateString('en-IN');
+
+  const html = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Apna Neta source summary - ${escapeHtml(candidate.name)}</title>
+<style>
+  @page { size: A4; margin: 16mm; }
+  body { font-family: system-ui, sans-serif; color: #0a192f; margin: 0; line-height: 1.45; }
+  h1 { font-size: 22px; margin: 0 0 4px; } h2 { font-size: 15px; margin: 22px 0 8px; }
+  .muted { color: #526071; font-size: 12px; } .banner { border-bottom: 3px solid #d97706; padding-bottom: 14px; }
+  .notice { background: #fff7ed; border: 1px solid #fed7aa; padding: 12px; margin: 18px 0; font-size: 13px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { text-align: left; border-bottom: 1px solid #ddd; padding: 8px 5px; vertical-align: top; }
+  th { width: 42%; color: #526071; font-weight: 600; }
+  a { color: #075985; overflow-wrap: anywhere; }
+  footer { margin-top: 28px; padding-top: 12px; border-top: 1px solid #ddd; font-size: 11px; color: #526071; }
+</style></head><body>
+<header class="banner"><h1>Apna Neta · Candidate record summary</h1>
+<div class="muted">Generated ${escapeHtml(date)} · Based on indexed public records · Not an official Form 26 copy or legal finding</div></header>
+<h2>${escapeHtml(candidate.name)}</h2>
+<div class="muted">${escapeHtml(candidate.house)} · ${escapeHtml(candidate.constituency)}, ${escapeHtml(candidate.state)} · Filing year: ${candidate.filing_year || 'Unavailable'}</div>
+<div class="notice"><strong>Evidence status:</strong> ${escapeHtml(auditStatus)}. Open the original ECI document before relying on a figure.</div>
+<h2>Financial disclosure</h2><table>
+<tr><th>Net worth</th><td>${financialValue(candidate.total_net_worth)}</td></tr>
+<tr><th>Movable assets</th><td>${financialValue(candidate.total_movable_assets)}</td></tr>
+<tr><th>Immovable assets</th><td>${financialValue(candidate.total_immovable_assets)}</td></tr>
+<tr><th>Liabilities</th><td>${financialValue(candidate.total_liabilities)}</td></tr>
+<tr><th>Five-year declared income</th><td>${financialValue(candidate.total_five_year_income)}</td></tr>
+</table>
+<h2>Other indexed records</h2><table>
+<tr><th>Criminal cases</th><td>${escapeHtml(caseStatus)}</td></tr>
+<tr><th>Parliamentary attendance</th><td>${candidate.attendance_rate == null ? 'Unavailable' : `${candidate.attendance_rate}%`}</td></tr>
+<tr><th>Questions / debates</th><td>${candidate.questions_count == null || candidate.debates_count == null ? 'Unavailable' : `${candidate.questions_count} / ${candidate.debates_count}`}</td></tr>
+<tr><th>MPLADS utilization</th><td>${candidate.mplads ? `${candidate.mplads.utilization_rate}% (${escapeHtml(candidate.mplads.term_years || 'term unavailable')})` : 'Unavailable'}</td></tr>
+<tr><th>Section 9A review</th><td>${escapeHtml(conflictStatus)}</td></tr>
+</table>
+<h2>Source</h2>
+${sourceUrl ? `<p><a href="${escapeHtml(sourceUrl)}">${escapeHtml(sourceUrl)}</a></p>` : '<p>Official ECI source link unavailable.</p>'}
+${candidate.affidavit_sha256 ? `<p class="muted">Indexed SHA-256: ${escapeHtml(candidate.affidavit_sha256)}</p>` : ''}
+<footer>Form 26 is filed under Rule 4A of the Conduct of Elections Rules, 1961. This summary distinguishes available records from unreviewed or missing data; it is not a reproduced affidavit or a determination under the Representation of the People Act, 1951.</footer>
+</body></html>`;
+
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) return;
+  printWindow.document.open();
+  printWindow.addEventListener('load', () => printWindow.print(), { once: true });
+  printWindow.document.write(html);
+  printWindow.document.close();
+  printWindow.opener = null;
 }
