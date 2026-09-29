@@ -60,6 +60,10 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME || 'apnaneta-affidavits' }}
           REGION: ${{ inputs.region || 'AUTO_BY_DAY' }}
           TARGET_STATE: ${{ inputs.state || 'ALL' }}
           BATCH_LIMIT: ${{ inputs.batch_limit || '0' }}

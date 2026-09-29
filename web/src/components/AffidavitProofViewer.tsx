@@ -36,12 +36,24 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
   if (!isOpen) return null;
 
   const sourceUrl = officialPdfUrl(pdfUrl);
+  const r2Key = candidate?.r2_storage_key?.trim() || null;
   const page = bbox?.page && bbox.page > 0 ? Math.floor(bbox.page) : 1;
   const documentUrl = sourceUrl ? (() => {
     const url = new URL(sourceUrl);
     url.hash = `page=${page}`;
     return url.href;
   })() : null;
+
+  // Stream through Cloudflare Worker / Vite dev proxy to strip frame-ancestors CSP directive.
+  // Prioritizes R2 storage archive key when available, falling back to official ECI URL.
+  const proxyUrl = (() => {
+    const params = new URLSearchParams();
+    if (r2Key) params.set('key', r2Key);
+    if (sourceUrl) params.set('url', sourceUrl);
+    if (!r2Key && !sourceUrl) return null;
+    return `/api/affidavit-proxy?${params.toString()}#page=${page}`;
+  })();
+
   const auditStatus = candidate?.affidavit_status === 'audited'
     ? candidate.has_arithmetic_discrepancy ? 'Arithmetic discrepancy recorded' : 'Arithmetic audit recorded without a discrepancy'
     : 'Arithmetic audit unavailable';
@@ -68,17 +80,17 @@ export const AffidavitProofViewer: React.FC<AffidavitProofViewerProps> = ({
 
         <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[minmax(0,1fr)_19rem]">
           <div className="flex min-h-0 flex-col bg-dholpur-100">
-            {documentUrl ? (
+            {documentUrl && proxyUrl ? (
               <>
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-dholpur-300 bg-white px-4 py-2 text-xs">
                   <span>ECI source document · page {page}</span>
                   <a href={documentUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-semibold text-ashoka-700 underline">
-                    Open at ECI <ArrowSquareOut size={14} />
+                    Open original at ECI <ArrowSquareOut size={14} />
                   </a>
                 </div>
-                <iframe title={`ECI affidavit for ${candidateName}`} src={documentUrl} className="min-h-[45vh] w-full flex-1" />
+                <iframe title={`ECI affidavit for ${candidateName}`} src={proxyUrl} className="min-h-[45vh] w-full flex-1" />
                 <p className="border-t border-dholpur-300 bg-white px-4 py-2 text-xs text-sovereign-600">
-                  If the ECI portal blocks embedded viewing, use “Open at ECI”. The source PDF is shown without alteration.
+                  Official ECI filing document streamed via ApnaNeta proxy. If you prefer, open directly at ECI.
                 </p>
               </>
             ) : (
